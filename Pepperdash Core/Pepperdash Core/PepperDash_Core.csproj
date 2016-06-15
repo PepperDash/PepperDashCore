@@ -1,0 +1,96 @@
+﻿<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{87E29B4C-569B-4368-A4ED-984AC1440C96}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>PepperDash_Core</RootNamespace>
+    <AssemblyName>PepperDash_Core</AssemblyName>
+    <ProjectTypeGuids>{0B4745B0-194B-4BB6-8E21-E9057CA92500};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <PlatformFamilyName>WindowsCE</PlatformFamilyName>
+    <PlatformID>E2BECB1F-8C8C-41ba-B736-9BE7D946A398</PlatformID>
+    <OSVersion>5.0</OSVersion>
+    <DeployDirSuffix>SmartDeviceProject1</DeployDirSuffix>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <NativePlatformName>Windows CE</NativePlatformName>
+    <FormFactorID>
+    </FormFactorID>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <AllowedReferenceRelatedFileExtensions>.allowedReferenceRelatedFileExtensions</AllowedReferenceRelatedFileExtensions>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <FileAlignment>512</FileAlignment>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <AllowedReferenceRelatedFileExtensions>.allowedReferenceRelatedFileExtensions</AllowedReferenceRelatedFileExtensions>
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <FileAlignment>512</FileAlignment>
+    <NoStdLib>true</NoStdLib>
+    <NoConfig>true</NoConfig>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="Newtonsoft.Json.Compact, Version=3.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\ProgramData\Crestron\SDK\Newtonsoft.Json.Compact.dll</HintPath>
+    </Reference>
+    <Reference Include="SimplSharpCustomAttributesInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpCustomAttributesInterface.dll</HintPath>
+    </Reference>
+    <Reference Include="SimplSharpHelperInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpHelperInterface.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CommunicationExtras.cs" />
+    <Compile Include="CoreInterfaces.cs" />
+    <Compile Include="Debug.cs" />
+    <Compile Include="Device.cs" />
+    <Compile Include="EthernetHelper.cs" />
+    <Compile Include="Feedbacks HAS SSP LINKS.cs" />
+    <Compile Include="GenericTcpIpClient.cs" />
+    <Compile Include="IHasFeedbacks.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <None Include="Properties\ControlSystem.cfg" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{0B4745B0-194B-4BB6-8E21-E9057CA92500}">
+        <ProgramIdTag>PepperDash_Core</ProgramIdTag>
+        <SystemName>PepperDash_Core</SystemName>
+        <Programmer />
+        <ArchiveFilename>C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\Pepperdash_Core.clz</ArchiveFilename>
+        <MinFirmwareVersion>1.007.0017</MinFirmwareVersion>
+        <CompiledOn>6/15/2016 10:01:37 AM</CompiledOn>
+        <AdditionalInfo />
+        <EmbedSourceArchive>False</EmbedSourceArchive>
+        <CopyTo />
+        <OriginalReferenceSources />
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <PropertyGroup>
+    <PostBuildEvent>rem  S# preparation will execute after these operations</PostBuildEvent>
+  </PropertyGroup>
+</Project>
