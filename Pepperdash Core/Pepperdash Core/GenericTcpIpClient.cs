@@ -25,7 +25,7 @@ namespace PepperDash.Core
 			get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
 		}
 
-		TCPClient Client;
+		public TCPClient Client { get; private set; }
 		CTimer RetryTimer;
 
 		public GenericTcpIpClient(string key, string address, int port, int bufferSize)
