@@ -13,23 +13,27 @@ namespace PepperDash.Core
 		public static uint Level { get; private set; }
 
 		/// <summary>
-		/// This should called from the ControlSystem Initiailize method.
+		/// This should called from the ControlSystem Initiailize method. It is only valid
+		/// in #pro environments because of direct console access and CrestronDataStoreStatic
 		/// </summary>
 		public static void Initialize()
 		{
-			// Add command to console
-			CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug", 
-				"appdebug:P [0-2]: Sets the application's console debug message level", 
-				ConsoleAccessLevelEnum.AccessOperator);
+			if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
+			{
+				// Add command to console
+				CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
+					"appdebug:P [0-2]: Sets the application's console debug message level",
+					ConsoleAccessLevelEnum.AccessOperator);
 
-			uint level = 0;
-			var err = CrestronDataStoreStatic.GetGlobalUintValue("DebugLevel", out level);
-			if (err == CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
-				SetDebugLevel(level);
-			else if (err == CrestronDataStore.CDS_ERROR.CDS_RECORD_NOT_FOUND)
-				CrestronDataStoreStatic.SetGlobalUintValue("DebugLevel", 0);
-			else
-				CrestronConsole.PrintLine("Error restoring console debug level setting: {0}", err);
+				uint level = 0;
+				var err = CrestronDataStoreStatic.GetGlobalUintValue("DebugLevel", out level);
+				if (err == CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
+					SetDebugLevel(level);
+				else if (err == CrestronDataStore.CDS_ERROR.CDS_RECORD_NOT_FOUND)
+					CrestronDataStoreStatic.SetGlobalUintValue("DebugLevel", 0);
+				else
+					CrestronConsole.PrintLine("Error restoring console debug level setting: {0}", err);
+			}
 		}
 
 		/// <summary>
@@ -62,12 +66,15 @@ namespace PepperDash.Core
 		{
 			if (level <= 2)
 			{
-				Level = 2;
+				Level = level;
 				CrestronConsole.PrintLine("[Application {0}], Debug level set to {1}", 
-					InitialParametersClass.ApplicationNumber, level);
-				var err = CrestronDataStoreStatic.SetGlobalUintValue("DebugLevel", level);
-				if(err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
-					CrestronConsole.PrintLine("Error saving console debug level setting: {0}", err);
+					InitialParametersClass.ApplicationNumber, Level);
+				if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
+				{
+					var err = CrestronDataStoreStatic.SetGlobalUintValue("DebugLevel", level);
+					if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
+						CrestronConsole.PrintLine("Error saving console debug level setting: {0}", err);
+				}
 			}
 		}
 
