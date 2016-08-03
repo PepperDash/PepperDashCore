@@ -8,8 +8,10 @@ using Crestron.SimplSharp.CrestronDataStore;
 
 namespace PepperDash.Core
 {
-	public class Debug
+	public static class Debug
 	{
+
+
 		public static uint Level { get; private set; }
 
 		/// <summary>

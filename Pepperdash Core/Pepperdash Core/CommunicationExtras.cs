@@ -16,13 +16,27 @@ namespace PepperDash.Core
 	{
 		event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
 		event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
+
 		bool IsConnected { get; }
-		bool Connected { get; }
 		void SendText(string text);
 		void SendBytes(byte[] bytes);
 		void Connect();
 	}
 
+	/// <summary>
+	/// 
+	/// </summary>
+	public enum eGenericCommMethodStatusChangeType
+	{
+		Connected, Disconnected
+	}
+
+	/// <summary>
+	/// This delegate defines handler for IBasicCommunication status changes
+	/// </summary>
+	/// <param name="comm">Device firing the status change</param>
+	/// <param name="status"></param>
+	public delegate void GenericCommMethodStatusHandler(IBasicCommunication comm, eGenericCommMethodStatusChangeType status);
 
 	/// <summary>
 	/// 

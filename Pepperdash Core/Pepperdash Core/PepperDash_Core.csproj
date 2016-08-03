@@ -63,11 +63,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommunicationExtras.cs" />
+    <Compile Include="Comm\GenericSshClient.cs" />
+    <Compile Include="Comm\SshConfig.cs" />
     <Compile Include="CoreInterfaces.cs" />
     <Compile Include="Debug.cs" />
     <Compile Include="Device.cs" />
     <Compile Include="EthernetHelper.cs" />
-    <Compile Include="GenericTcpIpClient.cs" />
+    <Compile Include="Comm\GenericTcpIpClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="Properties\ControlSystem.cfg" />
   </ItemGroup>
@@ -80,7 +82,7 @@
         <Programmer />
         <ArchiveFilename>C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\PepperDash_Core.clz</ArchiveFilename>
         <MinFirmwareVersion>1.007.0017</MinFirmwareVersion>
-        <CompiledOn>6/17/2016 10:42:36 AM</CompiledOn>
+        <CompiledOn>8/3/2016 3:25:15 PM</CompiledOn>
         <AdditionalInfo />
         <EmbedSourceArchive>False</EmbedSourceArchive>
         <CopyTo />

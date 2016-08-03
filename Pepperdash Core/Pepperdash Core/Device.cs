@@ -8,7 +8,7 @@ namespace PepperDash.Core
 	/// <summary>
 	/// The core event and status-bearing class that most if not all device and connectors can derive from.
 	/// </summary>
-	public class Device : IKeyed
+	public class Device : IKeyName
 	{
 		public string Key { get; protected set; }
 		public string Name { get; protected set; }

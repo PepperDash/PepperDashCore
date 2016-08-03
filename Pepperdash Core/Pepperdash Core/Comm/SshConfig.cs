@@ -4,15 +4,13 @@ using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 
+using Newtonsoft.Json;
+
 namespace PepperDash.Core
 {
-	public interface IKeyed
+	public class SshConfig : TcpIpConfig
 	{
-		string Key { get; }
-	}
-
-	public interface IKeyName : IKeyed
-	{
-		string Name { get; }
+		public string Username { get; set; }
+		public string Password { get; set; }
 	}
 }

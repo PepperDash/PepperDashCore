@@ -16,6 +16,7 @@ namespace PepperDash.Core
 		public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
 		public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
 
+		public TCPClient Client { get; private set; }
 		public bool IsConnected { get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; } }
 		public string Status { get { return Client.ClientStatus.ToString(); } }
 		public string ConnectionFailure { get { return Client.ClientStatus.ToString(); } }
@@ -25,7 +26,6 @@ namespace PepperDash.Core
 			get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
 		}
 
-		public TCPClient Client { get; private set; }
 		CTimer RetryTimer;
 
 		public GenericTcpIpClient(string key, string address, int port, int bufferSize)
@@ -74,9 +74,7 @@ namespace PepperDash.Core
 			if (numBytes > 0)
 			{
 				var bytes = client.IncomingDataBuffer.Take(numBytes).ToArray();
-				//if (Debug.Level == 2)
-				//    Debug.Console(2, this, "Received: {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
-				var bytesHandler = BytesReceived;
+ 				var bytesHandler = BytesReceived;
 				if (bytesHandler != null)
 					bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
 				var textHandler = TextReceived;
@@ -106,8 +104,6 @@ namespace PepperDash.Core
 		/// </summary>
 		public void SendEscapedText(string text)
 		{
-			//if (Client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
-			//    Connect();
 			var unescapedText = Regex.Replace(text, @"\\x([0-9a-fA-F][0-9a-fA-F])", s =>
 				{
 					var hex = s.Groups[1].Value;
@@ -115,9 +111,6 @@ namespace PepperDash.Core
 				});
 			SendText(unescapedText);
 
-			//var bytes = Encoding.GetEncoding(28591).GetBytes(unescapedText);
-			//Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, text);
-			//Client.SendData(bytes, bytes.Length);
 		}
 
 		public void SendBytes(byte[] bytes)
