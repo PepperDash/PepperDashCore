@@ -59,17 +59,9 @@ namespace PepperDash.Core
 		public ushort UStatus { get; private set; }
 
 		/// <summary>
-		/// Determines whether client will attempt reconnection on failure
+		/// Determines whether client will attempt reconnection on failure. Default is true
 		/// </summary>
-	
 		public bool AutoReconnect { get; set; }
-		/// <summary>
-		/// S+ helper for bool value
-		/// </summary>		
-		public ushort UAutoReconnect
-		{
-			set { AutoReconnect = value == 1; }
-		}
 
 		/// <summary>
 		/// Millisecond value, determines the timeout period in between reconnect attempts
@@ -85,7 +77,7 @@ namespace PepperDash.Core
 			base(key)
 		{
 			AutoReconnectIntervalMs = 5000;
-			
+			AutoReconnect = true;
 			Hostname = hostname;
 			Port = port;
 			Username = username;
@@ -125,7 +117,7 @@ namespace PepperDash.Core
 							Debug.Console(1, this, "Connected");
 							TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
 							TheStream.DataReceived += Stream_DataReceived;
-							TheStream.ErrorOccurred += Stream_ErrorOccurred;
+							//TheStream.ErrorOccurred += Stream_ErrorOccurred;
 							
 						}
 						return;
@@ -240,13 +232,13 @@ namespace PepperDash.Core
 			}
 		}
 
-		/// <summary>
-		/// Error event handler for stream events
-		/// </summary>
-		void Stream_ErrorOccurred(object sender, ExceptionEventArgs e)
-		{
-			Debug.Console(2, this, "CRITICAL: PLEASE REPORT - SSH client stream error:\r{0}", e.Exception);
-		}
+		///// <summary>
+		///// Error event handler for stream events
+		///// </summary>
+		//void Stream_ErrorOccurred(object sender, ExceptionEventArgs e)
+		//{
+		//    Debug.Console(2, this, "CRITICAL: PLEASE REPORT - SSH client stream error:\r{0}", e.Exception);
+		//}
 
 		/// <summary>
 		/// Error event handler for client events - disconnect, etc.  Will forward those events via ConnectionChange
@@ -254,12 +246,12 @@ namespace PepperDash.Core
 		/// </summary>
 		void Client_ErrorOccurred(object sender, Crestron.SimplSharp.Ssh.Common.ExceptionEventArgs e)
 		{
-			Debug.Console(0, this, "SSH client error: {0}", e.Exception);
-			if (e.Exception is SocketException)
+			if (!(e.Exception is SshConnectionException))
 			{
-				// ****LOG SOMETHING
+				Debug.Console(0, this, "SSH client error: {0}", e.Exception);
 				UStatus = 4;
 			}
+			Debug.Console(1, this, "Disconnected by remote");
 			IsConnected = false;
 			HandleConnectionFailure();
 		}
