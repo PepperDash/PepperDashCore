@@ -11,7 +11,7 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
-	public class GenericTcpIpClient : Device, IBasicCommunication
+	public class GenericTcpIpClient : Device, IBasicCommunication, IAutoReconnect
 	{
 		public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
 		public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
@@ -20,6 +20,9 @@ namespace PepperDash.Core
 		public bool IsConnected { get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; } }
 		public string Status { get { return Client.ClientStatus.ToString(); } }
 		public string ConnectionFailure { get { return Client.ClientStatus.ToString(); } }
+
+		public bool AutoReconnect { get; set; }
+		public int AutoReconnectIntervalMs { get; set; }
 
 		public bool Connected
 		{
@@ -173,9 +176,21 @@ namespace PepperDash.Core
 		/// </summary>
 		public int BufferSize { get; set; }
 
+		/// <summary>
+		/// Defaults to true
+		/// </summary>
+		public bool AutoReconnect { get; set; }
+
+		/// <summary>
+		/// Defaults to 5000ms
+		/// </summary>
+		public int AutoReconnectIntervalMs { get; set; }
+
 		public TcpIpConfig()
 		{
 			BufferSize = 32768;
+			AutoReconnect = true;
+			AutoReconnectIntervalMs = 5000;
 		}
 	}
 

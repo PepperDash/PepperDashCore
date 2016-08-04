@@ -23,6 +23,12 @@ namespace PepperDash.Core
 		void Connect();
 	}
 
+	public interface IAutoReconnect
+	{
+		bool AutoReconnect { get; set; }
+		int AutoReconnectIntervalMs { get; set; }
+	}
+
 	/// <summary>
 	/// 
 	/// </summary>
