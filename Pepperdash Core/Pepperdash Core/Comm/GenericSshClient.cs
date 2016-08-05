@@ -133,7 +133,6 @@ namespace PepperDash.Core
 				{
 					Client.Disconnect();
 					Client = null;
-					//Client.Dispose();
 				}				
 				Client = new SshClient(connectionInfo);
 				
@@ -267,14 +266,6 @@ namespace PepperDash.Core
 				}
 			}
 		}
-
-		///// <summary>
-		///// Error event handler for stream events
-		///// </summary>
-		//void Stream_ErrorOccurred(object sender, ExceptionEventArgs e)
-		//{
-		//    Debug.Console(2, this, "CRITICAL: PLEASE REPORT - SSH client stream error:\r{0}", e.Exception);
-		//}
 
 		/// <summary>
 		/// Error event handler for client events - disconnect, etc.  Will forward those events via ConnectionChange

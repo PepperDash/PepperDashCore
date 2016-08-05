@@ -163,13 +163,17 @@ namespace PepperDash.Core
 		}
 	}
 
-	public class TcpIpConfig
+
+	public class TcpSshPropertiesConfig
 	{
 		[JsonProperty(Required = Required.Always)]
 		public string Address { get; set; }
-
+		
 		[JsonProperty(Required = Required.Always)]
 		public int Port { get; set; }
+		
+		public string Username { get; set; }
+		public string Password { get; set; }
 
 		/// <summary>
 		/// Defaults to 32768
@@ -186,12 +190,44 @@ namespace PepperDash.Core
 		/// </summary>
 		public int AutoReconnectIntervalMs { get; set; }
 
-		public TcpIpConfig()
+		public TcpSshPropertiesConfig()
 		{
 			BufferSize = 32768;
 			AutoReconnect = true;
 			AutoReconnectIntervalMs = 5000;
 		}
+
 	}
+
+	//public class TcpIpConfig
+	//{
+	//    [JsonProperty(Required = Required.Always)]
+	//    public string Address { get; set; }
+
+	//    [JsonProperty(Required = Required.Always)]
+	//    public int Port { get; set; }
+
+	//    /// <summary>
+	//    /// Defaults to 32768
+	//    /// </summary>
+	//    public int BufferSize { get; set; }
+
+	//    /// <summary>
+	//    /// Defaults to true
+	//    /// </summary>
+	//    public bool AutoReconnect { get; set; }
+
+	//    /// <summary>
+	//    /// Defaults to 5000ms
+	//    /// </summary>
+	//    public int AutoReconnectIntervalMs { get; set; }
+
+	//    public TcpIpConfig()
+	//    {
+	//        BufferSize = 32768;
+	//        AutoReconnect = true;
+	//        AutoReconnectIntervalMs = 5000;
+	//    }
+	//}
 
 }
