@@ -13,17 +13,64 @@ namespace PepperDash.Core
 {
 	public class GenericTcpIpClient : Device, IBasicCommunication, IAutoReconnect
 	{
+		/// <summary>
+		/// 
+		/// </summary>
 		public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
 
+		/// <summary>
+		/// 
+		/// </summary>
 		public TCPClient Client { get; private set; }
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public bool IsConnected { get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; } }
-		public string Status { get { return Client.ClientStatus.ToString(); } }
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public SocketStatus ClientStatus { get { return Client.ClientStatus; } }
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ClientStatusText { get { return Client.ClientStatus.ToString(); } }
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public ushort UClientStatus { get { return (ushort)Client.ClientStatus; } }
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public string ConnectionFailure { get { return Client.ClientStatus.ToString(); } }
 
+		/// <summary>
+		/// 
+		/// </summary>
 		public bool AutoReconnect { get; set; }
+		
+		/// <summary>
+		/// 
+		/// </summary>
 		public int AutoReconnectIntervalMs { get; set; }
 
+		/// <summary>
+		/// Set only when the disconnect method is called.
+		/// </summary>
+		bool DisconnectCalledByUser;
+
+		/// <summary>
+		/// 
+		/// </summary>
 		public bool Connected
 		{
 			get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
@@ -52,10 +99,12 @@ namespace PepperDash.Core
 		public void Connect()
 		{
 			Client.ConnectToServerAsync(null);
+			DisconnectCalledByUser = false;
 		}
 
 		public void Disconnnect()
 		{
+			DisconnectCalledByUser = true;
 			Client.DisconnectFromServer();
 		}
 
@@ -126,12 +175,11 @@ namespace PepperDash.Core
 
 		void Client_SocketStatusChange(TCPClient client, SocketStatus clientSocketStatus)
 		{
-			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED &&
-				client.ClientStatus != SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY)
+
+			Debug.Console(2, this, "Socket status change {0} ({1})", clientSocketStatus, UClientStatus);
+			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && !DisconnectCalledByUser)
 				WaitAndTryReconnect();
 
-
-			Debug.Console(2, this, "Socket status change {0}", clientSocketStatus);
 			switch (clientSocketStatus)
 			{
 				case SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY:
@@ -140,6 +188,7 @@ namespace PepperDash.Core
 					break;
 				case SocketStatus.SOCKET_STATUS_CONNECTED:
 					Client.ReceiveDataAsync(Receive);
+					DisconnectCalledByUser = false;
 					break;
 				case SocketStatus.SOCKET_STATUS_CONNECT_FAILED:
 					break;

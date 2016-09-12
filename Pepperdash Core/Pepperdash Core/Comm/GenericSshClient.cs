@@ -147,7 +147,7 @@ namespace PepperDash.Core
 						IsConnected = true;
 						Debug.Console(1, this, "Connected");
 						TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
-						TheStream.DataReceived += Stream_DataReceived;						
+						TheStream.DataReceived += Stream_DataReceived;
 					}
 					return;
 				}
@@ -162,14 +162,18 @@ namespace PepperDash.Core
 							Key, Hostname, Port, ie.GetType());
 					else if (ie is SshAuthenticationException)
 					{
-						msg = string.Format("'{0}' Authentication failure for username '{1}', ({2})", 
+						msg = string.Format("'{0}' Authentication failure for username '{1}', ({2})",
 							Username, Key, ie.GetType());
-						Debug.Console(0, this, "Authentication failure for username '{0}', ({1})", 
+						Debug.Console(0, this, "Authentication failure for username '{0}', ({1})",
 							Username, ie.GetType());
 					}
 					else
 						Debug.Console(0, this, "Error on connect:\r({0})", e);
-				}	
+				}
+				catch (Exception e)
+				{
+					Debug.Console(0, this, "Unhandled exception on connect:\r({0})", e);
+				}
 			}
 			else
 			{
