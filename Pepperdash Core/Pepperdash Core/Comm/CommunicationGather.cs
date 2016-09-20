@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 
 using PepperDash.Core;
@@ -41,6 +42,8 @@ namespace PepperDash.Core
 		/// </summary>
 		char Delimiter;
 
+		string StringDelimiter;
+
 		/// <summary>
 		/// Fires up a gather, given a IBasicCommunicaion port and char for de
 		/// </summary>
@@ -51,6 +54,18 @@ namespace PepperDash.Core
 			Port = port;
 			Delimiter = delimiter;
 			port.TextReceived += new EventHandler<GenericCommMethodReceiveTextArgs>(Port_TextReceived);
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="port"></param>
+		/// <param name="delimiter"></param>
+		public CommunicationGather(IBasicCommunication port, string delimiter)
+		{
+			Port = port;
+			StringDelimiter = delimiter;
+			port.TextReceived += TextReceivedStringDelimiter;
 		}
 
 		/// <summary>
@@ -65,6 +80,31 @@ namespace PepperDash.Core
 				var str = ReceiveBuffer.ToString();
 				var lines = str.Split(Delimiter);
 				if (lines.Length > 0)
+				{
+					for (int i = 0; i < lines.Length - 1; i++)
+						handler(this, new GenericCommMethodReceiveTextArgs(lines[i]));
+					ReceiveBuffer = new StringBuilder(lines[lines.Length - 1]);
+				}
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="args"></param>
+		void TextReceivedStringDelimiter(object sender, GenericCommMethodReceiveTextArgs args)
+		{
+			var handler = LineReceived;
+			if (handler != null)
+			{
+				// Receive buffer should either be empty or not contain the delimiter
+				// If the line does not have a delimiter, append the 
+
+				ReceiveBuffer.Append(args.Text);
+				var str = ReceiveBuffer.ToString();
+				var lines = Regex.Split(str, StringDelimiter);
+				if (lines.Length > 1)
 				{
 					for (int i = 0; i < lines.Length - 1; i++)
 						handler(this, new GenericCommMethodReceiveTextArgs(lines[i]));
