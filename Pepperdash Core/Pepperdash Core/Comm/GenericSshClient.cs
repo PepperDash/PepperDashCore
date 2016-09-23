@@ -7,28 +7,9 @@ using Crestron.SimplSharp.Ssh.Common;
 
 namespace PepperDash.Core
 {
-	public class ConnectionChangeEventArgs : EventArgs
-	{
-		public bool IsConnected { get; private set; }
-
-		public ushort UIsConnected { get { return (ushort)(Client.IsConnected ? 1 : 0); } }
-
-		public GenericSshClient Client { get; private set; }
-		public ushort Status { get { return Client.UStatus; } }
-
-		// S+ Constructor
-		public ConnectionChangeEventArgs() { }
-
-		public ConnectionChangeEventArgs(bool isConnected, GenericSshClient client)
-		{
-			IsConnected = isConnected;
-			Client = client;
-		}
-	}
-
-	//*****************************************************************************************************
-	//*****************************************************************************************************
-
+	/// <summary>
+	/// 
+	/// </summary>
 	public class GenericSshClient : Device, IBasicCommunication, IAutoReconnect
 	{
 		/// <summary>
@@ -44,24 +25,39 @@ namespace PepperDash.Core
 		/// <summary>
 		/// Event when the connection status changes.
 		/// </summary>
-		public event EventHandler<ConnectionChangeEventArgs> ConnectionChange;
+		public event EventHandler<SshConnectionChangeEventArgs> ConnectionChange;
 
-
+		/// <summary>
+		/// Address of server
+		/// </summary>
 		public string Hostname { get; set; }
+
 		/// <summary>
 		/// Port on server
 		/// </summary>
 		public int Port { get; set; }
+
+		/// <summary>
+		/// Username for server
+		/// </summary>
 		public string Username { get; set; }
+
+		/// <summary>
+		/// And... Password for server.  That was worth documenting!
+		/// </summary>
 		public string Password { get; set; }
 
+		/// <summary>
+		/// True when the server is connected - when status == 2.
+		/// </summary>
 		public bool IsConnected 
 		{ 
 			// returns false if no client or not connected
 			get { return UStatus == 2; }
 		}
 		/// <summary>
-		/// Contains the familiar Simpl analog status values 
+		/// Contains the familiar Simpl analog status values. This drives the ConnectionChange event
+		/// and IsConnected with be true when this == 2.
 		/// </summary>
 		public ushort UStatus 
 		{
@@ -100,6 +96,11 @@ namespace PepperDash.Core
 		SshClient Client;
 		ShellStream TheStream;
 		CTimer ReconnectTimer;
+
+		string PreviousHostname;
+		int PreviousPort;
+		string PreviousUsername;
+		string PreviousPassword;
 
 		/// <summary>
 		/// Typical constructor.
@@ -143,7 +144,7 @@ namespace PepperDash.Core
 			{
 				if (Client != null)
 				{
-					Debug.Console(2, this, "Program stopping. Closing connection");
+					Debug.Console(1, this, "Program stopping. Closing connection");
 					Client.Disconnect();
 					Client.Dispose();
 				}
@@ -176,26 +177,43 @@ namespace PepperDash.Core
 				return;
 			}
 
-			//You can do it!
-			UStatus = 1;
-			//IsConnected = false;
-
 			// This handles both password and keyboard-interactive (like on OS-X, 'nixes)
 			KeyboardInteractiveAuthenticationMethod kauth = new KeyboardInteractiveAuthenticationMethod(Username);
 			kauth.AuthenticationPrompt += new EventHandler<AuthenticationPromptEventArgs>(kauth_AuthenticationPrompt);
 			PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
-			ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
 
 			// always spin up new client in case parameters have changed
 			// **** MAY WANT TO CHANGE THIS BECAUSE OF SOCKET LEAKS ****
-			if (Client != null)
+			//if (Client != null)
+			//{
+			//    Client.Disconnect();
+			//    Client = null;
+			//}
+
+			// Make a new client if we need it or things have changed
+			if (Client == null || PropertiesHaveChanged())
 			{
-				Client.Disconnect();
-				Client = null;
-			}
-			Client = new SshClient(connectionInfo);
-			
-			Client.ErrorOccurred += Client_ErrorOccurred;
+				if (Client != null)
+				{
+					Debug.Console(2, this, "Cleaning up disconnected client");
+					Client.ErrorOccurred -= Client_ErrorOccurred;
+					if(TheStream != null)
+						TheStream.DataReceived -= Stream_DataReceived;
+					TheStream = null;
+				}
+
+				Debug.Console(2, this, "Creating new SshClient");
+				ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
+				Client = new SshClient(connectionInfo);
+				Client.ErrorOccurred += Client_ErrorOccurred;
+			} 
+			PreviousHostname = Hostname;
+			PreviousPassword = Password;
+			PreviousPort = Port;
+			PreviousUsername = Username;
+
+			//You can do it!
+			UStatus = 1;
 			try
 			{
 				Client.Connect();
@@ -207,7 +225,10 @@ namespace PepperDash.Core
 					TheStream.DataReceived += Stream_DataReceived;
 					Debug.Console(1, this, "Connected");
 					UStatus = 2;
-					//IsConnected = true;
+					PreviousHostname = Hostname;
+					PreviousPassword = Password;
+					PreviousPort = Port;
+					PreviousUsername = Username;
 				}
 				return;
 			}
@@ -232,10 +253,9 @@ namespace PepperDash.Core
 				Debug.Console(0, this, "Unhandled exception on connect:\r({0})", e);
 			}
 			
-
 			// Sucess will not make it this far
+			Client.Disconnect();
 			UStatus = 3;
-			//IsConnected = false;
 			HandleConnectionFailure();
 		}
 
@@ -250,34 +270,34 @@ namespace PepperDash.Core
 				ReconnectTimer.Stop();
 				ReconnectTimer = null;
 			}
-			DiscoAndCleanup();
+			if(TheStream != null)
+				TheStream.DataReceived -= Stream_DataReceived;
+			Client.Disconnect();
 			UStatus = 5;
-			//IsConnected = false;
+			Debug.Console(1, this, "Disconnected");
 		}
 
 		/// <summary>
 		/// 
 		/// </summary>
-		void DiscoAndCleanup()
-		{
-			if (Client != null)
-			{
-				Client.ErrorOccurred -= Client_ErrorOccurred;
-				TheStream.DataReceived -= Stream_DataReceived;
-				Debug.Console(2, this, "Cleaning up disconnected client");
-				Client.Disconnect();
-				Client.Dispose();
-				Client = null;
-			}
-		}
+		//void DiscoAndCleanup()
+		//{
+		//    if (Client != null)
+		//    {
+		//        Client.ErrorOccurred -= Client_ErrorOccurred;
+		//        TheStream.DataReceived -= Stream_DataReceived;
+		//        Debug.Console(2, this, "Cleaning up disconnected client");
+		//        Client.Disconnect();
+		//        Client.Dispose();
+		//        Client = null;
+		//    }
+		//}
 
 		/// <summary>
 		/// Anything to do with reestablishing connection on failures
 		/// </summary>
 		void HandleConnectionFailure()
 		{
-			DiscoAndCleanup();
-
 			Debug.Console(2, this, "Checking autoreconnect: {0}, {1}ms", 
 				AutoReconnect, AutoReconnectIntervalMs);
 			if (AutoReconnect)
@@ -298,6 +318,12 @@ namespace PepperDash.Core
 						(float)(AutoReconnectIntervalMs / 1000));
 				}
 			}
+		}
+
+		bool PropertiesHaveChanged()
+		{
+			return Hostname != PreviousHostname || Port != PreviousPort
+				|| Username != PreviousUsername || Password != PreviousPassword;
 		}
 
 		/// <summary>
@@ -344,11 +370,10 @@ namespace PepperDash.Core
 			if (Client != null)
 			{
 				Client.Disconnect();
-				Client.Dispose();
-				Client = null;
+				//Client.Dispose();
+				//Client = null;
 			}
 			UStatus = 4;
-			//IsConnected = false;
 			HandleConnectionFailure();
 		}
 
@@ -358,7 +383,7 @@ namespace PepperDash.Core
 		void OnConnectionChange()
 		{
 			if(ConnectionChange != null)
-				ConnectionChange(this, new ConnectionChangeEventArgs(IsConnected, this));
+				ConnectionChange(this, new SshConnectionChangeEventArgs(IsConnected, this));
 		}
 
 		#region IBasicCommunication Members
@@ -378,7 +403,6 @@ namespace PepperDash.Core
 			{
 				Debug.Console(1, this, "Stream write failed. Disconnected, closing");
 				UStatus = 4;
-				//IsConnected = false;
 				HandleConnectionFailure();
 			}
 		}
@@ -394,11 +418,34 @@ namespace PepperDash.Core
 			{
 				Debug.Console(1, this, "Stream write failed. Disconnected, closing");
 				UStatus = 4;
-				//IsConnected = false;
 				HandleConnectionFailure();
 			}
 		}
 
 		#endregion
+	}
+
+	//*****************************************************************************************************
+	//*****************************************************************************************************
+	/// <summary>
+	/// Fired when connection changes
+	/// </summary>
+	public class SshConnectionChangeEventArgs : EventArgs
+	{
+		public bool IsConnected { get; private set; }
+
+		public ushort UIsConnected { get { return (ushort)(Client.IsConnected ? 1 : 0); } }
+
+		public GenericSshClient Client { get; private set; }
+		public ushort Status { get { return Client.UStatus; } }
+
+		// S+ Constructor
+		public SshConnectionChangeEventArgs() { }
+
+		public SshConnectionChangeEventArgs(bool isConnected, GenericSshClient client)
+		{
+			IsConnected = isConnected;
+			Client = client;
+		}
 	}
 }
