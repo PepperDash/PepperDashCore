@@ -82,13 +82,13 @@ namespace PepperDash.Core
 			: base(key)
 		{
 			Client = new TCPClient(address, port, bufferSize);
+			Client.SocketStatusChange += new TCPClientSocketStatusChangeEventHandler(Client_SocketStatusChange);
 		}
 
-		public override bool CustomActivate()
-		{
-			Client.SocketStatusChange += new TCPClientSocketStatusChangeEventHandler(Client_SocketStatusChange);
-			return true;
-		}
+		//public override bool CustomActivate()
+		//{
+		//    return true;
+		//}
 
 		public override bool Deactivate()
 		{

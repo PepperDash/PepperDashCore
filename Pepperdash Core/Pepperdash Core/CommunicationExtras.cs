@@ -54,6 +54,11 @@ namespace PepperDash.Core
 		{
 			Bytes = bytes;
 		}
+
+		/// <summary>
+		/// Stupid S+ Constructor
+		/// </summary>
+		public GenericCommMethodReceiveBytesArgs() { }
 	}
 
 	/// <summary>
@@ -66,6 +71,11 @@ namespace PepperDash.Core
 		{
 			Text = text;
 		}
+
+		/// <summary>
+		/// Stupid S+ Constructor
+		/// </summary>
+		public GenericCommMethodReceiveTextArgs() { }
 	}
 
 	/// <summary>
