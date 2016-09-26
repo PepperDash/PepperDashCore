@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronSockets;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -22,6 +23,17 @@ namespace PepperDash.Core
 		void SendBytes(byte[] bytes);
 		void Connect();
 	}
+
+	/// <summary>
+	/// For IBasicCommunication classes that have SocketStatus. GenericSshClient,
+	/// GenericTcpIpClient
+	/// </summary>
+	public interface ISocketStatus : IBasicCommunication
+	{
+		event TCPClientSocketStatusChangeEventHandler SocketStatusChange;
+		SocketStatus ClientStatus { get; }
+	}
+
 
 	public interface IAutoReconnect
 	{
@@ -77,6 +89,8 @@ namespace PepperDash.Core
 		/// </summary>
 		public GenericCommMethodReceiveTextArgs() { }
 	}
+
+
 
 	/// <summary>
 	/// 

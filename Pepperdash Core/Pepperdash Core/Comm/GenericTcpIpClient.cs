@@ -11,7 +11,7 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
-	public class GenericTcpIpClient : Device, IBasicCommunication, IAutoReconnect
+	public class GenericTcpIpClient : Device, ISocketStatus, IAutoReconnect
 	{
 		/// <summary>
 		/// 
@@ -22,6 +22,11 @@ namespace PepperDash.Core
 		/// 
 		/// </summary>
 		public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public event TCPClientSocketStatusChangeEventHandler SocketStatusChange;
 
 		/// <summary>
 		/// 
@@ -82,7 +87,7 @@ namespace PepperDash.Core
 			: base(key)
 		{
 			Client = new TCPClient(address, port, bufferSize);
-			Client.SocketStatusChange += new TCPClientSocketStatusChangeEventHandler(Client_SocketStatusChange);
+			Client.SocketStatusChange += Client_SocketStatusChange;
 		}
 
 		//public override bool CustomActivate()
@@ -175,40 +180,23 @@ namespace PepperDash.Core
 
 		void Client_SocketStatusChange(TCPClient client, SocketStatus clientSocketStatus)
 		{
-
 			Debug.Console(2, this, "Socket status change {0} ({1})", clientSocketStatus, UClientStatus);
 			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && !DisconnectCalledByUser)
 				WaitAndTryReconnect();
 
+			// Probably doesn't need to be a switch since all other cases were eliminated
 			switch (clientSocketStatus)
 			{
-				case SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY:
-					break;
-				case SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY:
-					break;
 				case SocketStatus.SOCKET_STATUS_CONNECTED:
 					Client.ReceiveDataAsync(Receive);
 					DisconnectCalledByUser = false;
 					break;
-				case SocketStatus.SOCKET_STATUS_CONNECT_FAILED:
-					break;
-				case SocketStatus.SOCKET_STATUS_DNS_FAILED:
-					break;
-				case SocketStatus.SOCKET_STATUS_DNS_LOOKUP:
-					break;
-				case SocketStatus.SOCKET_STATUS_DNS_RESOLVED:
-					break;
-				case SocketStatus.SOCKET_STATUS_LINK_LOST:
-					break;
-				case SocketStatus.SOCKET_STATUS_NO_CONNECT:
-					break;
-				case SocketStatus.SOCKET_STATUS_SOCKET_NOT_EXIST:
-					break;
-				case SocketStatus.SOCKET_STATUS_WAITING:
-					break;
-				default:
-					break;
 			}
+
+			// Relay the event
+			var handler = SocketStatusChange;
+			if (handler != null)
+				SocketStatusChange(client, clientSocketStatus);
 		}
 	}
 

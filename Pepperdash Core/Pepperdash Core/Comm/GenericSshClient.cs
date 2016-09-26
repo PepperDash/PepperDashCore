@@ -10,7 +10,7 @@ namespace PepperDash.Core
 	/// <summary>
 	/// 
 	/// </summary>
-	public class GenericSshClient : Device, IBasicCommunication, IAutoReconnect
+	public class GenericSshClient : Device, ISocketStatus, IAutoReconnect
 	{
 		/// <summary>
 		/// Event that fires when data is received.  Delivers args with byte array
@@ -26,6 +26,10 @@ namespace PepperDash.Core
 		/// Event when the connection status changes.
 		/// </summary>
 		public event EventHandler<SshConnectionChangeEventArgs> ConnectionChange;
+
+
+		public event Crestron.SimplSharp.CrestronSockets.TCPClientSocketStatusChangeEventHandler SocketStatusChange;
+
 
 		/// <summary>
 		/// Address of server
@@ -55,6 +59,15 @@ namespace PepperDash.Core
 			// returns false if no client or not connected
 			get { return UStatus == 2; }
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		public Crestron.SimplSharp.CrestronSockets.SocketStatus ClientStatus
+		{
+			get { throw new NotImplementedException(); }
+		}
+
 		/// <summary>
 		/// Contains the familiar Simpl analog status values. This drives the ConnectionChange event
 		/// and IsConnected with be true when this == 2.
