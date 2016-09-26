@@ -65,7 +65,17 @@ namespace PepperDash.Core
 		{
 			Port = port;
 			StringDelimiter = delimiter;
-			port.TextReceived += TextReceivedStringDelimiter;
+			port.TextReceived += Port_TextReceivedStringDelimiter;
+		}
+
+		/// <summary>
+		/// Disconnects this gather from the Port's TextReceived event. This will not fire LineReceived
+		/// after the this call.
+		/// </summary>
+		public void Stop()
+		{
+			Port.TextReceived -= Port_TextReceived;
+			Port.TextReceived -= Port_TextReceivedStringDelimiter;
 		}
 
 		/// <summary>
@@ -93,7 +103,7 @@ namespace PepperDash.Core
 		/// </summary>
 		/// <param name="sender"></param>
 		/// <param name="args"></param>
-		void TextReceivedStringDelimiter(object sender, GenericCommMethodReceiveTextArgs args)
+		void Port_TextReceivedStringDelimiter(object sender, GenericCommMethodReceiveTextArgs args)
 		{
 			var handler = LineReceived;
 			if (handler != null)
@@ -118,7 +128,7 @@ namespace PepperDash.Core
 		/// </summary>
 		~CommunicationGather()
 		{
-			Port.TextReceived -= Port_TextReceived;
+			Stop();
 		}
 	}
 }
