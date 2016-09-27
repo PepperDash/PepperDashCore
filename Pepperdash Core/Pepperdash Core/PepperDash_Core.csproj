@@ -64,9 +64,8 @@
   <ItemGroup>
     <Compile Include="CommunicationExtras.cs" />
     <Compile Include="Comm\CommunicationGather.cs" />
+    <Compile Include="Comm\GenericSocketStatusChangeEventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
-    <Compile Include="Comm\GenericTcpIpClientWithGather.cs" />
-    <Compile Include="Comm\SshConfig.cs" />
     <Compile Include="CoreInterfaces.cs" />
     <Compile Include="Debug.cs" />
     <Compile Include="Device.cs" />
@@ -85,7 +84,7 @@
         <Programmer />
         <ArchiveFilename>C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\PepperDash_Core.clz</ArchiveFilename>
         <MinFirmwareVersion>1.007.0017</MinFirmwareVersion>
-        <CompiledOn>9/26/2016 9:02:28 AM</CompiledOn>
+        <CompiledOn>9/27/2016 5:17:31 PM</CompiledOn>
         <AdditionalInfo />
         <EmbedSourceArchive>False</EmbedSourceArchive>
         <CopyTo />

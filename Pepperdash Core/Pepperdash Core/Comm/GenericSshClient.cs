@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronSockets;
 using Crestron.SimplSharp.Ssh;
 using Crestron.SimplSharp.Ssh.Common;
 
@@ -25,11 +26,13 @@ namespace PepperDash.Core
 		/// <summary>
 		/// Event when the connection status changes.
 		/// </summary>
-		public event EventHandler<SshConnectionChangeEventArgs> ConnectionChange;
+		//[Obsolete("Use SocketStatusChange instead")]
+		//public event EventHandler<SshConnectionChangeEventArgs> ConnectionChange;
 
-
-		public event Crestron.SimplSharp.CrestronSockets.TCPClientSocketStatusChangeEventHandler SocketStatusChange;
-
+		/// <summary>
+		/// 
+		/// </summary>
+		public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
 
 		/// <summary>
 		/// Address of server
@@ -57,16 +60,24 @@ namespace PepperDash.Core
 		public bool IsConnected 
 		{ 
 			// returns false if no client or not connected
-			get { return UStatus == 2; }
+			get { return ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
 		}
 
 		/// <summary>
 		/// 
 		/// </summary>
-		public Crestron.SimplSharp.CrestronSockets.SocketStatus ClientStatus
+		public SocketStatus ClientStatus
 		{
-			get { throw new NotImplementedException(); }
+			get { return _ClientStatus; }
+			private set
+			{
+				if (_ClientStatus == value)
+					return;
+				_ClientStatus = value;
+				OnConnectionChange();
+			}
 		}
+		SocketStatus _ClientStatus;
 
 		/// <summary>
 		/// Contains the familiar Simpl analog status values. This drives the ConnectionChange event
@@ -74,17 +85,8 @@ namespace PepperDash.Core
 		/// </summary>
 		public ushort UStatus 
 		{
-			get { return _UStatus; }
-			private set
-			{
-				if (_UStatus == value)
-					return;
-				_UStatus = value;
-				OnConnectionChange();
-			}
-		
+			get { return (ushort)_ClientStatus; }	
 		}
-		ushort _UStatus;
 
 		/// <summary>
 		/// Determines whether client will attempt reconnection on failure. Default is true
@@ -226,7 +228,7 @@ namespace PepperDash.Core
 			PreviousUsername = Username;
 
 			//You can do it!
-			UStatus = 1;
+			ClientStatus = SocketStatus.SOCKET_STATUS_WAITING;
 			try
 			{
 				Client.Connect();
@@ -237,7 +239,7 @@ namespace PepperDash.Core
 					TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
 					TheStream.DataReceived += Stream_DataReceived;
 					Debug.Console(1, this, "Connected");
-					UStatus = 2;
+					ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
 					PreviousHostname = Hostname;
 					PreviousPassword = Password;
 					PreviousPort = Port;
@@ -268,7 +270,7 @@ namespace PepperDash.Core
 			
 			// Sucess will not make it this far
 			Client.Disconnect();
-			UStatus = 3;
+			ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
 			HandleConnectionFailure();
 		}
 
@@ -286,7 +288,7 @@ namespace PepperDash.Core
 			if(TheStream != null)
 				TheStream.DataReceived -= Stream_DataReceived;
 			Client.Disconnect();
-			UStatus = 5;
+			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY;
 			Debug.Console(1, this, "Disconnected");
 		}
 
@@ -386,7 +388,7 @@ namespace PepperDash.Core
 				//Client.Dispose();
 				//Client = null;
 			}
-			UStatus = 4;
+			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
 			HandleConnectionFailure();
 		}
 
@@ -395,8 +397,12 @@ namespace PepperDash.Core
 		/// </summary>
 		void OnConnectionChange()
 		{
-			if(ConnectionChange != null)
-				ConnectionChange(this, new SshConnectionChangeEventArgs(IsConnected, this));
+			//if(ConnectionChange != null)
+			//    ConnectionChange(this, new SshConnectionChangeEventArgs(IsConnected, this));
+
+			var handler = SocketStatusChange;
+			if (handler != null)
+				SocketStatusChange(this);
 		}
 
 		#region IBasicCommunication Members
@@ -415,7 +421,7 @@ namespace PepperDash.Core
 			catch
 			{
 				Debug.Console(1, this, "Stream write failed. Disconnected, closing");
-				UStatus = 4;
+				ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
 				HandleConnectionFailure();
 			}
 		}
@@ -430,7 +436,7 @@ namespace PepperDash.Core
 			catch
 			{
 				Debug.Console(1, this, "Stream write failed. Disconnected, closing");
-				UStatus = 4;
+				ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
 				HandleConnectionFailure();
 			}
 		}

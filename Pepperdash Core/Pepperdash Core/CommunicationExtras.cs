@@ -22,6 +22,7 @@ namespace PepperDash.Core
 		void SendText(string text);
 		void SendBytes(byte[] bytes);
 		void Connect();
+		void Disconnect();
 	}
 
 	/// <summary>
@@ -30,7 +31,7 @@ namespace PepperDash.Core
 	/// </summary>
 	public interface ISocketStatus : IBasicCommunication
 	{
-		event TCPClientSocketStatusChangeEventHandler SocketStatusChange;
+		event GenericSocketStatusChangeEventDelegate SocketStatusChange;
 		SocketStatus ClientStatus { get; }
 	}
 

@@ -26,7 +26,7 @@ namespace PepperDash.Core
 		/// <summary>
 		/// 
 		/// </summary>
-		public event TCPClientSocketStatusChangeEventHandler SocketStatusChange;
+		public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
 
 		/// <summary>
 		/// 
@@ -107,7 +107,7 @@ namespace PepperDash.Core
 			DisconnectCalledByUser = false;
 		}
 
-		public void Disconnnect()
+		public void Disconnect()
 		{
 			DisconnectCalledByUser = true;
 			Client.DisconnectFromServer();
@@ -196,7 +196,7 @@ namespace PepperDash.Core
 			// Relay the event
 			var handler = SocketStatusChange;
 			if (handler != null)
-				SocketStatusChange(client, clientSocketStatus);
+				SocketStatusChange(this);
 		}
 	}
 
