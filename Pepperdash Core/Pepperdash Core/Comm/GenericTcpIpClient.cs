@@ -86,6 +86,19 @@ namespace PepperDash.Core
 		public GenericTcpIpClient(string key, string address, int port, int bufferSize)
 			: base(key)
 		{
+			if (string.IsNullOrEmpty(address))
+			{
+				Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': No address set", key);
+				return;
+			}
+			if (port < 1 || port > 65535)
+			{
+				{
+					Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': Invalid port", key);
+					return;
+				}
+			}
+
 			Client = new TCPClient(address, port, bufferSize);
 			Client.SocketStatusChange += Client_SocketStatusChange;
 		}
