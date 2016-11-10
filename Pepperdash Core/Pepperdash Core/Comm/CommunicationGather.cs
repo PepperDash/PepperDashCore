@@ -33,6 +33,12 @@ namespace PepperDash.Core
 		public IBasicCommunication Port { get; private set; }
 
 		/// <summary>
+		/// Default false. If true, the delimiter will be included in the line output
+		/// events
+		/// </summary>
+		public bool IncludeDelimiter { get; set; }
+
+		/// <summary>
 		///	For receive buffer
 		/// </summary>
 		StringBuilder ReceiveBuffer = new StringBuilder();
@@ -92,7 +98,14 @@ namespace PepperDash.Core
 				if (lines.Length > 0)
 				{
 					for (int i = 0; i < lines.Length - 1; i++)
-						handler(this, new GenericCommMethodReceiveTextArgs(lines[i]));
+					{
+						string strToSend = null;
+						if (IncludeDelimiter)
+							strToSend = lines[i] + Delimiter;
+						else
+							strToSend = lines[i];
+						handler(this, new GenericCommMethodReceiveTextArgs(strToSend));
+					}
 					ReceiveBuffer = new StringBuilder(lines[lines.Length - 1]);
 				}
 			}
@@ -117,7 +130,14 @@ namespace PepperDash.Core
 				if (lines.Length > 1)
 				{
 					for (int i = 0; i < lines.Length - 1; i++)
-						handler(this, new GenericCommMethodReceiveTextArgs(lines[i]));
+					{
+						string strToSend = null;
+						if (IncludeDelimiter)
+							strToSend = lines[i] + StringDelimiter;
+						else
+							strToSend = lines[i];
+						handler(this, new GenericCommMethodReceiveTextArgs(strToSend));
+					}
 					ReceiveBuffer = new StringBuilder(lines[lines.Length - 1]);
 				}
 			}

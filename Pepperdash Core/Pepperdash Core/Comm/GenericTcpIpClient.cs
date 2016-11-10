@@ -64,7 +64,7 @@ namespace PepperDash.Core
 		public bool AutoReconnect { get; set; }
 		
 		/// <summary>
-		/// 
+		/// Milliseconds to wait before attempting to reconnect. Defaults to 5000
 		/// </summary>
 		public int AutoReconnectIntervalMs { get; set; }
 
@@ -98,6 +98,7 @@ namespace PepperDash.Core
 					return;
 				}
 			}
+			AutoReconnectIntervalMs = 5000;
 
 			Client = new TCPClient(address, port, bufferSize);
 			Client.SocketStatusChange += Client_SocketStatusChange;
