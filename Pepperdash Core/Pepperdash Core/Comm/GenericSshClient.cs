@@ -188,7 +188,7 @@ namespace PepperDash.Core
 			if (string.IsNullOrEmpty(Hostname) || Port < 1 || Port > 65535
 				|| Username == null || Password == null)
 			{
-				Debug.Console(0, this, "Connect failed.  Check hostname, port, username and password are set or not null");
+				Debug.Console(1, this, "Connect failed.  Check hostname, port, username and password are set or not null");
 				return;
 			}
 
@@ -251,21 +251,21 @@ namespace PepperDash.Core
 			{
 				var ie = e.InnerException; // The details are inside!!
 				if (ie is SocketException)
-					Debug.Console(0, this, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.GetType());
+					Debug.Console(1, this, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.GetType());
 				else if (ie is System.Net.Sockets.SocketException)
-					Debug.Console(0, this, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
+					Debug.Console(1, this, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
 						Key, Hostname, Port, ie.GetType());
 				else if (ie is SshAuthenticationException)
 				{
-					Debug.Console(0, this, "Authentication failure for username '{0}', ({1})",
+					Debug.Console(1, this, "Authentication failure for username '{0}', ({1})",
 						Username, ie.GetType());
 				}
 				else
-					Debug.Console(0, this, "Error on connect:\r({0})", e);
+					Debug.Console(1, this, "Error on connect:\r({0})", e);
 			}
 			catch (Exception e)
 			{
-				Debug.Console(0, this, "Unhandled exception on connect:\r({0})", e);
+				Debug.Console(1, this, "Unhandled exception on connect:\r({0})", e);
 			}
 			
 			// Sucess will not make it this far
@@ -377,7 +377,7 @@ namespace PepperDash.Core
 		/// </summary>
 		void Client_ErrorOccurred(object sender, Crestron.SimplSharp.Ssh.Common.ExceptionEventArgs e)
 		{
-			Debug.Console(0, this, "SSH client error: {0}", e.Exception);
+			Debug.Console(1, this, "SSH client error: {0}", e.Exception);
 			if (!(e.Exception is SshConnectionException))
 			{
 				Debug.Console(1, this, "Disconnected by remote");

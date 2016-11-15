@@ -1,8 +1,10 @@
 C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\obj\Debug\ResolveAssemblyReference.cache
 C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpCustomAttributesInterface.dll
 C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpHelperInterface.dll
-C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\Newtonsoft.Json.Compact.dll
 C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\PepperDash_Core.dll
 C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\PepperDash_Core.pdb
 C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\obj\Debug\PepperDash_Core.dll
 C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\obj\Debug\PepperDash_Core.pdb
+C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpNewtonsoft.dll
+C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpSQLHelperInterface.dll
+C:\Users\hvolm\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpReflectionInterface.dll

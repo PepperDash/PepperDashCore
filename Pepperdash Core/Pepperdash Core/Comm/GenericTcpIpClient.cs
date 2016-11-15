@@ -165,8 +165,8 @@ namespace PepperDash.Core
 		{
 			var bytes = Encoding.GetEncoding(28591).GetBytes(text);
 			// Check debug level before processing byte array
-			if (Debug.Level == 2)
-				Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+			//if (Debug.Level == 2)
+			//    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
 			Client.SendData(bytes, bytes.Length);
 		}
 
@@ -186,8 +186,8 @@ namespace PepperDash.Core
 
 		public void SendBytes(byte[] bytes)
 		{
-			if (Debug.Level == 2)
-				Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+			//if (Debug.Level == 2)
+			//    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
 			Client.SendData(bytes, bytes.Length);
 		}
 
