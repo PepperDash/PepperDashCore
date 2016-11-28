@@ -67,7 +67,9 @@
     <Compile Include="Comm\GenericSocketStatusChangeEventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
     <Compile Include="CoreInterfaces.cs" />
-    <Compile Include="Debug.cs" />
+    <Compile Include="Debug\Debug.cs" />
+    <Compile Include="Debug\DebugContext.cs" />
+    <Compile Include="Debug\DebugMemory.cs" />
     <Compile Include="Device.cs" />
     <Compile Include="EthernetHelper.cs" />
     <Compile Include="Comm\GenericTcpIpClient.cs" />
