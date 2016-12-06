@@ -67,7 +67,7 @@ namespace PepperDash.Core
 		/// </summary>
 		public ushort UIsConnected
 		{
-			get { return (ushort)(ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED ? 1 : 0); }
+			get { return (ushort)(IsConnected ? 1 : 0); }
 		}
 
 		/// <summary>
@@ -186,7 +186,7 @@ namespace PepperDash.Core
 		public void Connect()
 		{
 			ConnectEnabled = true;
-			Debug.Console(1, this, "attempting connect, IsConnected={0}", Client != null ? Client.IsConnected : false);
+			Debug.Console(1, this, "attempting connect");
 			
 			// Cancel reconnect if running.
 			if (ReconnectTimer != null)
@@ -219,8 +219,11 @@ namespace PepperDash.Core
 				{
 					Debug.Console(2, this, "Cleaning up disconnected client");
 					Client.ErrorOccurred -= Client_ErrorOccurred;
-					if(TheStream != null)
+					if (TheStream != null)
+					{
 						TheStream.DataReceived -= Stream_DataReceived;
+						TheStream.ErrorOccurred += TheStream_ErrorOccurred;
+					}
 					TheStream = null;
 				}
 
@@ -245,6 +248,7 @@ namespace PepperDash.Core
 					Client.SendKeepAlive();
 					TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
 					TheStream.DataReceived += Stream_DataReceived;
+					TheStream.ErrorOccurred += TheStream_ErrorOccurred;
 					Debug.Console(1, this, "Connected");
 					ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
 					PreviousHostname = Hostname;
@@ -252,7 +256,7 @@ namespace PepperDash.Core
 					PreviousPort = Port;
 					PreviousUsername = Username;
 				}
-				return;
+				return; // Success will not pass here
 			}
 			catch (SshConnectionException e)
 			{
@@ -279,6 +283,8 @@ namespace PepperDash.Core
 			ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
 			HandleConnectionFailure();
 		}
+
+
 
 		/// <summary>
 		/// Disconnect the clients and put away it's resources.
@@ -334,6 +340,7 @@ namespace PepperDash.Core
 			if (TheStream != null)
 			{
 				TheStream.DataReceived -= Stream_DataReceived;
+				TheStream.ErrorOccurred += TheStream_ErrorOccurred;
 				TheStream.Close();
 				TheStream.Dispose();
 				TheStream = null;
@@ -377,6 +384,18 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
+		/// Handler for errors on the stream...
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		void TheStream_ErrorOccurred(object sender, ExceptionEventArgs e)
+		{
+			Debug.Console(1, this, "Unhandled SSH STREAM error: {0}", e.Exception);
+			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
+			HandleConnectionFailure();
+		}
+
+		/// <summary>
 		/// Error event handler for client events - disconnect, etc.  Will forward those events via ConnectionChange
 		/// event
 		/// </summary>
@@ -398,10 +417,6 @@ namespace PepperDash.Core
 		{
 			if (ConnectionChange != null)
 				ConnectionChange(this, new GenericSocketStatusChageEventArgs(this));
-
-			//var handler = SocketStatusChange;
-			//if (handler != null)
-			//    SocketStatusChange(this);
 		}
 
 		#region IBasicCommunication Members
