@@ -126,10 +126,10 @@ namespace PepperDash.Core
 
 		CTimer ReconnectTimer;
 
-		string PreviousHostname;
-		int PreviousPort;
-		string PreviousUsername;
-		string PreviousPassword;
+		//string PreviousHostname;
+		//int PreviousPort;
+		//string PreviousUsername;
+		//string PreviousPassword;
 
 		/// <summary>
 		/// Typical constructor.
@@ -213,37 +213,37 @@ namespace PepperDash.Core
 			PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
 
 			// Make a new client if we need it or things have changed
-			if (Client == null || PropertiesHaveChanged())
-			{
+			//if (Client == null || PropertiesHaveChanged())
+			//{
 				if (Client != null)
 				{
 					Debug.Console(2, this, "Cleaning up disconnected client");
 					Client.ErrorOccurred -= Client_ErrorOccurred;
-					if (TheStream != null)
-					{
-						TheStream.DataReceived -= Stream_DataReceived;
-						TheStream.ErrorOccurred -= TheStream_ErrorOccurred;
-					}
-					TheStream = null;
+					KillStream();
+					
+					//if (TheStream != null)
+					//{
+					//    TheStream.DataReceived -= Stream_DataReceived;
+					//    TheStream.ErrorOccurred -= TheStream_ErrorOccurred;
+					//}
+					//TheStream = null;
 				}
 
 				Debug.Console(2, this, "Creating new SshClient");
 				ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
 				Client = new SshClient(connectionInfo);
 				Client.ErrorOccurred += Client_ErrorOccurred;
-			} 
-			PreviousHostname = Hostname;
-			PreviousPassword = Password;
-			PreviousPort = Port;
-			PreviousUsername = Username;
+			//} 
+			//PreviousHostname = Hostname;
+			//PreviousPassword = Password;
+			//PreviousPort = Port;
+			//PreviousUsername = Username;
 
 			//You can do it!
 			ClientStatus = SocketStatus.SOCKET_STATUS_WAITING;
 			try
 			{
 				Client.Connect();
-#warning We are getting past here with a false IsConnected when it appears to be connected
-
 
 				// Have to assume client is connected cause Client.IsConnected is busted in some cases
 				// All other conditions *should* error out...
@@ -256,10 +256,10 @@ namespace PepperDash.Core
 					TheStream.ErrorOccurred += TheStream_ErrorOccurred;
 					Debug.Console(1, this, "Connected");
 					ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
-					PreviousHostname = Hostname;
-					PreviousPassword = Password;
-					PreviousPort = Port;
-					PreviousUsername = Username;
+					//PreviousHostname = Hostname;
+					//PreviousPassword = Password;
+					//PreviousPort = Port;
+					//PreviousUsername = Username;
 				//}
 				return; // Success will not pass here
 			}
@@ -305,6 +305,7 @@ namespace PepperDash.Core
 			}
 			KillStream();
 			Client.Disconnect();
+			Client = null;
 			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY;
 			Debug.Console(1, this, "Disconnected");
 		}
@@ -352,11 +353,11 @@ namespace PepperDash.Core
 			}
 		}
 
-		bool PropertiesHaveChanged()
-		{
-			return Hostname != PreviousHostname || Port != PreviousPort
-				|| Username != PreviousUsername || Password != PreviousPassword;
-		}
+		//bool PropertiesHaveChanged()
+		//{
+		//    return Hostname != PreviousHostname || Port != PreviousPort
+		//        || Username != PreviousUsername || Password != PreviousPassword;
+		//}
 
 		/// <summary>
 		/// Handles the keyboard interactive authentication, should it be required.
