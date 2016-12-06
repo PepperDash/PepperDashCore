@@ -26,7 +26,8 @@ namespace PepperDash.Core
 		/// <summary>
 		/// 
 		/// </summary>
-		public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
+		//public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
+		public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
 		/// <summary>
 		/// 
@@ -207,10 +208,14 @@ namespace PepperDash.Core
 					break;
 			}
 
-			// Relay the event
-			var handler = SocketStatusChange;
+			var handler = ConnectionChange;
 			if (handler != null)
-				SocketStatusChange(this);
+				ConnectionChange(this, new GenericSocketStatusChageEventArgs(this));
+
+			// Relay the event
+			//var handler = SocketStatusChange;
+			//if (handler != null)
+			//    SocketStatusChange(this);
 		}
 	}
 

@@ -32,11 +32,7 @@ namespace PepperDash.Core
 
 		static CTimer SaveTimer;
 
-		/// <summary>
-		/// This should called from the ControlSystem Initiailize method. Will attempt to call
-		/// CrestronDataStoreStatic.InitCrestronDataStore which may have been called elsewhere.
-		/// </summary>
-		public static void Initialize()
+		static Debug()
 		{
 			CrestronDataStoreStatic.InitCrestronDataStore();
 			if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
@@ -51,6 +47,27 @@ namespace PepperDash.Core
 
 			LoadMemory();
 			Level = Contexts.GetOrCreateItem("DEFAULT").Level;
+		}
+
+		/// <summary>
+		/// This should called from the ControlSystem Initiailize method. Will attempt to call
+		/// CrestronDataStoreStatic.InitCrestronDataStore which may have been called elsewhere.
+		/// </summary>
+		public static void Initialize()
+		{
+			//CrestronDataStoreStatic.InitCrestronDataStore();
+			//if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
+			//{
+			//    // Add command to console
+			//    CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
+			//        "appdebug:P [0-2]: Sets the application's console debug message level",
+			//        ConsoleAccessLevelEnum.AccessOperator);
+			//}
+
+			//CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
+
+			//LoadMemory();
+			//Level = Contexts.GetOrCreateItem("DEFAULT").Level;
 		}
 
 		/// <summary>

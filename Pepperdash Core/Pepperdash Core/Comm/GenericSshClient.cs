@@ -26,13 +26,12 @@ namespace PepperDash.Core
 		/// <summary>
 		/// Event when the connection status changes.
 		/// </summary>
-		//[Obsolete("Use SocketStatusChange instead")]
-		//public event EventHandler<SshConnectionChangeEventArgs> ConnectionChange;
+		public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
 		/// <summary>
 		/// 
 		/// </summary>
-		public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
+		//public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
 
 		/// <summary>
 		/// Address of server
@@ -61,6 +60,14 @@ namespace PepperDash.Core
 		{ 
 			// returns false if no client or not connected
 			get { return ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
+		}
+
+		/// <summary>
+		/// S+ helper for IsConnected
+		/// </summary>
+		public ushort UIsConnected
+		{
+			get { return (ushort)(ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED ? 1 : 0); }
 		}
 
 		/// <summary>
@@ -94,6 +101,11 @@ namespace PepperDash.Core
 		public bool AutoReconnect { get; set; }
 
 		/// <summary>
+		/// Will be set and unset by connect and disconnect only
+		/// </summary>
+		public bool ConnectEnabled { get; private set; }
+
+		/// <summary>
 		/// S+ helper for AutoReconnect
 		/// </summary>
 		public ushort UAutoReconnect
@@ -109,7 +121,9 @@ namespace PepperDash.Core
 		public int AutoReconnectIntervalMs { get; set; }
 
 		SshClient Client;
+
 		ShellStream TheStream;
+
 		CTimer ReconnectTimer;
 
 		string PreviousHostname;
@@ -171,6 +185,7 @@ namespace PepperDash.Core
 		/// </summary>
 		public void Connect()
 		{
+			ConnectEnabled = true;
 			Debug.Console(1, this, "attempting connect, IsConnected={0}", Client != null ? Client.IsConnected : false);
 			
 			// Cancel reconnect if running.
@@ -196,14 +211,6 @@ namespace PepperDash.Core
 			KeyboardInteractiveAuthenticationMethod kauth = new KeyboardInteractiveAuthenticationMethod(Username);
 			kauth.AuthenticationPrompt += new EventHandler<AuthenticationPromptEventArgs>(kauth_AuthenticationPrompt);
 			PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
-
-			// always spin up new client in case parameters have changed
-			// **** MAY WANT TO CHANGE THIS BECAUSE OF SOCKET LEAKS ****
-			//if (Client != null)
-			//{
-			//    Client.Disconnect();
-			//    Client = null;
-			//}
 
 			// Make a new client if we need it or things have changed
 			if (Client == null || PropertiesHaveChanged())
@@ -269,7 +276,6 @@ namespace PepperDash.Core
 			}
 			
 			// Sucess will not make it this far
-			Client.Disconnect();
 			ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
 			HandleConnectionFailure();
 		}
@@ -279,44 +285,32 @@ namespace PepperDash.Core
 		/// </summary>
 		public void Disconnect()
 		{
+			ConnectEnabled = false;
 			// Stop trying reconnects, if we are
 			if (ReconnectTimer != null)
 			{
 				ReconnectTimer.Stop();
 				ReconnectTimer = null;
 			}
-			if(TheStream != null)
-				TheStream.DataReceived -= Stream_DataReceived;
+			KillStream();
 			Client.Disconnect();
 			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY;
 			Debug.Console(1, this, "Disconnected");
 		}
 
 		/// <summary>
-		/// 
-		/// </summary>
-		//void DiscoAndCleanup()
-		//{
-		//    if (Client != null)
-		//    {
-		//        Client.ErrorOccurred -= Client_ErrorOccurred;
-		//        TheStream.DataReceived -= Stream_DataReceived;
-		//        Debug.Console(2, this, "Cleaning up disconnected client");
-		//        Client.Disconnect();
-		//        Client.Dispose();
-		//        Client = null;
-		//    }
-		//}
-
-		/// <summary>
 		/// Anything to do with reestablishing connection on failures
 		/// </summary>
 		void HandleConnectionFailure()
 		{
-			Debug.Console(2, this, "Checking autoreconnect: {0}, {1}ms", 
-				AutoReconnect, AutoReconnectIntervalMs);
-			if (AutoReconnect)
+			if (Client != null)
+				Client.Disconnect();
+			KillStream();
+
+			if (AutoReconnect && ConnectEnabled)
 			{
+				Debug.Console(2, this, "Checking autoreconnect: {0}, {1}ms", 
+					AutoReconnect, AutoReconnectIntervalMs);
 				if (ReconnectTimer == null)// || !ReconnectTimerRunning)
 				{
 					ReconnectTimer = new CTimer(o =>
@@ -332,6 +326,17 @@ namespace PepperDash.Core
 					Debug.Console(2, this, "{0} second reconnect cycle running",
 						(float)(AutoReconnectIntervalMs / 1000));
 				}
+			}
+		}
+
+		void KillStream()
+		{
+			if (TheStream != null)
+			{
+				TheStream.DataReceived -= Stream_DataReceived;
+				TheStream.Close();
+				TheStream.Dispose();
+				TheStream = null;
 			}
 		}
 
@@ -377,17 +382,11 @@ namespace PepperDash.Core
 		/// </summary>
 		void Client_ErrorOccurred(object sender, Crestron.SimplSharp.Ssh.Common.ExceptionEventArgs e)
 		{
-			Debug.Console(1, this, "SSH client error: {0}", e.Exception);
-			if (!(e.Exception is SshConnectionException))
-			{
+			if (e.Exception is SshConnectionException)
 				Debug.Console(1, this, "Disconnected by remote");
-			}
-			if (Client != null)
-			{
-				Client.Disconnect();
-				//Client.Dispose();
-				//Client = null;
-			}
+			else
+				Debug.Console(1, this, "Unhandled SSH client error: {0}", e.Exception);
+
 			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
 			HandleConnectionFailure();
 		}
@@ -397,12 +396,12 @@ namespace PepperDash.Core
 		/// </summary>
 		void OnConnectionChange()
 		{
-			//if(ConnectionChange != null)
-			//    ConnectionChange(this, new SshConnectionChangeEventArgs(IsConnected, this));
+			if (ConnectionChange != null)
+				ConnectionChange(this, new GenericSocketStatusChageEventArgs(this));
 
-			var handler = SocketStatusChange;
-			if (handler != null)
-				SocketStatusChange(this);
+			//var handler = SocketStatusChange;
+			//if (handler != null)
+			//    SocketStatusChange(this);
 		}
 
 		#region IBasicCommunication Members
