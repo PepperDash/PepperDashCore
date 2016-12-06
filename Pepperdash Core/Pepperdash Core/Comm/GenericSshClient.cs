@@ -222,7 +222,7 @@ namespace PepperDash.Core
 					if (TheStream != null)
 					{
 						TheStream.DataReceived -= Stream_DataReceived;
-						TheStream.ErrorOccurred += TheStream_ErrorOccurred;
+						TheStream.ErrorOccurred -= TheStream_ErrorOccurred;
 					}
 					TheStream = null;
 				}
@@ -242,10 +242,15 @@ namespace PepperDash.Core
 			try
 			{
 				Client.Connect();
-				if (Client.IsConnected)
-				{
-					Client.KeepAliveInterval = TimeSpan.FromSeconds(2);
-					Client.SendKeepAlive();
+#warning We are getting past here with a false IsConnected when it appears to be connected
+
+
+				// Have to assume client is connected cause Client.IsConnected is busted in some cases
+				// All other conditions *should* error out...
+				//if (Client.IsConnected)
+				//{
+					//Client.KeepAliveInterval = TimeSpan.FromSeconds(2);
+					//Client.SendKeepAlive();
 					TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
 					TheStream.DataReceived += Stream_DataReceived;
 					TheStream.ErrorOccurred += TheStream_ErrorOccurred;
@@ -255,7 +260,7 @@ namespace PepperDash.Core
 					PreviousPassword = Password;
 					PreviousPort = Port;
 					PreviousUsername = Username;
-				}
+				//}
 				return; // Success will not pass here
 			}
 			catch (SshConnectionException e)
@@ -340,7 +345,7 @@ namespace PepperDash.Core
 			if (TheStream != null)
 			{
 				TheStream.DataReceived -= Stream_DataReceived;
-				TheStream.ErrorOccurred += TheStream_ErrorOccurred;
+				TheStream.ErrorOccurred -= TheStream_ErrorOccurred;
 				TheStream.Close();
 				TheStream.Dispose();
 				TheStream = null;
@@ -401,7 +406,7 @@ namespace PepperDash.Core
 		/// </summary>
 		void Client_ErrorOccurred(object sender, Crestron.SimplSharp.Ssh.Common.ExceptionEventArgs e)
 		{
-			if (e.Exception is SshConnectionException)
+			if (e.Exception is SshConnectionException || e.Exception is System.Net.Sockets.SocketException)
 				Debug.Console(1, this, "Disconnected by remote");
 			else
 				Debug.Console(1, this, "Unhandled SSH client error: {0}", e.Exception);
