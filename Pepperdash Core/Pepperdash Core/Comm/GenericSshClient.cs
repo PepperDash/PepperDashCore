@@ -253,7 +253,7 @@ namespace PepperDash.Core
 					//Client.SendKeepAlive();
 					TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
 					TheStream.DataReceived += Stream_DataReceived;
-					TheStream.ErrorOccurred += TheStream_ErrorOccurred;
+					//TheStream.ErrorOccurred += TheStream_ErrorOccurred;
 					Debug.Console(1, this, "Connected");
 					ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
 					//PreviousHostname = Hostname;
@@ -346,7 +346,7 @@ namespace PepperDash.Core
 			if (TheStream != null)
 			{
 				TheStream.DataReceived -= Stream_DataReceived;
-				TheStream.ErrorOccurred -= TheStream_ErrorOccurred;
+				//TheStream.ErrorOccurred -= TheStream_ErrorOccurred;
 				TheStream.Close();
 				TheStream.Dispose();
 				TheStream = null;
@@ -389,17 +389,17 @@ namespace PepperDash.Core
 			}
 		}
 
-		/// <summary>
-		/// Handler for errors on the stream...
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		void TheStream_ErrorOccurred(object sender, ExceptionEventArgs e)
-		{
-			Debug.Console(1, this, "Unhandled SSH STREAM error: {0}", e.Exception);
-			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
-			HandleConnectionFailure();
-		}
+		///// <summary>
+		///// Handler for errors on the stream...
+		///// </summary>
+		///// <param name="sender"></param>
+		///// <param name="e"></param>
+		//void TheStream_ErrorOccurred(object sender, ExceptionEventArgs e)
+		//{
+		//    Debug.Console(1, this, "Unhandled SSH STREAM error: {0}", e.Exception);
+		//    ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
+		//    HandleConnectionFailure();
+		//}
 
 		/// <summary>
 		/// Error event handler for client events - disconnect, etc.  Will forward those events via ConnectionChange
