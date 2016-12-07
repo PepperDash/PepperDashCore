@@ -34,7 +34,7 @@ namespace PepperDash.Core
 
 		static Debug()
 		{
-			CrestronDataStoreStatic.InitCrestronDataStore();
+			//CrestronDataStoreStatic.InitCrestronDataStore();
 			if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
 			{
 				// Add command to console
@@ -47,27 +47,6 @@ namespace PepperDash.Core
 
 			LoadMemory();
 			Level = Contexts.GetOrCreateItem("DEFAULT").Level;
-		}
-
-		/// <summary>
-		/// This should called from the ControlSystem Initiailize method. Will attempt to call
-		/// CrestronDataStoreStatic.InitCrestronDataStore which may have been called elsewhere.
-		/// </summary>
-		public static void Initialize()
-		{
-			//CrestronDataStoreStatic.InitCrestronDataStore();
-			//if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
-			//{
-			//    // Add command to console
-			//    CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
-			//        "appdebug:P [0-2]: Sets the application's console debug message level",
-			//        ConsoleAccessLevelEnum.AccessOperator);
-			//}
-
-			//CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
-
-			//LoadMemory();
-			//Level = Contexts.GetOrCreateItem("DEFAULT").Level;
 		}
 
 		/// <summary>
@@ -231,18 +210,28 @@ namespace PepperDash.Core
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
 		static void LoadMemory()
 		{
-			if (File.Exists(GetMemoryFileName()))
+			var file = GetMemoryFileName();
+			if (File.Exists(file))
 			{
-				using (StreamReader sr = new StreamReader(GetMemoryFileName()))
+				using (StreamReader sr = new StreamReader(file))
 				{
 					var json = sr.ReadToEnd();
 					Contexts = JsonConvert.DeserializeObject<DebugContextCollection>(json);
+
+					if (Contexts != null)
+					{
+						Debug.Console(0, "Debug memory restored from file");
+						return;
+					}
 				}
 			}
-			else
-				Contexts = new DebugContextCollection();
+			
+			Contexts = new DebugContextCollection();
 		}
 
 		/// <summary>
