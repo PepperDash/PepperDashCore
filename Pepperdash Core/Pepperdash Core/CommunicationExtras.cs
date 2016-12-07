@@ -31,7 +31,7 @@ namespace PepperDash.Core
 	/// </summary>
 	public interface ISocketStatus : IBasicCommunication
 	{
-		event GenericSocketStatusChangeEventDelegate SocketStatusChange;
+		event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 		SocketStatus ClientStatus { get; }
 	}
 
