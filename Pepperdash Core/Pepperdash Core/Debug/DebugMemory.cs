@@ -40,7 +40,7 @@ namespace PepperDash.Core.DebugThings
 		public DebugContextItem GetOrCreateItem(string contextKey)
 		{
 			if (!Items.ContainsKey(contextKey))
-				Items[contextKey] = new DebugContextItem() { Level = 0 };
+				Items[contextKey] = new DebugContextItem(this) { Level = 0 };
 			return Items[contextKey];
 		}
 	}
@@ -49,5 +49,10 @@ namespace PepperDash.Core.DebugThings
 	{
 		[JsonProperty("level")]
 		public int Level { get; set; }
+
+		public DebugContextItem(DebugContextCollection parent)
+		{
+
+		}
 	}
 }
