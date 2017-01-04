@@ -29,6 +29,31 @@ namespace PepperDash.Core
 		//public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
 		public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
+        /// <summary>
+        /// Address of server
+        /// </summary>
+        public string Hostname { get; set; }
+
+        /// <summary>
+        /// Port on server
+        /// </summary>
+        public int Port { get; set; }
+
+        /// <summary>
+        /// Another damn S+ helper because S+ seems to treat large port nums as signed ints
+        /// which screws up things
+        /// </summary>
+        public ushort UPort
+        {
+            get { return Convert.ToUInt16(Port); }
+            set { Port = Convert.ToInt32(value); }
+        }
+
+        /// <summary>
+        /// Defaults to 2000
+        /// </summary>
+        public int BufferSize { get; set; }
+
 		/// <summary>
 		/// 
 		/// </summary>
@@ -37,33 +62,70 @@ namespace PepperDash.Core
 		/// <summary>
 		/// 
 		/// </summary>
-		public bool IsConnected { get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; } }
+		public bool IsConnected 
+        { 
+            get { return Client != null && Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; } 
+        }
+        
+        /// <summary>
+        /// S+ helper for IsConnected
+        /// </summary>
+        public ushort UIsConnected
+        {
+            get { return (ushort)(IsConnected ? 1 : 0); }
+        }
 
 		/// <summary>
 		/// 
 		/// </summary>
-		public SocketStatus ClientStatus { get { return Client.ClientStatus; } }
-		
-		/// <summary>
-		/// 
-		/// </summary>
-		public string ClientStatusText { get { return Client.ClientStatus.ToString(); } }
+		public SocketStatus ClientStatus 
+        { 
+            get 
+            {
+                if (Client == null)
+                    return SocketStatus.SOCKET_STATUS_NO_CONNECT;
+                return Client.ClientStatus; 
+            } 
+        }
+
+        /// <summary>
+        /// Contains the familiar Simpl analog status values. This drives the ConnectionChange event
+        /// and IsConnected with be true when this == 2.
+        /// </summary>
+        public ushort UStatus
+        {
+            get { return (ushort)ClientStatus; }
+        }
 
 		/// <summary>
 		/// 
 		/// </summary>
-		public ushort UClientStatus { get { return (ushort)Client.ClientStatus; } }
+		public string ClientStatusText { get { return ClientStatus.ToString(); } }
+
+        [Obsolete]
+		/// <summary>
+		/// 
+		/// </summary>
+		public ushort UClientStatus { get { return (ushort)ClientStatus; } }
 
 		/// <summary>
 		/// 
 		/// </summary>
-		public string ConnectionFailure { get { return Client.ClientStatus.ToString(); } }
+		public string ConnectionFailure { get { return ClientStatus.ToString(); } }
 
 		/// <summary>
 		/// 
 		/// </summary>
 		public bool AutoReconnect { get; set; }
-		
+
+        /// <summary>
+        /// S+ helper for AutoReconnect
+        /// </summary>
+        public ushort UAutoReconnect
+        {
+            get { return (ushort)(AutoReconnect ? 1 : 0); }
+            set { AutoReconnect = value == 1; }
+        }
 		/// <summary>
 		/// Milliseconds to wait before attempting to reconnect. Defaults to 5000
 		/// </summary>
@@ -87,23 +149,59 @@ namespace PepperDash.Core
 		public GenericTcpIpClient(string key, string address, int port, int bufferSize)
 			: base(key)
 		{
-			if (string.IsNullOrEmpty(address))
-			{
-				Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': No address set", key);
-				return;
-			}
-			if (port < 1 || port > 65535)
-			{
-				{
-					Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': Invalid port", key);
-					return;
-				}
-			}
+            Hostname = address;
+            Port = port;
+            BufferSize = bufferSize;
 			AutoReconnectIntervalMs = 5000;
 
-			Client = new TCPClient(address, port, bufferSize);
-			Client.SocketStatusChange += Client_SocketStatusChange;
+            //if (string.IsNullOrEmpty(address))
+            //{
+            //    Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': No address set", key);
+            //    return;
+            //}
+            //if (port < 1 || port > 65535)
+            //{
+            //    {
+            //        Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': Invalid port", key);
+            //        return;
+            //    }
+            //}
+
+            //Client = new TCPClient(address, port, bufferSize);
+            //Client.SocketStatusChange += Client_SocketStatusChange;
 		}
+
+        public GenericTcpIpClient()
+			: base("Uninitialized TcpIpClient")
+		{
+			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+			AutoReconnectIntervalMs = 5000;
+            BufferSize = 2000;
+		}
+
+        /// <summary>
+        /// Just to help S+ set the key
+        /// </summary>
+        public void Initialize(string key)
+        {
+            Key = key;
+        }
+
+        /// <summary>
+        /// Handles closing this up when the program shuts down
+        /// </summary>
+        void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
+        {
+            if (programEventType == eProgramStatusEventType.Stopping)
+            {
+                if (Client != null)
+                {
+                    Debug.Console(1, this, "Program stopping. Closing connection");
+                    Client.DisconnectFromServer();
+                    Client.Dispose();
+                }
+            }
+        }
 
 		//public override bool CustomActivate()
 		//{
@@ -112,12 +210,32 @@ namespace PepperDash.Core
 
 		public override bool Deactivate()
 		{
-			Client.SocketStatusChange -= this.Client_SocketStatusChange;
+            if(Client != null)
+    			Client.SocketStatusChange -= this.Client_SocketStatusChange;
 			return true;
 		}
 
 		public void Connect()
 		{
+            if (IsConnected) 
+                return;
+
+            if (string.IsNullOrEmpty(Hostname))
+            {
+                Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': No address set", Key);
+                return;
+            }
+            if (Port < 1 || Port > 65535)
+            {
+                {
+                    Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': Invalid port", Key);
+                    return;
+                }
+            }
+
+            Client = new TCPClient(Hostname, Port, BufferSize);
+            Client.SocketStatusChange += Client_SocketStatusChange;
+
 			Client.ConnectToServerAsync(null);
 			DisconnectCalledByUser = false;
 		}

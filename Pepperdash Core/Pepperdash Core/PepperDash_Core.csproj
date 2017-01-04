@@ -73,8 +73,20 @@
     <Compile Include="Device.cs" />
     <Compile Include="EthernetHelper.cs" />
     <Compile Include="Comm\GenericTcpIpClient.cs" />
+    <Compile Include="JsonToSimpl\EventArgs and Constants.cs" />
+    <Compile Include="JsonToSimpl\Global.cs" />
+    <Compile Include="JsonToSimpl\JsonToSimplArrayLookupChild.cs" />
+    <Compile Include="JsonToSimpl\JsonToSimplChildObjectBase.cs" />
+    <Compile Include="JsonToSimpl\JsonToSimplFileMaster.cs" />
+    <Compile Include="JsonToSimpl\JsonToSimplFixedPathObject.cs" />
+    <Compile Include="JsonToSimpl\REMOVE JsonToSimplFixedPathObject.cs" />
+    <Compile Include="JsonToSimpl\JsonToSimplGenericMaster.cs" />
+    <Compile Include="JsonToSimpl\JsonToSimplMaster.cs" />
     <Compile Include="Network\DiscoveryThings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WebApi\Presets\Preset.cs" />
+    <Compile Include="WebApi\Presets\User.cs" />
+    <Compile Include="WebApi\Presets\WebApiPasscodeClient.cs" />
     <None Include="Properties\ControlSystem.cfg" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
