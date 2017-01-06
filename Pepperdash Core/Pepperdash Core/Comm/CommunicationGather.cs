@@ -92,6 +92,13 @@ namespace PepperDash.Core
 			var handler = LineReceived;
 			if (handler != null)
 			{
+                if (Debug.Level >= 2)
+                {
+                    var output = Regex.Replace(args.Text,
+                          @"\p{Cc}",
+                          a => string.Format("[{0:X2}]", (byte)a.Value[0]));
+                    Debug.Console(2, Port, "RX: '{0}]", output);
+                }
 				ReceiveBuffer.Append(args.Text);
 				var str = ReceiveBuffer.ToString();
 				var lines = str.Split(Delimiter);
@@ -123,7 +130,13 @@ namespace PepperDash.Core
 			{
 				// Receive buffer should either be empty or not contain the delimiter
 				// If the line does not have a delimiter, append the 
-
+                if (Debug.Level >= 2)
+                {
+                    var output = Regex.Replace(args.Text,
+                          @"\p{Cc}",
+                          a => string.Format("[{0:X2}]", (byte)a.Value[0]));
+                    Debug.Console(2, Port, "RX: '{0}]", output);
+                }
 				ReceiveBuffer.Append(args.Text);
 				var str = ReceiveBuffer.ToString();
 				var lines = Regex.Split(str, StringDelimiter);

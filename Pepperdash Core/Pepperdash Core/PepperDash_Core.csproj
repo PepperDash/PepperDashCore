@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CommunicationExtras.cs" />
+    <Compile Include="Comm\FINISH CommStatic.cs" />
     <Compile Include="Comm\CommunicationGather.cs" />
     <Compile Include="Comm\GenericSocketStatusChangeEventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
