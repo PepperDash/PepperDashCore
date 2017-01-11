@@ -2,8 +2,9 @@
 using System.Text;
 using Crestron.SimplSharp;                          				// For Basic SIMPL# Classes
 using Crestron.SimplSharp.CrestronIO;
-using Crestron.SimplSharp.Net; 
+using Crestron.SimplSharp.Net;
 using Crestron.SimplSharp.Net.Http;
+using Crestron.SimplSharp.Net.Https;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -59,31 +60,35 @@ namespace PepperDash.Core.WebApi.Presets
 
 		public void GetUserForPasscode(string passcode)
 		{
+            // Bullshit duplicate code here... These two cases should be the same 
+            // except for https/http and the certificate ignores 
+            if (!UrlBase.StartsWith("https"))
+                return;
+            var req = new HttpsClientRequest();
+            req.Url = new UrlParser(UrlBase + "/api/users/dopin");
+            req.RequestType = Crestron.SimplSharp.Net.Https.RequestType.Post;
+            req.Header.AddHeader(new HttpsHeader("Content-Type", "application/json"));
+            req.Header.AddHeader(new HttpsHeader("Accept", "application/json"));
+            var jo = new JObject();
+            jo.Add("pin", passcode);
+            req.ContentString = jo.ToString();
 
-
-			var req = new HttpClientRequest();
-			req.Url = new UrlParser(UrlBase + "/api/users/dopin");
-			req.RequestType = RequestType.Post;
-			req.Header.AddHeader(new HttpHeader("Content-Type", "application/json"));
-			req.Header.AddHeader(new HttpHeader("Accept", "application/json"));
-			var jo = new JObject();
-			jo.Add("pin", passcode);
-			req.ContentString = jo.ToString();
-
-			var client = new HttpClient();
-			var resp = client.Dispatch(req);
-			if (resp.Code == 200)
-			{
-				CrestronConsole.PrintLine("Received: {0}", resp.ContentString);
-				var user = JsonConvert.DeserializeObject<User>(resp.ContentString);
+            var client = new HttpsClient();
+            client.HostVerification = false;
+            client.PeerVerification = false;
+            var resp = client.Dispatch(req);
+            if (resp.Code == 200)
+            {
+                CrestronConsole.PrintLine("Received: {0}", resp.ContentString);
+                var user = JsonConvert.DeserializeObject<User>(resp.ContentString);
 #warning CHECK for user success here??
-				CurrentUser = user;
-				var handler = UserReceived;
-				if (handler != null)
-					UserReceived(this, new UserReceivedEventArgs(user));
-			}
-			else
-				CrestronConsole.PrintLine("No user received: {0}", resp.Code);
+                CurrentUser = user;
+                var handler = UserReceived;
+                if (handler != null)
+                    UserReceived(this, new UserReceivedEventArgs(user));
+            }
+            else
+                CrestronConsole.PrintLine("No user received: {0}", resp.Code);
 		}
 
 		/// <summary>
@@ -106,37 +111,41 @@ namespace PepperDash.Core.WebApi.Presets
 				PresetNumber = presetNumber
 			};
 
-			var req = new HttpClientRequest();
-			req.Url = new UrlParser(UrlBase + "/api/presets/userandroom");
-			req.RequestType = RequestType.Post;
-			req.Header.AddHeader(new HttpHeader("Content-Type", "application/json"));
-			req.Header.AddHeader(new HttpHeader("Accept", "application/json"));
-			req.ContentString = JsonConvert.SerializeObject(msg);
-
-			var client = new HttpClient();
 			try
 			{
-				var resp = client.Dispatch(req);
-				if (resp.Code == 200)
-				{
-					Debug.Console(1, this, "Received: {0}", resp.ContentString);
-					var preset = JsonConvert.DeserializeObject<Preset>(resp.ContentString);
+                if (!UrlBase.StartsWith("https"))
+                    return;
+                var req = new HttpsClientRequest();
+                req.Url = new UrlParser(UrlBase + "/api/presets/userandroom");
+                req.RequestType = Crestron.SimplSharp.Net.Https.RequestType.Post;
+                req.Header.AddHeader(new HttpsHeader("Content-Type", "application/json"));
+                req.Header.AddHeader(new HttpsHeader("Accept", "application/json"));
+                req.ContentString = JsonConvert.SerializeObject(msg);
 
-					CurrentPreset = preset;
-					
-					//if there's no preset data, load the template
-					if (preset.Data == null || preset.Data.Trim() == string.Empty || JObject.Parse(preset.Data).Count == 0)
-					{
-						Debug.Console(1, this, "Loaded preset has no data. Loading default template.");
-						LoadDefaultPresetData();
-						return;
-					}
+                var client = new HttpsClient();
+                client.HostVerification = false;
+                client.PeerVerification = false;
+                var resp = client.Dispatch(req);
+                if (resp.Code == 200)
+                {
+                    Debug.Console(1, this, "Received: {0}", resp.ContentString);
+                    var preset = JsonConvert.DeserializeObject<Preset>(resp.ContentString);
 
-					J2SMaster.LoadWithJson(preset.Data);
-					var handler = PresetReceived;
-					if (handler != null)
-						PresetReceived(this, new PresetReceivedEventArgs(preset));
-				}
+                    CurrentPreset = preset;
+
+                    //if there's no preset data, load the template
+                    if (preset.Data == null || preset.Data.Trim() == string.Empty || JObject.Parse(preset.Data).Count == 0)
+                    {
+                        Debug.Console(1, this, "Loaded preset has no data. Loading default template.");
+                        LoadDefaultPresetData();
+                        return;
+                    }
+
+                    J2SMaster.LoadWithJson(preset.Data);
+                    var handler = PresetReceived;
+                    if (handler != null)
+                        PresetReceived(this, new PresetReceivedEventArgs(preset));
+                }
 			}
 			catch (HttpException e)
 			{
@@ -198,14 +207,18 @@ namespace PepperDash.Core.WebApi.Presets
 		{
 			CurrentPreset.Data = json;
 
-			var req = new HttpClientRequest();
-			req.RequestType = RequestType.Post;
+            if (!UrlBase.StartsWith("https"))
+                return;
+			var req = new HttpsClientRequest();
+			req.RequestType = Crestron.SimplSharp.Net.Https.RequestType.Post;
 			req.Url = new UrlParser(string.Format("{0}/api/presets/addorchange", UrlBase));
-			req.Header.AddHeader(new HttpHeader("Content-Type", "application/json"));
-			req.Header.AddHeader(new HttpHeader("Accept", "application/json"));
+			req.Header.AddHeader(new HttpsHeader("Content-Type", "application/json"));
+			req.Header.AddHeader(new HttpsHeader("Accept", "application/json"));
 			req.ContentString = JsonConvert.SerializeObject(CurrentPreset);
 
-			var client = new HttpClient();
+			var client = new HttpsClient();
+            client.HostVerification = false;
+            client.PeerVerification = false;
 			try
 			{
 				var resp = client.Dispatch(req);
