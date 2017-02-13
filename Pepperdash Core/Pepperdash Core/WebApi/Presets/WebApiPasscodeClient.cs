@@ -125,12 +125,13 @@ namespace PepperDash.Core.WebApi.Presets
                 var client = new HttpsClient();
                 client.HostVerification = false;
                 client.PeerVerification = false;
+
+                // ask for the preset
                 var resp = client.Dispatch(req);
-                if (resp.Code == 200)
+                if (resp.Code == 200) // got it
                 {
                     Debug.Console(1, this, "Received: {0}", resp.ContentString);
                     var preset = JsonConvert.DeserializeObject<Preset>(resp.ContentString);
-
                     CurrentPreset = preset;
 
                     //if there's no preset data, load the template
@@ -145,6 +146,11 @@ namespace PepperDash.Core.WebApi.Presets
                     var handler = PresetReceived;
                     if (handler != null)
                         PresetReceived(this, new PresetReceivedEventArgs(preset));
+                }
+                else // no existing preset
+                {
+                    CurrentPreset = new Preset();
+                    LoadDefaultPresetData();
                 }
 			}
 			catch (HttpException e)
