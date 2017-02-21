@@ -172,12 +172,6 @@ namespace PepperDash.Core
 			}
 		}
 
-		public enum ErrorLogLevel
-		{
-			Error, Warning, Notice, None
-		}
-
-
 		/// <summary>
 		/// Writes the memory object after timeout
 		/// </summary>
@@ -241,5 +235,12 @@ namespace PepperDash.Core
 		{
 			return string.Format(@"\NVRAM\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
 		}
+
+        public enum ErrorLogLevel
+        {
+            Error, Warning, Notice, None
+        }
 	}
+
+
 }

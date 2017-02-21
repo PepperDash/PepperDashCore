@@ -13,6 +13,17 @@ namespace PepperDash.Core
 		public string Key { get; protected set; }
 		public string Name { get; protected set; }
 		public bool Enabled { get; protected set; }
+
+        ///// <summary>
+        ///// A place to store reference to the original config object, if any. These values should 
+        ///// NOT be used as properties on the device as they are all publicly-settable values.
+        ///// </summary>
+        //public DeviceConfig Config { get; private set; }
+        ///// <summary>
+        ///// Helper method to check if Config exists
+        ///// </summary>
+        //public bool HasConfig { get { return Config != null; } }
+
 		List<Action> _PreActivationActions;
 		List<Action> _PostActivationActions;
 
@@ -34,6 +45,12 @@ namespace PepperDash.Core
 		{
 			Name = name;
 		}
+
+        //public Device(DeviceConfig config)
+        //    : this(config.Key, config.Name)
+        //{
+        //    Config = config;
+        //}
 
 		public void AddPreActivationAction(Action act)
 		{

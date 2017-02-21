@@ -74,6 +74,7 @@
     <Compile Include="Debug\DebugContext.cs" />
     <Compile Include="Debug\DebugMemory.cs" />
     <Compile Include="Device.cs" />
+    <Compile Include="DeviceConfig.cs" />
     <Compile Include="EthernetHelper.cs" />
     <Compile Include="Comm\GenericTcpIpClient.cs" />
     <Compile Include="JsonToSimpl\EventArgs and Constants.cs" />
