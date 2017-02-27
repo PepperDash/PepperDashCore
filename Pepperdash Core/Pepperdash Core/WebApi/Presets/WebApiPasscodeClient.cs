@@ -77,18 +77,18 @@ namespace PepperDash.Core.WebApi.Presets
             client.HostVerification = false;
             client.PeerVerification = false;
             var resp = client.Dispatch(req);
+            var handler = UserReceived;
             if (resp.Code == 200)
             {
-                CrestronConsole.PrintLine("Received: {0}", resp.ContentString);
+                //CrestronConsole.PrintLine("Received: {0}", resp.ContentString);
                 var user = JsonConvert.DeserializeObject<User>(resp.ContentString);
-#warning CHECK for user success here??
                 CurrentUser = user;
-                var handler = UserReceived;
                 if (handler != null)
-                    UserReceived(this, new UserReceivedEventArgs(user));
+                    UserReceived(this, new UserReceivedEventArgs(user, true));
             }
             else
-                CrestronConsole.PrintLine("No user received: {0}", resp.Code);
+                if (handler != null)
+                    UserReceived(this, new UserReceivedEventArgs(null, false));
 		}
 
 		/// <summary>
@@ -111,6 +111,7 @@ namespace PepperDash.Core.WebApi.Presets
 				PresetNumber = presetNumber
 			};
 
+            var handler = PresetReceived;
 			try
 			{
                 if (!UrlBase.StartsWith("https"))
@@ -130,27 +131,28 @@ namespace PepperDash.Core.WebApi.Presets
                 var resp = client.Dispatch(req);
                 if (resp.Code == 200) // got it
                 {
-                    Debug.Console(1, this, "Received: {0}", resp.ContentString);
+                    //Debug.Console(1, this, "Received: {0}", resp.ContentString);
                     var preset = JsonConvert.DeserializeObject<Preset>(resp.ContentString);
                     CurrentPreset = preset;
 
                     //if there's no preset data, load the template
                     if (preset.Data == null || preset.Data.Trim() == string.Empty || JObject.Parse(preset.Data).Count == 0)
                     {
-                        Debug.Console(1, this, "Loaded preset has no data. Loading default template.");
+                        //Debug.Console(1, this, "Loaded preset has no data. Loading default template.");
                         LoadDefaultPresetData();
                         return;
                     }
 
                     J2SMaster.LoadWithJson(preset.Data);
-                    var handler = PresetReceived;
                     if (handler != null)
-                        PresetReceived(this, new PresetReceivedEventArgs(preset));
+                        PresetReceived(this, new PresetReceivedEventArgs(preset, true));
                 }
                 else // no existing preset
                 {
                     CurrentPreset = new Preset();
                     LoadDefaultPresetData();
+                    if (handler != null)
+                        PresetReceived(this, new PresetReceivedEventArgs(null, false));
                 }
 			}
 			catch (HttpException e)
@@ -158,6 +160,8 @@ namespace PepperDash.Core.WebApi.Presets
 				var resp = e.Response;
 				Debug.Console(1, this, "No preset received (code {0}). Loading default template", resp.Code);
 				LoadDefaultPresetData();
+                if (handler != null)
+                    PresetReceived(this, new PresetReceivedEventArgs(null, false));
 			}
 		}
 

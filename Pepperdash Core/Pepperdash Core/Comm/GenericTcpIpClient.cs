@@ -300,7 +300,6 @@ namespace PepperDash.Core
 					return ((char)Convert.ToByte(hex, 16)).ToString();
 				});
 			SendText(unescapedText);
-
 		}
 
 		public void SendBytes(byte[] bytes)
@@ -313,7 +312,7 @@ namespace PepperDash.Core
 
 		void Client_SocketStatusChange(TCPClient client, SocketStatus clientSocketStatus)
 		{
-			Debug.Console(2, this, "Socket status change {0} ({1})", clientSocketStatus, UClientStatus);
+			Debug.Console(2, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
 			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && !DisconnectCalledByUser)
 				WaitAndTryReconnect();
 

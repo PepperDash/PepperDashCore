@@ -26,6 +26,16 @@ namespace PepperDash.Core.WebApi.Presets
 	/// </summary>
 	public class UserReceivedEventArgs : EventArgs
 	{
+        /// <summary>
+        /// True when user is found
+        /// </summary>
+        public bool LookupSuccess { get; private set; }
+
+        /// <summary>
+        /// For stupid S+
+        /// </summary>
+        public ushort ULookupSuccess { get { return (ushort)(LookupSuccess ? 1 : 0); } }
+
 		public User User { get; private set; }
 
 		/// <summary>
@@ -33,8 +43,9 @@ namespace PepperDash.Core.WebApi.Presets
 		/// </summary>
 		public UserReceivedEventArgs() { }
 
-		public UserReceivedEventArgs(User user)
+		public UserReceivedEventArgs(User user, bool success)
 		{
+            LookupSuccess = success;
 			User = user;
 		}
 	}

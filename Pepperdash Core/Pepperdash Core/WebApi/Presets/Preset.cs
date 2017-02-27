@@ -36,15 +36,26 @@ namespace PepperDash.Core.WebApi.Presets
 	/// </summary>
 	public class PresetReceivedEventArgs : EventArgs
 	{
-		public Preset Preset { get; private set; }
+        /// <summary>
+        /// True when the preset is found
+        /// </summary>
+        public bool LookupSuccess { get; private set; }
+        
+        /// <summary>
+        /// S+ helper for stupid S+
+        /// </summary>
+        public ushort ULookupSuccess { get { return (ushort)(LookupSuccess ? 1 : 0); } }
+
+        public Preset Preset { get; private set; }
 
 		/// <summary>
 		/// For Simpl+
 		/// </summary>
 		public PresetReceivedEventArgs() { }
 
-		public PresetReceivedEventArgs(Preset preset)
+		public PresetReceivedEventArgs(Preset preset, bool success)
 		{
+            LookupSuccess = success;
 			Preset = preset;
 		}
 	}
