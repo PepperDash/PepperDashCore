@@ -67,6 +67,7 @@
     <Compile Include="Comm\eControlMethods.cs" />
     <Compile Include="Comm\FINISH CommStatic.cs" />
     <Compile Include="Comm\CommunicationGather.cs" />
+    <Compile Include="Comm\GenericSecureTcpClient.cs" />
     <Compile Include="Comm\GenericSocketStatusChangeEventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
     <Compile Include="CoreInterfaces.cs" />

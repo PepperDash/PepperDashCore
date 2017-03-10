@@ -18,3 +18,13 @@ C:\Users\hvolmer\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepp
 C:\Users\hvolmer\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\obj\Debug\ResolveAssemblyReference.cache
 C:\Users\hvolmer\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\obj\Debug\PepperDash_Core.dll
 C:\Users\hvolmer\Desktop\working\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\obj\Debug\PepperDash_Core.pdb
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\PepperDash_Core.dll
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\PepperDash_Core.pdb
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpCustomAttributesInterface.dll
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpHelperInterface.dll
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpNewtonsoft.dll
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpSQLHelperInterface.dll
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\bin\SimplSharpReflectionInterface.dll
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\obj\Debug\ResolveAssemblyReference.cache
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\obj\Debug\PepperDash_Core.dll
+C:\P\BitBucket\pepperdash-simplsharp-core\Pepperdash Core\Pepperdash Core\obj\Debug\PepperDash_Core.pdb
