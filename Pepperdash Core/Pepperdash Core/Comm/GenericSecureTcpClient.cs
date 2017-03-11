@@ -48,6 +48,26 @@ namespace SecureTCP.SecureTCP.Client
         }
 
         /// <summary>
+        /// SharedKey is sent for varification to the server. Shared key can be any text (255 char limit in SIMPL+ Module), but must match the Shared Key on the Server module
+        /// </summary>
+        private string _SharedKey;
+        public string SharedKey 
+        {
+            get
+            {
+                return _SharedKey;
+            }
+            set
+            {
+                if (Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
+                    Client.DisconnectFromServer();
+                _SharedKey = value;
+            }
+        }
+
+        private bool WaitingForSharedKeyResponse { get; set; } 
+
+        /// <summary>
         /// Defaults to 2000
         /// </summary>
         public int BufferSize { get; set; }
@@ -195,17 +215,22 @@ namespace SecureTCP.SecureTCP.Client
             }
             if (Port < 1 || Port > 65535)
             {
-                {
-                    Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': Invalid port", Key);
-                    return;
-                }
+                Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': Invalid port", Key);
+                return;
             }
-            
+            if (string.IsNullOrEmpty(SharedKey))
+            {
+                Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': No Shared Key set", Key);
+                return;
+            }
+            if (Client != null)
+                Client.Dispose();
             Client = new SecureTCPClient(Hostname, Port, BufferSize);
             Client.SocketStatusChange += Client_SocketStatusChange;
             try
             {
                 DisconnectCalledByUser = false;
+                WaitingForSharedKeyResponse = true;
                 SocketErrorCodes error = Client.ConnectToServer();
             }
             catch (Exception ex)
@@ -231,7 +256,7 @@ namespace SecureTCP.SecureTCP.Client
 		{
 			Client.DisconnectFromServer();
 			Debug.Console(2, "Attempting reconnect, status={0}", Client.ClientStatus);
-            RetryTimer = new CTimer(ConnectToServerCallback, 1000);
+            RetryTimer = new CTimer(ConnectToServerCallback, AutoReconnectIntervalMs);
 		}
 
 		void Receive(SecureTCPClient client, int numBytes)
@@ -239,15 +264,35 @@ namespace SecureTCP.SecureTCP.Client
 			if (numBytes > 0)
 			{
 				var bytes = client.IncomingDataBuffer.Take(numBytes).ToArray();
- 				var bytesHandler = BytesReceived;
-				if (bytesHandler != null)
-					bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
-				var textHandler = TextReceived;
-				if (textHandler != null)
-				{
-					var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
-					textHandler(this, new GenericCommMethodReceiveTextArgs(str));
-				}
+                var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+                if (WaitingForSharedKeyResponse)
+                {
+                    if (str != (SharedKey + "\n"))
+                    {
+                        WaitingForSharedKeyResponse = false;
+                        Client.DisconnectFromServer();
+                        CrestronConsole.PrintLine("Client {0} was disconnected from server because the server did not respond with a matching shared key after connection", Key);
+                        ErrorLog.Error("Client {0} was disconnected from server because the server did not respond with a matching shared key after connection", Key);
+                        return;
+                    }
+                    else
+                    {
+                        WaitingForSharedKeyResponse = false;
+                        CrestronConsole.PrintLine("Client {0} successfully connected to the server and received the Shared Key. Ready for communication", Key);
+                    }
+                }
+                else
+                {
+                    var bytesHandler = BytesReceived;
+                    if (bytesHandler != null)
+                        bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
+                    var textHandler = TextReceived;
+                    if (textHandler != null)
+                    {
+
+                        textHandler(this, new GenericCommMethodReceiveTextArgs(str));
+                    }
+                }
 			}
 			Client.ReceiveDataAsync(Receive);
 		}
@@ -258,32 +303,15 @@ namespace SecureTCP.SecureTCP.Client
 		public void SendText(string text)
 		{
 			var bytes = Encoding.GetEncoding(28591).GetBytes(text);
-			// Check debug level before processing byte array
-			//if (Debug.Level == 2)
-			//    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
 			Client.SendData(bytes, bytes.Length);
 		}
 
-		/// <summary>
-		/// This is useful from console and...?
-		/// </summary>
-		public void SendEscapedText(string text)
-		{
-			var unescapedText = Regex.Replace(text, @"\\x([0-9a-fA-F][0-9a-fA-F])", s =>
-				{
-					var hex = s.Groups[1].Value;
-					return ((char)Convert.ToByte(hex, 16)).ToString();
-				});
-			SendText(unescapedText);
-		}
-
-		public void SendBytes(byte[] bytes)
-		{
-			//if (Debug.Level == 2)
-			//    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
-			Client.SendData(bytes, bytes.Length);
-		}
-
+        public void SendBytes(byte[] bytes)
+        {
+            //if (Debug.Level == 2)
+            //    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+            Client.SendData(bytes, bytes.Length);
+        }
 
 		void Client_SocketStatusChange(SecureTCPClient client, SocketStatus clientSocketStatus)
 		{
@@ -296,6 +324,7 @@ namespace SecureTCP.SecureTCP.Client
 			{
 				case SocketStatus.SOCKET_STATUS_CONNECTED:
 					Client.ReceiveDataAsync(Receive);
+                    SendText(SharedKey + "\n");
 					DisconnectCalledByUser = false;
 					break;
 			}
