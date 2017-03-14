@@ -7,7 +7,7 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
 using PepperDash.Core;
 
-namespace SecureTCP.SecureTCP.Client
+namespace PepperDash.Core
 {
     public class GenericSecureTcpClient : Device, ISocketStatus, IAutoReconnect
     {

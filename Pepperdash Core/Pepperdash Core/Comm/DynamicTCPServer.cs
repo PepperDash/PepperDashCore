@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 
-namespace PepperDash_Core.Comm
+namespace PepperDash_Core
 {
     public class DynamicTCPServer
     {
