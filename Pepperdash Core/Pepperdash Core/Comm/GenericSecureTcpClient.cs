@@ -47,6 +47,19 @@ namespace SecureTCP.SecureTCP.Client
             set { Port = Convert.ToInt32(value); }
         }
 
+        public bool RequiresPresharedKey { get; set; }
+
+        public ushort uRequiresPresharedKey
+        {
+            set
+            {
+                if (value == 1)
+                    RequiresPresharedKey = true;
+                else
+                    RequiresPresharedKey = false;
+            }
+        }
+
         /// <summary>
         /// SharedKey is sent for varification to the server. Shared key can be any text (255 char limit in SIMPL+ Module), but must match the Shared Key on the Server module
         /// </summary>
@@ -218,7 +231,7 @@ namespace SecureTCP.SecureTCP.Client
                 Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': Invalid port", Key);
                 return;
             }
-            if (string.IsNullOrEmpty(SharedKey))
+            if (string.IsNullOrEmpty(SharedKey) && RequiresPresharedKey)
             {
                 Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': No Shared Key set", Key);
                 return;
@@ -230,7 +243,8 @@ namespace SecureTCP.SecureTCP.Client
             try
             {
                 DisconnectCalledByUser = false;
-                WaitingForSharedKeyResponse = true;
+                if(RequiresPresharedKey)
+                    WaitingForSharedKeyResponse = true;
                 SocketErrorCodes error = Client.ConnectToServer();
             }
             catch (Exception ex)
@@ -265,7 +279,7 @@ namespace SecureTCP.SecureTCP.Client
 			{
 				var bytes = client.IncomingDataBuffer.Take(numBytes).ToArray();
                 var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
-                if (WaitingForSharedKeyResponse)
+                if (WaitingForSharedKeyResponse && RequiresPresharedKey)
                 {
                     if (str != (SharedKey + "\n"))
                     {
@@ -308,8 +322,6 @@ namespace SecureTCP.SecureTCP.Client
 
         public void SendBytes(byte[] bytes)
         {
-            //if (Debug.Level == 2)
-            //    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
             Client.SendData(bytes, bytes.Length);
         }
 
