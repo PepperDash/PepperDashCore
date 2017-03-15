@@ -8,30 +8,6 @@ using PepperDash.Core;
 
 namespace PepperDash_Core
 {
-    #region UNUSED OBJECT JUST IN CASE TILL DONE WITH CODING
-    //public class DynamicServer
-    //{
-    //    public object Server 
-    //    { 
-    //        get
-    //        {
-    //            if(Secure)
-    //                return secureServer;
-    //            else
-    //                return unsecureServer;
-    //        }
-    //        private set; 
-    //    }
-    //    public bool Secure { get; set; }
-    //    private TCPServer unsecureServer;
-    //    private SecureTCPServer secureServer;
-    //    public DynamicServer(bool secure)
-    //    {
-    //        Secure = secure;  
-    //    }
-    //}
-    #endregion
-
     public class DynamicTCPServer : Device
     {
         #region Events
@@ -49,7 +25,7 @@ namespace PepperDash_Core
         public bool Secure { get; set; }
 
         /// <summary>
-        /// S+ Helper for Secure bool
+        /// S+ Helper for Secure bool. Parameter in SIMPL+ so there is no get, one way set from simpl+ Param to property in func main of SIMPL+
         /// </summary>
         public ushort uSecure
         {
@@ -62,20 +38,17 @@ namespace PepperDash_Core
             }
         }
 
+        public string status
+        {
+            get { return Secure ? SecureServer.State.ToString() : UnsecureServer.State.ToString(); }
+        }
+
         /// <summary>
         /// Bool showing if socket is connected
         /// </summary>
         public bool IsConnected
         {
-            get
-            {
-                if (Secure && SecureServer != null)
-                    return SecureServer.State == ServerState.SERVER_CONNECTED;
-                else if (!Secure && UnsecureServer != null)
-                    return UnsecureServer.State == ServerState.SERVER_CONNECTED;
-                else
-                    return false;
-            }
+            get { return Secure ? SecureServer.State == ServerState.SERVER_CONNECTED : UnsecureServer.State == ServerState.SERVER_CONNECTED; }
         }
 
         /// <summary>
@@ -91,15 +64,7 @@ namespace PepperDash_Core
         /// </summary>
         public bool IsListening
         {
-            get
-            {
-                if (Secure && SecureServer != null)
-                    return SecureServer.State == ServerState.SERVER_LISTENING;
-                else if (!Secure && UnsecureServer != null)
-                    return UnsecureServer.State == ServerState.SERVER_LISTENING;
-                else
-                    return false;
-            }
+            get { return Secure ? SecureServer.State == ServerState.SERVER_LISTENING : UnsecureServer.State == ServerState.SERVER_LISTENING; }
         }
 
         public ushort MaxConnections { get; set; } // should be set by parameter in SIMPL+ in the MAIN method, Should not ever need to be configurable
@@ -117,15 +82,7 @@ namespace PepperDash_Core
         /// </summary>
         public ushort NumberOfClientsConnected
         {
-            get
-            {
-                if (Secure && SecureServer != null)
-                    return (ushort)SecureServer.NumberOfClientsConnected;
-                else if (!Secure && UnsecureServer != null)
-                    return (ushort)UnsecureServer.NumberOfClientsConnected;
-                else
-                    return 0;
-            }
+            get { return Secure ? (ushort)SecureServer.NumberOfClientsConnected : (ushort)UnsecureServer.NumberOfClientsConnected; }
         }
 
         /// <summary>
@@ -136,7 +93,7 @@ namespace PepperDash_Core
         /// <summary>
         /// S+ helper
         /// </summary>
-        public ushort UPort
+        public ushort uPort
         {
             get { return Convert.ToUInt16(Port); }
             set { Port = Convert.ToInt32(value); }
@@ -173,10 +130,7 @@ namespace PepperDash_Core
             }
             set
             {
-                if (Secure && SecureServer != null && SecureServer.State == ServerState.SERVER_CONNECTED)
-                    DisconnectAllClients();
-                if (!Secure && UnsecureServer != null && UnsecureServer.State == ServerState.SERVER_CONNECTED)
-                    DisconnectAllClients();
+                DisconnectAllClients();
                 _SharedKey = value;
             }
         }
@@ -203,10 +157,7 @@ namespace PepperDash_Core
             get { return _OnlyAcceptConnectionFromAddress; }
             set
             {
-                if (Secure && SecureServer != null && SecureServer.State == ServerState.SERVER_CONNECTED)
-                    DisconnectAllClients();
-                if (!Secure && UnsecureServer != null && UnsecureServer.State == ServerState.SERVER_CONNECTED)
-                    DisconnectAllClients();
+                DisconnectAllClients();
                 MaxConnections = 1;
                 _OnlyAcceptConnectionFromAddress = value;
             }
@@ -229,20 +180,14 @@ namespace PepperDash_Core
             BufferSize = 2000;
             Secure = false;
         }
-
-
-        void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
-        {
-            if (programEventType == eProgramStatusEventType.Stopping)
-            {
-                Debug.Console(1, this, "Program stopping. Closing server");
-                DisconnectAllClients();
-                StopListening();
-            }
-        }
         #endregion
 
         #region Methods - Server Actions
+        public void Initialize(string key)
+        {
+            Key = key;
+        }
+
         public void Listen()
         {
             if (Port < 1 || Port > 65535)
@@ -311,7 +256,7 @@ namespace PepperDash_Core
         {
             if (ConnectedClientsIndexes.Count > 0)
             {
-                if (Secure && SecureServer != null)
+                if (Secure)
                 {
                     foreach (uint i in ConnectedClientsIndexes)
                     {
@@ -319,7 +264,7 @@ namespace PepperDash_Core
                         SecureServer.SendDataAsync(i, b, b.Length, SecureSendDataAsyncCallback);
                     }
                 }
-                else if (!Secure && UnsecureServer != null)
+                else
                 {
                     foreach (uint i in ConnectedClientsIndexes)
                     {
@@ -337,12 +282,12 @@ namespace PepperDash_Core
         /// <param name="clientIndex"></param>
         public void SendTextToClient(string text, uint clientIndex)
         {
-            if (Secure && SecureServer != null)
+            if (Secure)
             {
                 byte[] b = Encoding.ASCII.GetBytes(text);
                 SecureServer.SendDataAsync(clientIndex, b, b.Length, SecureSendDataAsyncCallback);
             }
-            else if (!Secure && UnsecureServer != null)
+            else
             {
                 byte[] b = Encoding.ASCII.GetBytes(text);
                 UnsecureServer.SendDataAsync(clientIndex, b, b.Length, UnsecureSendDataAsyncCallback);
@@ -400,7 +345,7 @@ namespace PepperDash_Core
                     Debug.Console(0, "Sent Shared Key to client at {0}", mySecureTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
                 }
                 mySecureTCPServer.ReceiveDataAsync(clientIndex, SecureReceivedCallback);
-                if (mySecureTCPServer.State != ServerState.SERVER_LISTENING && MaxConnections > 1)
+                if (mySecureTCPServer.State != ServerState.SERVER_LISTENING && MaxConnections > 1 && !ServerStopped)
                     SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
             }
         }
@@ -412,7 +357,7 @@ namespace PepperDash_Core
                 Debug.Console(0, "Connected to client at {0}", myTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
                 myTCPServer.ReceiveDataAsync(clientIndex, UnsecureReceivedCallback);
             }
-            if (myTCPServer.State != ServerState.SERVER_LISTENING && MaxConnections > 1)
+            if (myTCPServer.State != ServerState.SERVER_LISTENING && MaxConnections > 1 && !ServerStopped)
                 UnsecureServer.WaitForConnectionAsync(IPAddress.Any, UnsecureConnectCallback);
         }
         #endregion
@@ -483,7 +428,7 @@ namespace PepperDash_Core
         }
         #endregion
 
-        #region Methods - EventHelper
+        #region Methods - EventHelpers/Callbacks
         void onConnectionChange()
         {
             var handler = ClientConnectionChange;
@@ -501,6 +446,16 @@ namespace PepperDash_Core
             var handler = TextReceived;
             if (handler != null)
                 TextReceived(this, new GenericCommMethodReceiveTextArgs(text));
+        }
+
+        void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
+        {
+            if (programEventType == eProgramStatusEventType.Stopping)
+            {
+                Debug.Console(1, this, "Program stopping. Closing server");
+                DisconnectAllClients();
+                StopListening();
+            }
         }
         #endregion
     }
