@@ -11,22 +11,17 @@ namespace PepperDash.Core
 {
     public class GenericSecureTcpClient : Device, ISocketStatus, IAutoReconnect
     {
-        /// <summary>
-        /// 
-        /// </summary>
+        #region Events
+
         public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
 
-        /// <summary>
-        /// 
-        /// </summary>
         public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
         public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
+        #endregion
+
+        #region Properties & Variables
         /// <summary>
         /// Address of server
         /// </summary>
@@ -38,8 +33,7 @@ namespace PepperDash.Core
         public int Port { get; set; }
 
         /// <summary>
-        /// Another damn S+ helper because S+ seems to treat large port nums as signed ints
-        /// which screws up things
+        /// S+ helper
         /// </summary>
         public ushort UPort
         {
@@ -47,8 +41,14 @@ namespace PepperDash.Core
             set { Port = Convert.ToInt32(value); }
         }
 
+        /// <summary>
+        /// Bool to show whether the server requires a preshared key. This is used in the DynamicTCPServer class
+        /// </summary>
         public bool RequiresPresharedKey { get; set; }
-
+        
+        /// <summary>
+        /// S+ helper for requires shared key bool
+        /// </summary>
         public ushort uRequiresPresharedKey
         {
             set
@@ -63,7 +63,6 @@ namespace PepperDash.Core
         /// <summary>
         /// SharedKey is sent for varification to the server. Shared key can be any text (255 char limit in SIMPL+ Module), but must match the Shared Key on the Server module
         /// </summary>
-        private string _SharedKey;
         public string SharedKey 
         {
             get
@@ -77,7 +76,11 @@ namespace PepperDash.Core
                 _SharedKey = value;
             }
         }
+        private string _SharedKey;
 
+        /// <summary>
+        /// flag to show the client is waiting for the server to send the shared key
+        /// </summary>
         private bool WaitingForSharedKeyResponse { get; set; } 
 
         /// <summary>
@@ -85,10 +88,8 @@ namespace PepperDash.Core
         /// </summary>
         public int BufferSize { get; set; }
 
-        public SecureTCPClient Client;
-
         /// <summary>
-		/// 
+		/// Bool showing if socket is connected
 		/// </summary>
 		public bool IsConnected 
         { 
@@ -104,7 +105,7 @@ namespace PepperDash.Core
         }
 
 		/// <summary>
-		/// 
+		/// Client socket status Read only
 		/// </summary>
 		public SocketStatus ClientStatus 
         { 
@@ -118,7 +119,7 @@ namespace PepperDash.Core
 
         /// <summary>
         /// Contains the familiar Simpl analog status values. This drives the ConnectionChange event
-        /// and IsConnected with be true when this == 2.
+        /// and IsConnected would be true when this == 2.
         /// </summary>
         public ushort UStatus
         {
@@ -126,17 +127,12 @@ namespace PepperDash.Core
         }
 
 		/// <summary>
-		/// 
+		/// Status text shows the message associated with socket status
 		/// </summary>
 		public string ClientStatusText { get { return ClientStatus.ToString(); } }
 
         /// <summary>
-        /// 
-        /// </summary>
-        public string ConnectionFailure { get { return ClientStatus.ToString(); } }
-
-        /// <summary>
-        /// 
+        /// bool to track if auto reconnect should be set on the socket
         /// </summary>
         public bool AutoReconnect { get; set; }
 
@@ -154,20 +150,27 @@ namespace PepperDash.Core
         public int AutoReconnectIntervalMs { get; set; }
 
         /// <summary>
-        /// Set only when the disconnect method is called.
+        /// Flag Set only when the disconnect method is called.
         /// </summary>
         bool DisconnectCalledByUser;
 
         /// <summary>
-        /// 
+        /// Connected bool
         /// </summary>
         public bool Connected
         {
             get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
         }
 
-        CTimer RetryTimer;
+        CTimer RetryTimer; //private Timer for auto reconnect
 
+        public SecureTCPClient Client; //Secure Client Class
+
+        #endregion
+
+        #region Constructors
+
+        //Base class constructor
         public GenericSecureTcpClient(string key, string address, int port, int bufferSize)
 			: base(key)
 		{
@@ -177,14 +180,17 @@ namespace PepperDash.Core
 			AutoReconnectIntervalMs = 5000;
 		}
 
+        //base class constructor
         public GenericSecureTcpClient()
 			: base("Uninitialized SecureTcpClient")
 		{
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
-		}
+        }
+        #endregion
 
+        #region Methods
         /// <summary>
         /// Just to help S+ set the key
         /// </summary>
@@ -209,6 +215,10 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// Deactivate the client. Unregisters the socket status change event and returns true. 
+        /// </summary>
+        /// <returns></returns>
         public override bool Deactivate()
 		{
             if(Client != null)
@@ -216,6 +226,9 @@ namespace PepperDash.Core
 			return true;
 		}
 
+        /// <summary>
+        /// Connect Method. Will return if already connected. Will write errors if missing address, port, or unique key/name.
+        /// </summary>
 		public void Connect()
 		{
             if (IsConnected) 
@@ -224,20 +237,21 @@ namespace PepperDash.Core
             if (string.IsNullOrEmpty(Hostname))
             {
                 Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': No address set", Key);
+                ErrorLog.Warn(string.Format("GenericSecureTcpClient '{0}': No address set", Key));
                 return;
             }
             if (Port < 1 || Port > 65535)
             {
                 Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': Invalid port", Key);
+                ErrorLog.Warn(string.Format("GenericSecureTcpClient '{0}': Invalid port", Key));
                 return;
             }
             if (string.IsNullOrEmpty(SharedKey) && RequiresPresharedKey)
             {
                 Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': No Shared Key set", Key);
+                ErrorLog.Warn(string.Format("GenericSecureTcpClient '{0}': No Shared Key set", Key));
                 return;
             }
-            if (Client != null)
-                Client.Dispose();
             Client = new SecureTCPClient(Hostname, Port, BufferSize);
             Client.SocketStatusChange += Client_SocketStatusChange;
             try
@@ -253,12 +267,19 @@ namespace PepperDash.Core
             }
 		}
 
+        /// <summary>
+        /// Disconnect client. Does not dispose. 
+        /// </summary>
 		public void Disconnect()
         {
             DisconnectCalledByUser = true;
 			Client.DisconnectFromServer();
 		}
 
+        /// <summary>
+        /// callback after connection made
+        /// </summary>
+        /// <param name="o"></param>
 		void ConnectToServerCallback(object o)
 		{
             Client.ConnectToServer();
@@ -266,6 +287,9 @@ namespace PepperDash.Core
                 WaitAndTryReconnect();
         }
 
+        /// <summary>
+        /// Called from Socket Status change if auto reconnect and socket disconnected (Not disconnected by user)
+        /// </summary>
 		void WaitAndTryReconnect()
 		{
 			Client.DisconnectFromServer();
@@ -273,6 +297,11 @@ namespace PepperDash.Core
             RetryTimer = new CTimer(ConnectToServerCallback, AutoReconnectIntervalMs);
 		}
 
+        /// <summary>
+        /// Receive callback
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="numBytes"></param>
 		void Receive(SecureTCPClient client, int numBytes)
 		{
 			if (numBytes > 0)
@@ -325,6 +354,11 @@ namespace PepperDash.Core
             Client.SendData(bytes, bytes.Length);
         }
 
+        /// <summary>
+        /// SocketStatusChange Callback 
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="clientSocketStatus"></param>
 		void Client_SocketStatusChange(SecureTCPClient client, SocketStatus clientSocketStatus)
 		{
 			Debug.Console(2, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
@@ -344,6 +378,7 @@ namespace PepperDash.Core
 			var handler = ConnectionChange;
 			if (handler != null)
 				ConnectionChange(this, new GenericSocketStatusChageEventArgs(this));
-		}
-	}
+        }
+        #endregion
+    }
 }

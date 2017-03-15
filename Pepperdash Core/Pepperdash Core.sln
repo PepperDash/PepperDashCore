@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PepperDash_Core", "Pepperdash Core\PepperDash_Core.csproj", "{87E29B4C-569B-4368-A4ED-984AC1440C96}"
