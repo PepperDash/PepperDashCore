@@ -313,7 +313,7 @@ namespace PepperDash.Core
 		void Client_SocketStatusChange(TCPClient client, SocketStatus clientSocketStatus)
 		{
 			Debug.Console(2, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
-			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && !DisconnectCalledByUser)
+			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && !DisconnectCalledByUser && AutoReconnect)
 				WaitAndTryReconnect();
 
 			// Probably doesn't need to be a switch since all other cases were eliminated

@@ -6,7 +6,7 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
 using PepperDash.Core;
 
-namespace PepperDash_Core
+namespace PepperDash.Core
 {
     public class DynamicTCPServer : Device
     {
@@ -40,7 +40,14 @@ namespace PepperDash_Core
 
         public string status
         {
-            get { return Secure ? SecureServer.State.ToString() : UnsecureServer.State.ToString(); }
+            get 
+            {
+                if (Secure ? SecureServer != null : UnsecureServer != null)
+                    return Secure ? SecureServer.State.ToString() : UnsecureServer.State.ToString();
+                else
+                    return "";
+            }
+
         }
 
         /// <summary>
@@ -48,7 +55,8 @@ namespace PepperDash_Core
         /// </summary>
         public bool IsConnected
         {
-            get { return Secure ? SecureServer.State == ServerState.SERVER_CONNECTED : UnsecureServer.State == ServerState.SERVER_CONNECTED; }
+            get { return (Secure ? SecureServer != null : UnsecureServer != null) && 
+                (Secure ? SecureServer.State == ServerState.SERVER_CONNECTED : UnsecureServer.State == ServerState.SERVER_CONNECTED); }
         }
 
         /// <summary>
@@ -64,11 +72,10 @@ namespace PepperDash_Core
         /// </summary>
         public bool IsListening
         {
-            get { return Secure ? SecureServer.State == ServerState.SERVER_LISTENING : UnsecureServer.State == ServerState.SERVER_LISTENING; }
+            get { return (Secure ? SecureServer != null : UnsecureServer != null) && 
+                (Secure ? SecureServer.State == ServerState.SERVER_LISTENING : UnsecureServer.State == ServerState.SERVER_LISTENING); }
         }
-
-        public ushort MaxConnections { get; set; } // should be set by parameter in SIMPL+ in the MAIN method, Should not ever need to be configurable
-
+        
         /// <summary>
         /// S+ helper for IsConnected
         /// </summary>
@@ -77,12 +84,18 @@ namespace PepperDash_Core
             get { return (ushort)(IsListening ? 1 : 0); }
         }
 
+        public ushort MaxClients { get; set; } // should be set by parameter in SIMPL+ in the MAIN method, Should not ever need to be configurable
         /// <summary>
         /// Number of clients currently connected.
         /// </summary>
         public ushort NumberOfClientsConnected
         {
-            get { return Secure ? (ushort)SecureServer.NumberOfClientsConnected : (ushort)UnsecureServer.NumberOfClientsConnected; }
+            get 
+            {
+                if (Secure ? SecureServer != null : UnsecureServer != null)
+                    return Secure ? (ushort)SecureServer.NumberOfClientsConnected : (ushort)UnsecureServer.NumberOfClientsConnected;
+                return 0;
+            }            
         }
 
         /// <summary>
@@ -122,19 +135,7 @@ namespace PepperDash_Core
         /// SharedKey is sent for varification to the server. Shared key can be any text (255 char limit in SIMPL+ Module), but must match the Shared Key on the Server module. 
         /// If SharedKey changes while server is listening or clients are connected, disconnect and stop listening will be called
         /// </summary>
-        public string SharedKey
-        {
-            get
-            {
-                return _SharedKey;
-            }
-            set
-            {
-                DisconnectAllClients();
-                _SharedKey = value;
-            }
-        }
-        private string _SharedKey;
+        public string SharedKey { get; set; }
 
         /// <summary>
         /// flags to show the secure server is waiting for client at index to send the shared key
@@ -152,17 +153,7 @@ namespace PepperDash_Core
         /// </summary>
         public int BufferSize { get; set; }
 
-        public string OnlyAcceptConnectionFromAddress
-        {
-            get { return _OnlyAcceptConnectionFromAddress; }
-            set
-            {
-                DisconnectAllClients();
-                MaxConnections = 1;
-                _OnlyAcceptConnectionFromAddress = value;
-            }
-        }
-        private string _OnlyAcceptConnectionFromAddress;
+        public string OnlyAcceptConnectionFromAddress { get; set; }
 
         private bool ServerStopped { get; set; }
 
@@ -190,66 +181,72 @@ namespace PepperDash_Core
 
         public void Listen()
         {
-            if (Port < 1 || Port > 65535)
+            try
             {
-                Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': Invalid port", Key);
-                ErrorLog.Warn(string.Format("GenericSecureTcpClient '{0}': Invalid port", Key));
-                return;
-            }
-            if (string.IsNullOrEmpty(SharedKey) && RequiresPresharedKey)
-            {
-                Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': No Shared Key set", Key);
-                ErrorLog.Warn(string.Format("GenericSecureTcpClient '{0}': No Shared Key set", Key));
-                return;
-            }
-            if (Secure)
-            {
-                if (SecureServer.State == ServerState.SERVER_LISTENING)
+                if (Port < 1 || Port > 65535)
+                {
+                    Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': Invalid port", Key);
+                    ErrorLog.Warn(string.Format("GenericSecureTcpClient '{0}': Invalid port", Key));
                     return;
-                SecureServer = new SecureTCPServer(Port, MaxConnections);
-                SecureServer.SocketStatusChange += new SecureTCPServerSocketStatusChangeEventHandler(SecureServer_SocketStatusChange);
-                ServerStopped = false;
-                if (!string.IsNullOrEmpty(OnlyAcceptConnectionFromAddress))
-                    SecureServer.WaitForConnectionAsync(OnlyAcceptConnectionFromAddress, SecureConnectCallback);
-                else
-                    SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
-                Debug.Console(0, "Secure Server Status: {0}, Socket Status: {1}\r\n", SecureServer.State.ToString(), SecureServer.ServerSocketStatus);
-            }
-            else
-            {
-                if (UnsecureServer.State == ServerState.SERVER_LISTENING)
+                }
+                if (string.IsNullOrEmpty(SharedKey) && RequiresPresharedKey)
+                {
+                    Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericSecureTcpClient '{0}': No Shared Key set", Key);
+                    ErrorLog.Warn(string.Format("GenericSecureTcpClient '{0}': No Shared Key set", Key));
                     return;
-                UnsecureServer = new TCPServer(Port, MaxConnections);
-                UnsecureServer.SocketStatusChange += new TCPServerSocketStatusChangeEventHandler(UnsecureServer_SocketStatusChange);
-                ServerStopped = false;
-                if (!string.IsNullOrEmpty(OnlyAcceptConnectionFromAddress))
-                    UnsecureServer.WaitForConnectionAsync(OnlyAcceptConnectionFromAddress, UnsecureConnectCallback);
+                }
+                if (IsListening)
+                    return;
+                if (Secure)
+                {
+                    SecureServer = new SecureTCPServer(Port, MaxClients);
+                    SecureServer.SocketStatusChange += new SecureTCPServerSocketStatusChangeEventHandler(SecureServer_SocketStatusChange);
+                    ServerStopped = false;
+                    if (!string.IsNullOrEmpty(OnlyAcceptConnectionFromAddress))
+                        SecureServer.WaitForConnectionAsync(OnlyAcceptConnectionFromAddress, SecureConnectCallback);
+                    else
+                        SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+                    onServerStateChange();
+                    Debug.Console(2, "Secure Server Status: {0}, Socket Status: {1}\r\n", SecureServer.State.ToString(), SecureServer.ServerSocketStatus);
+                }
                 else
-                    UnsecureServer.WaitForConnectionAsync(IPAddress.Any, UnsecureConnectCallback);
-                Debug.Console(0, "Unsecure Server Status: {0}, Socket Status: {1}\r\n", UnsecureServer.State.ToString(), UnsecureServer.ServerSocketStatus);
+                {
+                    UnsecureServer = new TCPServer(Port, MaxClients);
+                    UnsecureServer.SocketStatusChange += new TCPServerSocketStatusChangeEventHandler(UnsecureServer_SocketStatusChange);
+                    ServerStopped = false;
+                    if (!string.IsNullOrEmpty(OnlyAcceptConnectionFromAddress))
+                        UnsecureServer.WaitForConnectionAsync(OnlyAcceptConnectionFromAddress, UnsecureConnectCallback);
+                    else
+                        UnsecureServer.WaitForConnectionAsync(IPAddress.Any, UnsecureConnectCallback);
+                    onServerStateChange();
+                    Debug.Console(2, "Unsecure Server Status: {0}, Socket Status: {1}\r\n", UnsecureServer.State.ToString(), UnsecureServer.ServerSocketStatus);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorLog.Error("Error with Dynamic Server: {0}", ex.ToString()); 
             }
         }
 
         public void StopListening()
         {
-            Debug.Console(0, "Stopping Listener");
+            Debug.Console(2, "Stopping Listener");
             if (SecureServer != null && SecureServer.State == ServerState.SERVER_LISTENING)
                 SecureServer.Stop();
             if (UnsecureServer != null && UnsecureServer.State == ServerState.SERVER_LISTENING)
                 UnsecureServer.Stop();
-            var handler = ServerStateChange;
-            if (ServerStateChange != null)
-                ServerStateChange(this, new DynamicTCPServerStateChangedEventArgs(this, Secure));
             ServerStopped = true;
+            onServerStateChange();
         }
 
         public void DisconnectAllClients()
         {
-            Debug.Console(0, "Disconnecting All Clients");
+            Debug.Console(2, "Disconnecting All Clients");
             if (SecureServer != null && SecureServer.NumberOfClientsConnected > 0)
                 SecureServer.DisconnectAll();
             if (UnsecureServer != null && UnsecureServer.NumberOfClientsConnected > 0)
                 UnsecureServer.DisconnectAll();
+            onServerStateChange(); //State shows both listening and connected
         }
 
         public void BroadcastText(string text)
@@ -260,7 +257,7 @@ namespace PepperDash_Core
                 {
                     foreach (uint i in ConnectedClientsIndexes)
                     {
-                        byte[] b = Encoding.ASCII.GetBytes(text);
+                        byte[] b = Encoding.GetEncoding(28591).GetBytes(text);
                         SecureServer.SendDataAsync(i, b, b.Length, SecureSendDataAsyncCallback);
                     }
                 }
@@ -268,7 +265,7 @@ namespace PepperDash_Core
                 {
                     foreach (uint i in ConnectedClientsIndexes)
                     {
-                        byte[] b = Encoding.ASCII.GetBytes(text);
+                        byte[] b = Encoding.GetEncoding(28591).GetBytes(text);
                         UnsecureServer.SendDataAsync(i, b, b.Length, UnsecureSendDataAsyncCallback);
                     }
                 }
@@ -284,12 +281,12 @@ namespace PepperDash_Core
         {
             if (Secure)
             {
-                byte[] b = Encoding.ASCII.GetBytes(text);
+                byte[] b = Encoding.GetEncoding(28591).GetBytes(text);
                 SecureServer.SendDataAsync(clientIndex, b, b.Length, SecureSendDataAsyncCallback);
             }
             else
             {
-                byte[] b = Encoding.ASCII.GetBytes(text);
+                byte[] b = Encoding.GetEncoding(28591).GetBytes(text);
                 UnsecureServer.SendDataAsync(clientIndex, b, b.Length, UnsecureSendDataAsyncCallback);
             }
         }
@@ -298,7 +295,7 @@ namespace PepperDash_Core
         #region Methods - Socket Status Changed Callbacks
         void SecureServer_SocketStatusChange(SecureTCPServer mySecureTCPServer, uint clientIndex, SocketStatus serverSocketStatus)
         {
-            Debug.Console(0, "Client at {0} ServerSocketStatus {1}",
+            Debug.Console(2, "Client at {0} ServerSocketStatus {1}",
                 mySecureTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex), serverSocketStatus.ToString());
             if (mySecureTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
             {
@@ -317,7 +314,7 @@ namespace PepperDash_Core
 
         void UnsecureServer_SocketStatusChange(TCPServer mySecureTCPServer, uint clientIndex, SocketStatus serverSocketStatus)
         {
-            Debug.Console(0, "Client at {0} ServerSocketStatus {1}",
+            Debug.Console(2, "Client at {0} ServerSocketStatus {1}",
                 mySecureTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex), serverSocketStatus.ToString());
             if (mySecureTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
             {
@@ -340,12 +337,12 @@ namespace PepperDash_Core
             {
                 if (RequiresPresharedKey)
                 {
-                    byte[] b = Encoding.ASCII.GetBytes(SharedKey + "\n");
+                    byte[] b = Encoding.GetEncoding(28591).GetBytes(SharedKey + "\n");
                     mySecureTCPServer.SendDataAsync(clientIndex, b, b.Length, SecureSendDataAsyncCallback);
-                    Debug.Console(0, "Sent Shared Key to client at {0}", mySecureTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
+                    Debug.Console(2, "Sent Shared Key to client at {0}", mySecureTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
                 }
                 mySecureTCPServer.ReceiveDataAsync(clientIndex, SecureReceivedCallback);
-                if (mySecureTCPServer.State != ServerState.SERVER_LISTENING && MaxConnections > 1 && !ServerStopped)
+                if (mySecureTCPServer.State != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
                     SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
             }
         }
@@ -354,10 +351,10 @@ namespace PepperDash_Core
         {
             if (myTCPServer.ClientConnected(clientIndex))
             {
-                Debug.Console(0, "Connected to client at {0}", myTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
+                Debug.Console(2, "Connected to client at {0}", myTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
                 myTCPServer.ReceiveDataAsync(clientIndex, UnsecureReceivedCallback);
             }
-            if (myTCPServer.State != ServerState.SERVER_LISTENING && MaxConnections > 1 && !ServerStopped)
+            if (myTCPServer.State != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
                 UnsecureServer.WaitForConnectionAsync(IPAddress.Any, UnsecureConnectCallback);
         }
         #endregion
@@ -379,17 +376,15 @@ namespace PepperDash_Core
             {
                 string received = "Nothing";
                 byte[] bytes = mySecureTCPServer.GetIncomingDataBufferForSpecificClient(clientIndex);
-                received = System.Text.Encoding.ASCII.GetString(bytes, 0, numberOfBytesReceived);
-                Debug.Console(0, "Secure Server Listening on Port: {0}, client IP: {1}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
-                        mySecureTCPServer.PortNumber, mySecureTCPServer.AddressServerAcceptedConnectionFrom, numberOfBytesReceived, received);
+                received = System.Text.Encoding.GetEncoding(28591).GetString(bytes, 0, numberOfBytesReceived);                
                 if (WaitingForSharedKey.Contains(clientIndex))
                 {
                     received = received.Replace("\r", "");
                     received = received.Replace("\n", "");
                     if (received != SharedKey)
                     {
-                        byte[] b = Encoding.ASCII.GetBytes("Shared key did not match server. Disconnecting");
-                        Debug.Console(0, "Client at index {0} Shared key did not match the server, disconnecting client", clientIndex);
+                        byte[] b = Encoding.GetEncoding(28591).GetBytes("Shared key did not match server. Disconnecting");
+                        Debug.Console(2, "Client at index {0} Shared key did not match the server, disconnecting client", clientIndex);
                         ErrorLog.Error("Client at index {0} Shared key did not match the server, disconnecting client", clientIndex);
                         mySecureTCPServer.SendDataAsync(clientIndex, b, b.Length, null);
                         mySecureTCPServer.Disconnect(clientIndex);
@@ -397,14 +392,16 @@ namespace PepperDash_Core
                     if (mySecureTCPServer.NumberOfClientsConnected > 0)
                         mySecureTCPServer.ReceiveDataAsync(SecureReceivedCallback);
                     WaitingForSharedKey.Remove(clientIndex);
-                    byte[] skResponse = Encoding.ASCII.GetBytes("Shared Key Match, Connected and ready for communication");
+                    byte[] skResponse = Encoding.GetEncoding(28591).GetBytes("Shared Key Match, Connected and ready for communication");
                     mySecureTCPServer.SendDataAsync(clientIndex, skResponse, skResponse.Length, null);
                     mySecureTCPServer.ReceiveDataAsync(SecureReceivedCallback);
                 }
                 else
                 {
-                    onTextReceived(received);
                     mySecureTCPServer.ReceiveDataAsync(SecureReceivedCallback);
+                    Debug.Console(2, "Secure Server Listening on Port: {0}, client IP: {1}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
+                        mySecureTCPServer.PortNumber, mySecureTCPServer.AddressServerAcceptedConnectionFrom, numberOfBytesReceived, received);
+                    onTextReceived(received);
                 }
             }
             if (mySecureTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
@@ -417,11 +414,11 @@ namespace PepperDash_Core
             {
                 string received = "Nothing";
                 byte[] bytes = myTCPServer.GetIncomingDataBufferForSpecificClient(clientIndex);
-                received = System.Text.Encoding.ASCII.GetString(bytes, 0, numberOfBytesReceived);
-                Debug.Console(0, "Unsecure Server Listening on Port: {0}, client IP: {1}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
-                        myTCPServer.PortNumber, myTCPServer.AddressServerAcceptedConnectionFrom, numberOfBytesReceived, received);
+                received = System.Text.Encoding.GetEncoding(28591).GetString(bytes, 0, numberOfBytesReceived);
+                Debug.Console(2, "Unsecure Server Listening on Port: {0}, client IP: {1}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
+                        myTCPServer.PortNumber, myTCPServer.AddressServerAcceptedConnectionFrom, numberOfBytesReceived, received);                
+                myTCPServer.ReceiveDataAsync(UnsecureReceivedCallback);
                 onTextReceived(received);
-                myTCPServer.ReceiveDataAsync(UnsecureReceivedCallback);                
             }
             if (myTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
                 myTCPServer.ReceiveDataAsync(clientIndex, UnsecureReceivedCallback);
@@ -435,9 +432,9 @@ namespace PepperDash_Core
             if (handler != null)
             {
                 if (Secure)
-                    ClientConnectionChange(this, new DynamicTCPServerSocketStatusChangeEventArgs(SecureServer, Secure));
+                    handler(this, new DynamicTCPServerSocketStatusChangeEventArgs(SecureServer, Secure));
                 else
-                    ClientConnectionChange(this, new DynamicTCPServerSocketStatusChangeEventArgs(UnsecureServer, Secure));
+                    handler(this, new DynamicTCPServerSocketStatusChangeEventArgs(UnsecureServer, Secure));
             }
         }
 
@@ -445,7 +442,19 @@ namespace PepperDash_Core
         {
             var handler = TextReceived;
             if (handler != null)
-                TextReceived(this, new GenericCommMethodReceiveTextArgs(text));
+                handler(this, new GenericCommMethodReceiveTextArgs(text));
+        }
+
+        void onServerStateChange()
+        {
+            var handler = ServerStateChange;
+            if(handler != null)
+            {
+                if(Secure)
+                    handler(this, new DynamicTCPServerStateChangedEventArgs(SecureServer, Secure));
+                else
+                    handler(this, new DynamicTCPServerStateChangedEventArgs(UnsecureServer, Secure));
+            }
         }
 
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)

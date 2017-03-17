@@ -63,20 +63,7 @@ namespace PepperDash.Core
         /// <summary>
         /// SharedKey is sent for varification to the server. Shared key can be any text (255 char limit in SIMPL+ Module), but must match the Shared Key on the Server module
         /// </summary>
-        public string SharedKey 
-        {
-            get
-            {
-                return _SharedKey;
-            }
-            set
-            {
-                if (Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
-                    Client.DisconnectFromServer();
-                _SharedKey = value;
-            }
-        }
-        private string _SharedKey;
+        public string SharedKey { get; set; }
 
         /// <summary>
         /// flag to show the client is waiting for the server to send the shared key
@@ -362,7 +349,7 @@ namespace PepperDash.Core
 		void Client_SocketStatusChange(SecureTCPClient client, SocketStatus clientSocketStatus)
 		{
 			Debug.Console(2, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
-			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && !DisconnectCalledByUser)
+			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && !DisconnectCalledByUser && AutoReconnect)
 				WaitAndTryReconnect();
 
 			// Probably doesn't need to be a switch since all other cases were eliminated
