@@ -64,7 +64,6 @@
   <ItemGroup>
     <Compile Include="CommunicationExtras.cs" />
     <Compile Include="Comm\ControlPropertiesConfig.cs" />
-    <Compile Include="Comm\DynamicTCPServer.cs" />
     <Compile Include="Comm\eControlMethods.cs" />
     <Compile Include="Comm\FINISH CommStatic.cs" />
     <Compile Include="Comm\CommunicationGather.cs" />

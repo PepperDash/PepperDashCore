@@ -157,8 +157,8 @@ namespace PepperDash.Core
 
         private bool ServerStopped { get; set; }
 
-        public SecureTCPServer SecureServer;
-        public TCPServer UnsecureServer;
+        SecureTCPServer SecureServer;
+        TCPServer UnsecureServer;
 
         #endregion
 
@@ -231,9 +231,9 @@ namespace PepperDash.Core
         public void StopListening()
         {
             Debug.Console(2, "Stopping Listener");
-            if (SecureServer != null && SecureServer.State == ServerState.SERVER_LISTENING)
+            if (SecureServer != null)
                 SecureServer.Stop();
-            if (UnsecureServer != null && UnsecureServer.State == ServerState.SERVER_LISTENING)
+            if (UnsecureServer != null)
                 UnsecureServer.Stop();
             ServerStopped = true;
             onServerStateChange();
@@ -242,10 +242,11 @@ namespace PepperDash.Core
         public void DisconnectAllClients()
         {
             Debug.Console(2, "Disconnecting All Clients");
-            if (SecureServer != null && SecureServer.NumberOfClientsConnected > 0)
+            if (SecureServer != null)
                 SecureServer.DisconnectAll();
-            if (UnsecureServer != null && UnsecureServer.NumberOfClientsConnected > 0)
+            if (UnsecureServer != null)
                 UnsecureServer.DisconnectAll();
+            onConnectionChange();
             onServerStateChange(); //State shows both listening and connected
         }
 
@@ -343,7 +344,7 @@ namespace PepperDash.Core
                 }
                 mySecureTCPServer.ReceiveDataAsync(clientIndex, SecureReceivedCallback);
                 if (mySecureTCPServer.State != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
-                    SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+                    mySecureTCPServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
             }
         }
 
@@ -351,23 +352,30 @@ namespace PepperDash.Core
         {
             if (myTCPServer.ClientConnected(clientIndex))
             {
-                Debug.Console(2, "Connected to client at {0}", myTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
+                if (RequiresPresharedKey)
+                {
+                    byte[] b = Encoding.GetEncoding(28591).GetBytes(SharedKey + "\n");
+                    myTCPServer.SendDataAsync(clientIndex, b, b.Length, UnsecureSendDataAsyncCallback);
+                    Debug.Console(2, "Sent Shared Key to client at {0}", myTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
+                }
                 myTCPServer.ReceiveDataAsync(clientIndex, UnsecureReceivedCallback);
+                if (myTCPServer.State != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
+                    myTCPServer.WaitForConnectionAsync(IPAddress.Any, UnsecureConnectCallback);
             }
             if (myTCPServer.State != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
-                UnsecureServer.WaitForConnectionAsync(IPAddress.Any, UnsecureConnectCallback);
+                myTCPServer.WaitForConnectionAsync(IPAddress.Any, UnsecureConnectCallback);
         }
         #endregion
 
         #region Methods - Send/Receive Callbacks
         void SecureSendDataAsyncCallback(SecureTCPServer mySecureTCPServer, uint clientIndex, int numberOfBytesSent)
         {
-
+            //Seems there is nothing to do here
         }
 
         void UnsecureSendDataAsyncCallback(TCPServer myTCPServer, uint clientIndex, int numberOfBytesSent)
         {
-
+            //Seems there is nothing to do here
         }
 
         void SecureReceivedCallback(SecureTCPServer mySecureTCPServer, uint clientIndex, int numberOfBytesReceived)
@@ -415,10 +423,32 @@ namespace PepperDash.Core
                 string received = "Nothing";
                 byte[] bytes = myTCPServer.GetIncomingDataBufferForSpecificClient(clientIndex);
                 received = System.Text.Encoding.GetEncoding(28591).GetString(bytes, 0, numberOfBytesReceived);
-                Debug.Console(2, "Unsecure Server Listening on Port: {0}, client IP: {1}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
-                        myTCPServer.PortNumber, myTCPServer.AddressServerAcceptedConnectionFrom, numberOfBytesReceived, received);                
-                myTCPServer.ReceiveDataAsync(UnsecureReceivedCallback);
-                onTextReceived(received);
+                if (WaitingForSharedKey.Contains(clientIndex))
+                {
+                    received = received.Replace("\r", "");
+                    received = received.Replace("\n", "");
+                    if (received != SharedKey)
+                    {
+                        byte[] b = Encoding.GetEncoding(28591).GetBytes("Shared key did not match server. Disconnecting");
+                        Debug.Console(2, "Client at index {0} Shared key did not match the server, disconnecting client", clientIndex);
+                        ErrorLog.Error("Client at index {0} Shared key did not match the server, disconnecting client", clientIndex);
+                        myTCPServer.SendDataAsync(clientIndex, b, b.Length, null);
+                        myTCPServer.Disconnect(clientIndex);
+                    }
+                    if (myTCPServer.NumberOfClientsConnected > 0)
+                        myTCPServer.ReceiveDataAsync(UnsecureReceivedCallback);
+                    WaitingForSharedKey.Remove(clientIndex);
+                    byte[] skResponse = Encoding.GetEncoding(28591).GetBytes("Shared Key Match, Connected and ready for communication");
+                    myTCPServer.SendDataAsync(clientIndex, skResponse, skResponse.Length, null);
+                    myTCPServer.ReceiveDataAsync(UnsecureReceivedCallback);
+                }
+                else
+                {
+                    myTCPServer.ReceiveDataAsync(UnsecureReceivedCallback);
+                    Debug.Console(2, "Secure Server Listening on Port: {0}, client IP: {1}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
+                        myTCPServer.PortNumber, myTCPServer.AddressServerAcceptedConnectionFrom, numberOfBytesReceived, received);
+                    onTextReceived(received);
+                }
             }
             if (myTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
                 myTCPServer.ReceiveDataAsync(clientIndex, UnsecureReceivedCallback);

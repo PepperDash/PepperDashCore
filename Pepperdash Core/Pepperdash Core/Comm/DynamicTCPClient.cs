@@ -9,7 +9,7 @@ using PepperDash.Core;
 
 namespace PepperDash.Core
 {
-    public class GenericSecureTcpClient : Device, ISocketStatus, IAutoReconnect
+    public class DynamicTcpClient : Device, ISocketStatus, IAutoReconnect
     {
         #region Events
 
@@ -49,7 +49,7 @@ namespace PepperDash.Core
         /// <summary>
         /// S+ helper for requires shared key bool
         /// </summary>
-        public ushort URequiresPresharedKey
+        public ushort uRequiresPresharedKey
         {
             set
             {
@@ -158,7 +158,7 @@ namespace PepperDash.Core
         #region Constructors
 
         //Base class constructor
-        public GenericSecureTcpClient(string key, string address, int port, int bufferSize)
+        public DynamicTcpClient(string key, string address, int port, int bufferSize)
 			: base(key)
 		{
             Hostname = address;
@@ -168,7 +168,7 @@ namespace PepperDash.Core
 		}
 
         //base class constructor
-        public GenericSecureTcpClient()
+        public DynamicTcpClient()
 			: base("Uninitialized SecureTcpClient")
 		{
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
@@ -281,8 +281,7 @@ namespace PepperDash.Core
 		{
 			Client.DisconnectFromServer();
 			Debug.Console(2, "Attempting reconnect, status={0}", Client.ClientStatus);
-            if(!DisconnectCalledByUser)
-                RetryTimer = new CTimer(ConnectToServerCallback, AutoReconnectIntervalMs);
+            RetryTimer = new CTimer(ConnectToServerCallback, AutoReconnectIntervalMs);
 		}
 
         /// <summary>

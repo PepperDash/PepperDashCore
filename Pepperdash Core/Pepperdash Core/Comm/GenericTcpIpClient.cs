@@ -256,7 +256,8 @@ namespace PepperDash.Core
 		{
 			Client.DisconnectFromServer();
 			Debug.Console(2, "Attempting reconnect, status={0}", Client.ClientStatus);
-            RetryTimer = new CTimer(o => { Client.ConnectToServerAsync(ConnectToServerCallback); }, AutoReconnectIntervalMs);
+            if(!DisconnectCalledByUser)
+                RetryTimer = new CTimer(o => { Client.ConnectToServerAsync(ConnectToServerCallback); }, AutoReconnectIntervalMs);
 		}
 
 		void Receive(TCPClient client, int numBytes)
