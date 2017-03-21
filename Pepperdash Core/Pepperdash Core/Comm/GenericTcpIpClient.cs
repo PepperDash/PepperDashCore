@@ -369,6 +369,8 @@ namespace PepperDash.Core
 			BufferSize = 32768;
 			AutoReconnect = true;
 			AutoReconnectIntervalMs = 5000;
+            Username = "";
+            Password = "";
 		}
 
 	}
