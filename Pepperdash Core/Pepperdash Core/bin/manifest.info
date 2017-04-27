@@ -1,6 +1,6 @@
-﻿MainAssembly=PepperDash_Core.dll:00d1b9d87735985f4fbe4cd55c2b5400
+﻿MainAssembly=PepperDash_Core.dll:0530e92ffa26ff73039f7720af6e8148
 MainAssemblyMinFirmwareVersion=1.007.0017
-MainAssemblyResource=SimplSharpData.dat:315526abf906cded47fb0c7510266a7e
+MainAssemblyResource=SimplSharpData.dat:820b61c48c8a2cace82957eed4cc377c
 ü
 DependencySource=Newtonsoft.Json.Compact.dll:ea996aa2ec65aa1878e7c9d09e37a896
 DependencyPath=PepperDash_Core.clz:Newtonsoft.Json.Compact.dll
