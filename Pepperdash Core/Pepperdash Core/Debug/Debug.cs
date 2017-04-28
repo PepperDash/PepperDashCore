@@ -42,10 +42,10 @@ namespace PepperDash.Core
                     "appdebug:P [0-2]: Sets the application's console debug message level",
                     ConsoleAccessLevelEnum.AccessOperator);
                 CrestronConsole.AddNewConsoleCommand(ShowDebugLog, "appdebuglog",
-                    "appdebuglog:P [all] Dumps the custom log. Use \"all\" to show full log, otherwise last-200 entries are returned.", 
+                    "appdebuglog:P [all] Use \"all\" for full log.", 
                     ConsoleAccessLevelEnum.AccessOperator);
                 CrestronConsole.AddNewConsoleCommand(s => CrestronLogger.Clear(false), "appdebugclear",
-                    "appdebugclear:P Clears the current custom log. Does not clear backup logs", 
+                    "appdebugclear:P Clears the current custom log", 
                     ConsoleAccessLevelEnum.AccessOperator);
             }
 
@@ -125,7 +125,7 @@ namespace PepperDash.Core
         {
             var loglist = CrestronLogger.PrintTheLog(s.ToLower() == "all");
             foreach (var l in loglist)
-                CrestronConsole.ConsoleCommandResponse(l);
+                CrestronConsole.ConsoleCommandResponse(l + CrestronEnvironment.NewLine);
         }
 
         /// <summary>
