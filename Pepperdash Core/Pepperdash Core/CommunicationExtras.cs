@@ -10,19 +10,26 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// An incoming communication stream
+    /// </summary>
+    public interface ICommunicationReceiver : IKeyed
+    {
+        event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
+        event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
+
+        bool IsConnected { get; }
+        void Connect();
+        void Disconnect();
+    }
+
 	/// <summary>
 	/// Represents a device that uses basic connection
 	/// </summary>
-	public interface IBasicCommunication : IKeyed
+    public interface IBasicCommunication : ICommunicationReceiver
 	{
-		event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
-		event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
-
-		bool IsConnected { get; }
 		void SendText(string text);
 		void SendBytes(byte[] bytes);
-		void Connect();
-		void Disconnect();
 	}
 
 	/// <summary>

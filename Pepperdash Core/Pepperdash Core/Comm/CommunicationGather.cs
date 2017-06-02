@@ -135,10 +135,22 @@ namespace PepperDash.Core
                     var output = Regex.Replace(args.Text,
                           @"\p{Cc}",
                           a => string.Format("[{0:X2}]", (byte)a.Value[0]));
-                    Debug.Console(2, Port, "RX: '{0}", output);
+                    Debug.Console(2, Port, "RX: '{0}'", output);
                 }
 				ReceiveBuffer.Append(args.Text);
 				var str = ReceiveBuffer.ToString();
+
+                // Case: Receiving DEVICE get version\x0d\0x0a+OK "value":"1234"\x0d\x0a
+
+                // RX: DEV
+                //  Split: (1) "DEV"
+                // RX: I
+                //  Split: (1) "DEVI"
+                // RX: CE get version
+                //  Split: (1) "DEVICE get version"
+                // RX: \x0d\x0a+OK "value":"1234"\x0d\x0a
+                //  Split: (2) DEVICE get version, +OK "value":"1234"
+
 				var lines = Regex.Split(str, StringDelimiter);
 				if (lines.Length > 1)
 				{
