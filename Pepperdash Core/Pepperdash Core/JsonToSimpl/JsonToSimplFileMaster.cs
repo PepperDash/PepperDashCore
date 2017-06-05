@@ -87,7 +87,9 @@ namespace PepperDash.Core.JsonToSimpl
 				return;
 			}
         }
-
+        public void setDebugLevel(int level) {
+            Debug.SetDebugLevel(level);
+            }
 		public override void Save()
 		{
 			// this code is duplicated in the other masters!!!!!!!!!!!!!
