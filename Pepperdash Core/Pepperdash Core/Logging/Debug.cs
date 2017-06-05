@@ -274,7 +274,7 @@ namespace PepperDash.Core
 
                     if (Contexts != null)
                     {
-                        Debug.Console(0, "Debug memory restored from file");
+                        Debug.Console(1, "Debug memory restored from file");
                         return;
                     }
                 }

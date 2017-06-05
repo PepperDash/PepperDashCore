@@ -59,7 +59,7 @@ namespace PepperDash.Core.JsonToSimpl
 			if (Master != null)
 				Master.AddChild(this);
 			else
-				Debug.Console(0, "JSON Child [{0}] cannot link to master {1}", key, masterUniqueId);
+				Debug.Console(1, "JSON Child [{0}] cannot link to master {1}", key, masterUniqueId);
 		}
 
 		/// <summary>
@@ -67,7 +67,7 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public void SetBoolPath(ushort index, string path)
 		{
-			Debug.Console(0, "JSON Child[{0}] SetBoolPath {1}={2}", Key, index, path);
+			Debug.Console(1, "JSON Child[{0}] SetBoolPath {1}={2}", Key, index, path);
 			if (path == null || path.Trim() == string.Empty) return;
 			BoolPaths[index] = path;
 		}
@@ -77,7 +77,7 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public void SetUshortPath(ushort index, string path)
 		{
-			Debug.Console(0, "JSON Child[{0}] SetUshortPath {1}={2}", Key, index, path);
+			Debug.Console(1, "JSON Child[{0}] SetUshortPath {1}={2}", Key, index, path);
 			if (path == null || path.Trim() == string.Empty) return;
 			UshortPaths[index] = path;
 		}
@@ -87,7 +87,7 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public void SetStringPath(ushort index, string path)
 		{
-			Debug.Console(0, "JSON Child[{0}] SetStringPath {1}={2}", Key, index, path);
+			Debug.Console(1, "JSON Child[{0}] SetStringPath {1}={2}", Key, index, path);
 			if (path == null || path.Trim() == string.Empty) return;
 			StringPaths[index] = path;
 		}
@@ -161,7 +161,7 @@ namespace PepperDash.Core.JsonToSimpl
 		bool Process(string path, out string response)
 		{
 			path = GetFullPath(path);
-			Debug.Console(0, "Child[{0}] Processing {1}", Key, path); 
+			Debug.Console(1, "Child[{0}] Processing {1}", Key, path); 
 			response = "";
 			if (Master == null)
 			{
@@ -188,7 +188,7 @@ namespace PepperDash.Core.JsonToSimpl
 							response = (t.HasValues ? t.Children().Count() : 0).ToString();
 						else
 							response = t.Value<string>();
-						Debug.Console(0, "   ='{0}'", response);
+						Debug.Console(1, "   ='{0}'", response);
 						return true;
 					}
 				}
@@ -251,7 +251,7 @@ namespace PepperDash.Core.JsonToSimpl
 			var path = GetFullPath(keyPath);
 			try
 			{
-				Debug.Console(0, "Child[{0}] Queueing value on master {1}='{2}'", Key, path, valueToSave);
+				Debug.Console(1, "Child[{0}] Queueing value on master {1}='{2}'", Key, path, valueToSave);
 
 				//var token = Master.JsonObject.SelectToken(path);
 				//if (token != null) // The path exists in the file

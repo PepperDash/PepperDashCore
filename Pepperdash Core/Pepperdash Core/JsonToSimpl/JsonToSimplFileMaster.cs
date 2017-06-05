@@ -54,7 +54,7 @@ namespace PepperDash.Core.JsonToSimpl
 
 			// Resolve wildcard
 			var dir = Path.GetDirectoryName(Filepath);
-			Debug.Console(0, "Checking directory {0}", dir);
+			Debug.Console(1, "Checking directory {0}", dir);
 			var fileName = Path.GetFileName(Filepath);
 			var directory = new DirectoryInfo(dir);
 
@@ -68,7 +68,7 @@ namespace PepperDash.Core.JsonToSimpl
 			}
 			//var actualFileName = actualFile.FullName;
 			ActualFilePath = actualFile.FullName;
-			Debug.Console(0, "Actual JSON file is {0}", ActualFilePath);
+			Debug.Console(1, "Actual JSON file is {0}", ActualFilePath);
 
 			string json = File.ReadToEnd(ActualFilePath, System.Text.Encoding.ASCII);
 
@@ -95,30 +95,30 @@ namespace PepperDash.Core.JsonToSimpl
 			// Make each child update their values into master object
 			foreach (var child in Children)
 			{
-				Debug.Console(0, "Master [{0}] checking child [{1}] for updates to save", UniqueID, child.Key);
+				Debug.Console(1, "Master [{0}] checking child [{1}] for updates to save", UniqueID, child.Key);
 				child.UpdateInputsForMaster();
 			}
 
 			if (UnsavedValues == null || UnsavedValues.Count == 0)
 			{
-				Debug.Console(0, "Master [{0}] No updated values to save. Skipping", UniqueID);
+				Debug.Console(1, "Master [{0}] No updated values to save. Skipping", UniqueID);
 				return;
 			}
 			lock (FileLock)
 			{
-				Debug.Console(0, "Saving");
+				Debug.Console(1, "Saving");
 				foreach (var path in UnsavedValues.Keys)
 				{
 					var tokenToReplace = JsonObject.SelectToken(path);
 					if (tokenToReplace != null)
 					{// It's found
 						tokenToReplace.Replace(UnsavedValues[path]);
-						Debug.Console(0, "JSON Master[{0}] Updating '{1}'", UniqueID, path);
+						Debug.Console(1, "JSON Master[{0}] Updating '{1}'", UniqueID, path);
 					}
 					else // No token.  Let's make one 
 					{
 						//http://stackoverflow.com/questions/17455052/how-to-set-the-value-of-a-json-path-using-json-net
-						Debug.Console(0, "JSON Master[{0}] Cannot write value onto missing property: '{1}'", UniqueID, path);
+						Debug.Console(1, "JSON Master[{0}] Cannot write value onto missing property: '{1}'", UniqueID, path);
 						
 //                        JContainer jpart = JsonObject;
 //                        // walk down the path and find where it goes
