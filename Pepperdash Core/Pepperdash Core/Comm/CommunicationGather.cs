@@ -30,7 +30,7 @@ namespace PepperDash.Core
 		/// <summary>
 		/// The communication port that this gathers on
 		/// </summary>
-		public IBasicCommunication Port { get; private set; }
+        public ICommunicationReceiver Port { get; private set; }
 
 		/// <summary>
 		/// Default false. If true, the delimiter will be included in the line output
@@ -55,7 +55,7 @@ namespace PepperDash.Core
 		/// </summary>
 		/// <param name="port"></param>
 		/// <param name="delimiter"></param>
-		public CommunicationGather(IBasicCommunication port, char delimiter)
+		public CommunicationGather(ICommunicationReceiver port, char delimiter)
 		{
 			Port = port;
 			Delimiter = delimiter;
@@ -67,7 +67,7 @@ namespace PepperDash.Core
 		/// </summary>
 		/// <param name="port"></param>
 		/// <param name="delimiter"></param>
-		public CommunicationGather(IBasicCommunication port, string delimiter)
+        public CommunicationGather(ICommunicationReceiver port, string delimiter)
 		{
 			Port = port;
 			StringDelimiter = delimiter;
