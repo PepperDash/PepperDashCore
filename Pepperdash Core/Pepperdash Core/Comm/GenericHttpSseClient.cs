@@ -82,7 +82,6 @@ namespace PepperDash.Core
                     ErrorLog.Notice("Exception occured in AsyncWebPostHttps(): " + e.ToString());
                 }
             });
-            //CrestronConsole.PrintLine("Out of DoSomething");
         }
 
         public void CloseConnection(string s)
