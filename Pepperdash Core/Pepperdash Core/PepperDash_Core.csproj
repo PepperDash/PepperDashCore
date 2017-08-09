@@ -64,6 +64,7 @@
   <ItemGroup>
     <Compile Include="CommunicationExtras.cs" />
     <Compile Include="Comm\ControlPropertiesConfig.cs" />
+    <Compile Include="Comm\GenericHttpSseClient.cs" />
     <Compile Include="Comm\GenericSecureTcpIpServer.cs" />
     <Compile Include="Comm\GenericSecureTcpIpClient.cs">
       <SubType>Code</SubType>
