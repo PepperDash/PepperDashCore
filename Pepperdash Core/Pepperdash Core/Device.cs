@@ -39,11 +39,13 @@ namespace PepperDash.Core
 			Key = key;
 			if (key.Contains('.')) Debug.Console(0, this, "WARNING: Device name's should not include '.'");
 			Name = "";
+
 		}
 
 		public Device(string key, string name) : this(key)
 		{
 			Name = name;
+
 		}
 
         //public Device(DeviceConfig config)
@@ -51,6 +53,11 @@ namespace PepperDash.Core
         //{
         //    Config = config;
         //}
+
+        public void EnableUsageTracker()
+        {
+            UsageTracker = new UsageTracker();
+        }
 
 		public void AddPreActivationAction(Action act)
 		{
@@ -105,5 +112,6 @@ namespace PepperDash.Core
 		{
 			if (o is bool && !(bool)o) a();
 		}
+
 	}
 }
