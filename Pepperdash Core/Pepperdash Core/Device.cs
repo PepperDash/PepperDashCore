@@ -54,11 +54,6 @@ namespace PepperDash.Core
         //    Config = config;
         //}
 
-        public void EnableUsageTracker()
-        {
-            UsageTracker = new UsageTracker();
-        }
-
 		public void AddPreActivationAction(Action act)
 		{
 			if (_PreActivationActions == null)

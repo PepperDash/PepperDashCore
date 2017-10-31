@@ -138,7 +138,7 @@ namespace PepperDash.Core
         public static void Console(uint level, string format, params object[] items)
         {
             if (Level >= level)
-                CrestronConsole.PrintLine("App {0}:{1}", InitialParametersClass.ApplicationNumber,
+                CrestronConsole.PrintLine("[{0}]App {1}:{2}", DateTime.Now.ToString("HH:mm:ss.fff"), InitialParametersClass.ApplicationNumber,
                     string.Format(format, items));
         }
 
