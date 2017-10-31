@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
-using Crestron.SimplSharp.Net;
 using Crestron.SimplSharp.Net.Http;
 
 namespace PepperDash.Core
@@ -36,8 +35,6 @@ namespace PepperDash.Core
 
         HttpClient Client;
         HttpClientRequest Request;
-        Connection SseConnection;
-        
 
         public GenericHttpSseClient(string key, string name)
         {
@@ -78,38 +75,23 @@ namespace PepperDash.Core
                     // In order to get a handle on the response stream, we have to get
                     // the request stream first.  Boo
                     Client.BeginGetRequestStream(GetRequestStreamCallback, Request, null);
-                    //CrestronConsole.PrintLine("Request made!");
+                    CrestronConsole.PrintLine("Request made!");
                 }
                 catch (Exception e)
                 {
-                    ErrorLog.Notice("Exception occured in InitiateConnection(): " + e);
+                    ErrorLog.Notice("Exception occured in AsyncWebPostHttps(): " + e.ToString());
                 }
             });
         }
 
         public void CloseConnection(string s)
         {
-            try
+            if (Client != null)
             {
-                if (Client != null)
-                {
-                    if (SseConnection != null)
-                    {
-                        // Gracefully dispose of any in use resources??
+                Client.Abort();
+                IsConnected = false;
 
-                        SseConnection.Disconnect();
-                        SseConnection.Close(true);
-
-                        Client.Abort();
-                    }
-                    IsConnected = false;
-
-                    Debug.Console(1, this, "Client Disconnected");
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.Console(1, this, "Error Closing SSE Connection: {0}", e);
+                Debug.Console(1, this, "Client Disconnected");
             }
         }
 
@@ -148,9 +130,13 @@ namespace PepperDash.Core
                 // This closes up the GetResponseStream async
                 var response = request.ThisClient.EndGetResponseStream(request);
 
-                SseConnection = response.DataConnection;                
+                response.DataConnection.OnBytesReceived += new EventHandler(DataConnection_OnBytesReceived);
+
+                IsConnected = true;
 
                 Debug.Console(1, this, "Client Disconnected");
+
+#warning Need to explore using a heartbeat to verify connection to the server
 
                 Stream streamResponse = response.ContentStream;
                 // Object containing various states to be passed back to async callback below
@@ -175,6 +161,11 @@ namespace PepperDash.Core
             {
                 ErrorLog.Notice("Exception occured in GetSecureRequestStreamCallback(): " + e.ToString());
             }
+        }
+
+        void DataConnection_OnBytesReceived(object sender, EventArgs e)
+        {
+            Debug.Console(1, this, "DataConnection OnBytesReceived Fired");
         }
 
         /// <summary>
@@ -214,20 +205,13 @@ namespace PepperDash.Core
                     return;
                 }
 
-                try
+                Crestron.SimplSharp.CrestronIO.IAsyncResult asynchronousResult;
+                do
                 {
-                    Crestron.SimplSharp.CrestronIO.IAsyncResult asynchronousResult;
-                    do
-                    {
-                            asynchronousResult = responseStream.BeginRead(requestState.BufferRead, 0, RequestState.BUFFER_SIZE,
-                                new Crestron.SimplSharp.CrestronIO.AsyncCallback(ReadCallBack), requestState);                      
-                    }
-                    while (asynchronousResult.CompletedSynchronously && !requestState.Done);
+                    asynchronousResult = responseStream.BeginRead(requestState.BufferRead, 0, RequestState.BUFFER_SIZE, 
+                        new Crestron.SimplSharp.CrestronIO.AsyncCallback(ReadCallBack), requestState);
                 }
-                catch (Exception e)
-                {
-                    Debug.Console(1, this, "Exception: {0}", e);
-                }
+                while (asynchronousResult.CompletedSynchronously && !requestState.Done);
             }
             else
             {
