@@ -307,7 +307,8 @@ namespace PepperDash.Core
 		{
 			//if (Debug.Level == 2)
 			//    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
-			Client.SendData(bytes, bytes.Length);
+            if(Client != null)
+			    Client.SendData(bytes, bytes.Length);
 		}
 
 
