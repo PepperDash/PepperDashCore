@@ -230,7 +230,7 @@ namespace PepperDash.Core
                     if (data != null)
                     {
                         SaveData = data;
-                        Debug.Console(0, "Debug memory restored from file");
+                        Debug.Console(1, "Debug memory restored from file");
                         return;
                     }
                     else
