@@ -106,7 +106,9 @@ namespace PepperDash.Core.JsonToSimpl
 		/// <param name="child"></param>
 		public void AddChild(JsonToSimplChildObjectBase child)
 		{
-			if (Children.Contains(child)) return;
+			if (Children.Contains(child)) {
+				Children.Remove(child);
+				}
 			Children.Add(child);
 		}
 

@@ -18,6 +18,7 @@ namespace PepperDash.Core.JsonToSimpl
 		/// master, this will fail
 		/// </summary>
 		/// <param name="master">New master to add</param>
+        /// 
 		public static void AddMaster(JsonToSimplMaster master)
 		{
 			if (master == null)
@@ -26,7 +27,7 @@ namespace PepperDash.Core.JsonToSimpl
 			if (string.IsNullOrEmpty(master.UniqueID))
 				throw new InvalidOperationException("JSON Master cannot be added with a null UniqueId");
 			
-			Debug.Console(0, "JSON Global adding master {0}", master.UniqueID);
+			Debug.Console(1, "JSON Global adding master {0}", master.UniqueID);
 
 			if (Masters.Contains(master)) return;
 

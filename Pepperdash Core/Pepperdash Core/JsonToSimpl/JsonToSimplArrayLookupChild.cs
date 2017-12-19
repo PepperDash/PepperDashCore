@@ -73,7 +73,7 @@ namespace PepperDash.Core.JsonToSimpl
 					}
 
 					ArrayIndex = array.IndexOf(item);
-					Debug.Console(0, "Child[{0}] Found array match at index {1}", Key, ArrayIndex);
+					Debug.Console(1, "Child[{0}] Found array match at index {1}", Key, ArrayIndex);
 					return true;
 				}
 				catch (Exception e)

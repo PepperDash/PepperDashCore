@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronLogger;
 using Crestron.SimplSharp.CrestronIO;
@@ -32,8 +33,20 @@ namespace PepperDash.Core
 
         static CTimer SaveTimer;
 
+		/// <summary>
+		/// When true, the IncludedExcludedKeys dict will contain keys to include. 
+		/// When false (default), IncludedExcludedKeys will contain keys to exclude.
+		/// </summary>
+		static bool ExcludeAllMode;
+
+		static bool ExcludeNoKeyMessages;
+
+		static Dictionary<string, object> IncludedExcludedKeys;
+
         static Debug()
         {
+			IncludedExcludedKeys = new Dictionary<string, object>();
+
             //CrestronDataStoreStatic.InitCrestronDataStore();
             if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
             {
@@ -47,6 +60,8 @@ namespace PepperDash.Core
                 CrestronConsole.AddNewConsoleCommand(s => CrestronLogger.Clear(false), "appdebugclear",
                     "appdebugclear:P Clears the current custom log", 
                     ConsoleAccessLevelEnum.AccessOperator);
+				CrestronConsole.AddNewConsoleCommand(SetDebugFilterFromConsole, "appdebugfilter",
+					"appdebugfilter [params]", ConsoleAccessLevelEnum.AccessOperator);
             }
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
@@ -96,6 +111,82 @@ namespace PepperDash.Core
                 CrestronConsole.PrintLine("Usage: appdebug:P [0-2]");
             }
         }
+
+		public static void SetDebugFilterFromConsole(string items)
+		{
+			var str = items.Trim();
+			if (str == "?")
+			{
+				CrestronConsole.ConsoleCommandResponse("Usage:\r APPDEBUGFILTER key1 key2 key3....\r " +
+					"+all: at beginning puts filter into 'default include' mode\r" +
+					"      All keys that follow will be excluded from output.\r" +
+					"-all: at beginning puts filter into 'default excluse all' mode.\r" +
+					"      All keys that follow will be the only keys that are shown\r" +
+					"+nokey: Enables messages with no key (default)\r" +
+					"-nokey: Disables messages with no key.\r" +
+					"(nokey settings are independent of all other settings)");
+				return;
+			}
+			var keys = Regex.Split(str, @"\s*");
+			foreach (var keyToken in keys)
+			{
+				var lkey = keyToken.ToLower();
+				if (lkey == "+all")
+				{
+					IncludedExcludedKeys.Clear();
+					ExcludeAllMode = false;
+				}
+				else if (lkey == "-all")
+				{
+					IncludedExcludedKeys.Clear();
+					ExcludeAllMode = true;
+				}
+				else if (lkey == "+nokey")
+				{
+					ExcludeNoKeyMessages = false;
+				}
+				else if (lkey == "-nokey")
+				{
+					ExcludeNoKeyMessages = true;
+				}
+				else
+				{
+					string key = null; ;
+					if (lkey.StartsWith("-"))
+					{
+						key = lkey.Substring(1);
+						// if in exclude all mode, we need to remove this from the inclusions
+						if (ExcludeAllMode)
+						{
+							if (IncludedExcludedKeys.ContainsKey(key))
+								IncludedExcludedKeys.Remove(key);
+						}
+						// otherwise include all mode, add to the exclusions
+						else
+						{
+							IncludedExcludedKeys[key] = new object();
+						}
+					}
+					else if (lkey.StartsWith("+"))
+					{
+						key = lkey.Substring(1);
+						// if in exclude all mode, we need to add this as inclusion
+						if (ExcludeAllMode)
+						{
+
+							IncludedExcludedKeys[key] = new object();
+						}
+						// otherwise include all mode, remove this from exclusions
+						else
+						{
+							if (IncludedExcludedKeys.ContainsKey(key))
+								IncludedExcludedKeys.Remove(key);
+						}
+					}
+				}
+			}
+		}
+
 
         /// <summary>
         /// Sets the debug level
@@ -274,7 +365,7 @@ namespace PepperDash.Core
 
                     if (Contexts != null)
                     {
-                        Debug.Console(0, "Debug memory restored from file");
+                        Debug.Console(1, "Debug memory restored from file");
                         return;
                     }
                 }
