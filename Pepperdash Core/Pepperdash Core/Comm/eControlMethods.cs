@@ -8,6 +8,6 @@ namespace PepperDash.Core
 {
     public enum eControlMethod
     {
-        None = 0, Com, IpId, IR, Ssh, Tcpip, Telnet
+        None = 0, Com, IpId, IR, Ssh, Tcpip, Telnet, Cresnet
     }
 }
