@@ -303,11 +303,16 @@ namespace PepperDash.Core
 				ReconnectTimer.Stop();
 				ReconnectTimer = null;
 			}
+
 			KillStream();
-			Client.Disconnect();
-			Client = null;
-			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY;
-			Debug.Console(1, this, "Disconnected");
+
+            if (Client != null)
+            {
+                Client.Disconnect();
+                Client = null;
+                ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY;
+                Debug.Console(1, this, "Disconnected");
+            }
 		}
 
 		/// <summary>
