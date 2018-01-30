@@ -79,7 +79,6 @@
     <Compile Include="Logging\DebugContext.cs" />
     <Compile Include="Logging\DebugMemory.cs" />
     <Compile Include="Device.cs" />
-    <Compile Include="DeviceConfig.cs" />
     <Compile Include="Comm\GenericTcpIpServer.cs" />
     <Compile Include="EthernetHelper.cs" />
     <Compile Include="Comm\GenericTcpIpClient.cs" />
