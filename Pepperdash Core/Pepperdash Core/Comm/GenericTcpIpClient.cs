@@ -194,12 +194,8 @@ namespace PepperDash.Core
         {
             if (programEventType == eProgramStatusEventType.Stopping)
             {
-                if (Client != null)
-                {
-                    Debug.Console(1, this, "Program stopping. Closing connection");
-                    Client.DisconnectFromServer();
-                    Client.Dispose();
-                }
+                Debug.Console(1, this, "Program stopping. Closing connection");
+                DisconnectClient();
             }
         }
 
@@ -217,8 +213,8 @@ namespace PepperDash.Core
 
 		public void Connect()
 		{
-            if (IsConnected) 
-                return;
+            if (IsConnected)
+                DisconnectClient();
 
             if (string.IsNullOrEmpty(Hostname))
             {
@@ -233,8 +229,11 @@ namespace PepperDash.Core
                 }
             }
 
-            Client = new TCPClient(Hostname, Port, BufferSize);
-            Client.SocketStatusChange += Client_SocketStatusChange;
+            if (Client == null)
+            {
+                Client = new TCPClient(Hostname, Port, BufferSize);
+                Client.SocketStatusChange += Client_SocketStatusChange;
+            }
 
 			Client.ConnectToServerAsync(null);
 			DisconnectCalledByUser = false;
@@ -243,8 +242,19 @@ namespace PepperDash.Core
 		public void Disconnect()
 		{
 			DisconnectCalledByUser = true;
-			Client.DisconnectFromServer();
+            DisconnectClient();
 		}
+
+        public void DisconnectClient()
+        {
+            if (Client != null)
+            {
+                Debug.Console(1, this, "Disconnecting client");
+                //Client.SocketStatusChange -= Client_SocketStatusChange;
+                if(IsConnected)
+                    Client.DisconnectFromServer();
+            }
+        }
 
 		void ConnectToServerCallback(TCPClient c)
 		{
@@ -254,7 +264,8 @@ namespace PepperDash.Core
 
 		void WaitAndTryReconnect()
 		{
-			Client.DisconnectFromServer();
+            DisconnectClient();
+
 			Debug.Console(2, "Attempting reconnect, status={0}", Client.ClientStatus);
             if(!DisconnectCalledByUser)
                 RetryTimer = new CTimer(o => { Client.ConnectToServerAsync(ConnectToServerCallback); }, AutoReconnectIntervalMs);
