@@ -67,23 +67,25 @@ namespace PepperDash.Core.JsonToSimpl
 					});
 					if (item == null)
 					{
-						Debug.Console(0, "Child[{0}] Array '{1}' '{2}={3}' not found: ", Key,
+						Debug.Console(1, "Child[{0}] Array '{1}' '{2}={3}' not found: ", Key,
 							PathPrefix, SearchPropertyName, SearchPropertyValue);
+						this.LinkedToObject = false;
 						return false;
 					}
 
+					this.LinkedToObject = true;
 					ArrayIndex = array.IndexOf(item);
 					Debug.Console(1, "Child[{0}] Found array match at index {1}", Key, ArrayIndex);
 					return true;
 				}
 				catch (Exception e)
 				{
-					Debug.Console(0, "Child[{0}] Array '{1}' lookup error: '{2}={3}'\r{4}", Key, 
+					Debug.Console(1, "Child[{0}] Array '{1}' lookup error: '{2}={3}'\r{4}", Key, 
 						PathPrefix, SearchPropertyName, SearchPropertyValue, e);
 				}
 			}
 			else
-				Debug.Console(0, "Child[{0}] Path '{1}' is not an array", Key, PathPrefix);
+				Debug.Console(1, "Child[{0}] Path '{1}' is not an array", Key, PathPrefix);
 
 			return false;
 		}

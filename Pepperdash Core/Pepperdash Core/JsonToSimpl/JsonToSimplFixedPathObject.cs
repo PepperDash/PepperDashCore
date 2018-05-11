@@ -15,6 +15,7 @@ namespace PepperDash.Core.JsonToSimpl
 	{
 		public JsonToSimplFixedPathObject()
 		{
+			this.LinkedToObject = true;
 		}
 	}
 }

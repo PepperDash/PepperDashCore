@@ -35,6 +35,8 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public string PathSuffix { get; protected set; }
 
+		public bool LinkedToObject { get; protected set; }
+
 		protected JsonToSimplMaster Master;
 
 		// The sent-in JPaths for the various types
@@ -101,6 +103,12 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public virtual void ProcessAll()
 		{
+			if (!LinkedToObject)
+			{
+				Debug.Console(1, this, "Not linked to object in file.  Skipping");
+				return;
+			}
+
 			if (SetAllPathsDelegate == null)
 			{
 				Debug.Console(1, this, "No SetAllPathsDelegate set. Ignoring ProcessAll");
@@ -166,7 +174,7 @@ namespace PepperDash.Core.JsonToSimpl
 			response = "";
 			if (Master == null)
 			{
-				Debug.Console(0, "JSONChild[{0}] cannot process without Master attached", Key);
+				Debug.Console(1, "JSONChild[{0}] cannot process without Master attached", Key);
 				return false;
 			}
 
@@ -213,6 +221,12 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public void UpdateInputsForMaster()
 		{
+			if (!LinkedToObject)
+			{
+				Debug.Console(1, this, "Not linked to object in file.  Skipping");
+				return;
+			}
+
 			if (SetAllPathsDelegate == null)
 			{
 				Debug.Console(1, this, "No SetAllPathsDelegate set. Ignoring UpdateInputsForMaster");
@@ -260,7 +274,7 @@ namespace PepperDash.Core.JsonToSimpl
 			}
 			catch (Exception e)
 			{
-				Debug.Console(0, "Child[{0}] Failed setting value for path '{1}'\r{2}", Key, path, e);
+				Debug.Console(1, "Child[{0}] Failed setting value for path '{1}'\r{2}", Key, path, e);
 			}
 		}
 
