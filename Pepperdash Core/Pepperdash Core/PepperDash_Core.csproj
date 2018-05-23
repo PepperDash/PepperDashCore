@@ -74,7 +74,9 @@
     <Compile Include="Comm\CommunicationGather.cs" />
     <Compile Include="Comm\EventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
+    <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />
+    <Compile Include="JsonToSimpl\JsonToSimplPortalFileMaster.cs" />
     <Compile Include="Logging\Debug.cs" />
     <Compile Include="Logging\DebugContext.cs" />
     <Compile Include="Logging\DebugMemory.cs" />

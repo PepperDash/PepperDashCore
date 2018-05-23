@@ -97,7 +97,6 @@ namespace PepperDash.Core
 
         private void GetRequestStreamCallback(HttpClientRequest request, HTTP_CALLBACK_ERROR error, object status)
         {
-#warning Explore simplifying this later....
 
             try
             {
@@ -135,8 +134,6 @@ namespace PepperDash.Core
                 IsConnected = true;
 
                 Debug.Console(1, this, "Client Disconnected");
-
-#warning Need to explore using a heartbeat to verify connection to the server
 
                 Stream streamResponse = response.ContentStream;
                 // Object containing various states to be passed back to async callback below

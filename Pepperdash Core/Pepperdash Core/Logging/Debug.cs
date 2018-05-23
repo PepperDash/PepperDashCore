@@ -39,7 +39,7 @@ namespace PepperDash.Core
 		/// </summary>
 		static bool ExcludeAllMode;
 
-		static bool ExcludeNoKeyMessages;
+		//static bool ExcludeNoKeyMessages;
 
 		static Dictionary<string, object> IncludedExcludedKeys;
 
@@ -141,14 +141,14 @@ namespace PepperDash.Core
 					IncludedExcludedKeys.Clear();
 					ExcludeAllMode = true;
 				}
-				else if (lkey == "+nokey")
-				{
-					ExcludeNoKeyMessages = false;
-				}
-				else if (lkey == "-nokey")
-				{
-					ExcludeNoKeyMessages = true;
-				}
+				//else if (lkey == "+nokey")
+				//{
+				//    ExcludeNoKeyMessages = false;
+				//}
+				//else if (lkey == "-nokey")
+				//{
+				//    ExcludeNoKeyMessages = true;
+				//}
 				else
 				{
 					string key = null; ;

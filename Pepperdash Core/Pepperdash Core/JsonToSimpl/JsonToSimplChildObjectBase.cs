@@ -170,7 +170,7 @@ namespace PepperDash.Core.JsonToSimpl
 		bool Process(string path, out string response)
 		{
 			path = GetFullPath(path);
-			Debug.Console(1, "Child[{0}] Processing {1}", Key, path); 
+			Debug.Console(1, "JSON Child[{0}] Processing {1}", Key, path); 
 			response = "";
 			if (Master == null)
 			{
@@ -266,7 +266,7 @@ namespace PepperDash.Core.JsonToSimpl
 			var path = GetFullPath(keyPath);
 			try
 			{
-				Debug.Console(1, "Child[{0}] Queueing value on master {1}='{2}'", Key, path, valueToSave);
+				Debug.Console(1, "JSON Child[{0}] Queueing value on master {1}='{2}'", Key, path, valueToSave);
 
 				//var token = Master.JsonObject.SelectToken(path);
 				//if (token != null) // The path exists in the file
@@ -274,7 +274,7 @@ namespace PepperDash.Core.JsonToSimpl
 			}
 			catch (Exception e)
 			{
-				Debug.Console(1, "Child[{0}] Failed setting value for path '{1}'\r{2}", Key, path, e);
+				Debug.Console(1, "JSON Child[{0}] Failed setting value for path '{1}'\r{2}", Key, path, e);
 			}
 		}
 
