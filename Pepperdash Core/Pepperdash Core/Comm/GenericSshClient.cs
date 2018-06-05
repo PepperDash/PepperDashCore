@@ -217,7 +217,7 @@ namespace PepperDash.Core
 			//{
 				if (Client != null)
 				{
-					Debug.Console(2, this, "Cleaning up disconnected client");
+					Debug.Console(1, this, "Cleaning up disconnected client");
 					Client.ErrorOccurred -= Client_ErrorOccurred;
 					KillStream();
 					
@@ -229,7 +229,7 @@ namespace PepperDash.Core
 					//TheStream = null;
 				}
 
-				Debug.Console(2, this, "Creating new SshClient");
+				Debug.Console(1, this, "Creating new SshClient");
 				ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
 				Client = new SshClient(connectionInfo);
 				Client.ErrorOccurred += Client_ErrorOccurred;

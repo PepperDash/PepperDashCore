@@ -234,9 +234,8 @@ namespace PepperDash.Core
                 Client = new TCPClient(Hostname, Port, BufferSize);
                 Client.SocketStatusChange += Client_SocketStatusChange;
             }
-
-			Client.ConnectToServerAsync(null);
 			DisconnectCalledByUser = false;
+			Client.ConnectToServerAsync(ConnectToServerCallback); // (null);
 		}
 
 		public void Disconnect()
@@ -258,6 +257,7 @@ namespace PepperDash.Core
 
 		void ConnectToServerCallback(TCPClient c)
 		{
+			Debug.Console(1, this, "Server connection result: {0}", c.ClientStatus);
 			if (c.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
 				WaitAndTryReconnect();
 		}
@@ -266,7 +266,7 @@ namespace PepperDash.Core
 		{
             DisconnectClient();
 
-			Debug.Console(2, "Attempting reconnect, status={0}", Client.ClientStatus);
+			Debug.Console(1, "Attempting reconnect, status={0}", Client.ClientStatus);
             if(!DisconnectCalledByUser)
                 RetryTimer = new CTimer(o => { Client.ConnectToServerAsync(ConnectToServerCallback); }, AutoReconnectIntervalMs);
 		}
@@ -326,7 +326,7 @@ namespace PepperDash.Core
 
 		void Client_SocketStatusChange(TCPClient client, SocketStatus clientSocketStatus)
 		{
-			Debug.Console(2, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
+			Debug.Console(1, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
 			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && !DisconnectCalledByUser && AutoReconnect)
 				WaitAndTryReconnect();
 
