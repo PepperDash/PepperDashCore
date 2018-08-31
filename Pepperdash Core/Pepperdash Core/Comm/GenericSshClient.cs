@@ -293,8 +293,6 @@ namespace PepperDash.Core
 		/// </summary>
 		void HandleConnectionFailure()
 		{
-
-
 			if (Client != null)
 				Client.Disconnect();
 			KillStream();

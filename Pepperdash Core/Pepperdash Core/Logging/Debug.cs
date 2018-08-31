@@ -234,7 +234,7 @@ namespace PepperDash.Core
         }
 
         /// <summary>
-        /// Appends a device Key to the beginning of a message
+		/// Logs to Console when at-level, and all messages to error log, including device key			
         /// </summary>
         public static void Console(uint level, IKeyed dev, string format, params object[] items)
         {
@@ -245,23 +245,26 @@ namespace PepperDash.Core
         public static void Console(uint level, IKeyed dev, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
+            var str = string.Format("[{0}] {1}", dev.Key, string.Format(format, items));
+			LogError(errorLogLevel, str);
             if (Level >= level)
             {
-                var str = string.Format("[{0}] {1}", dev.Key, string.Format(format, items));
                 Console(level, str);
-                LogError(errorLogLevel, str);
             }
         }
 
+		/// <summary>
+		/// Logs to Console when at-level, and all messages to error log
+		/// </summary>
         public static void Console(uint level, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
-            if (Level >= level)
-            {
-                var str = string.Format(format, items);
-                Console(level, str);
-                LogError(errorLogLevel, str);
-            }
+            var str = string.Format(format, items);
+            LogError(errorLogLevel, str);
+			if (Level >= level)
+			{
+				Console(level, str);
+			}
         }
 
         /// <summary>
