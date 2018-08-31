@@ -212,55 +212,28 @@ namespace PepperDash.Core
 			kauth.AuthenticationPrompt += new EventHandler<AuthenticationPromptEventArgs>(kauth_AuthenticationPrompt);
 			PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
 
-			// Make a new client if we need it or things have changed
-			//if (Client == null || PropertiesHaveChanged())
-			//{
-				if (Client != null)
-				{
-					Debug.Console(1, this, "Cleaning up disconnected client");
-					Client.ErrorOccurred -= Client_ErrorOccurred;
-					KillStream();
-					
-					//if (TheStream != null)
-					//{
-					//    TheStream.DataReceived -= Stream_DataReceived;
-					//    TheStream.ErrorOccurred -= TheStream_ErrorOccurred;
-					//}
-					//TheStream = null;
-				}
+			if (Client != null)
+			{
+				Debug.Console(1, this, "Cleaning up disconnected client");
+				Client.ErrorOccurred -= Client_ErrorOccurred;
+				KillStream();
+			}
 
-				Debug.Console(1, this, "Creating new SshClient");
-				ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
-				Client = new SshClient(connectionInfo);
-				Client.ErrorOccurred += Client_ErrorOccurred;
-			//} 
-			//PreviousHostname = Hostname;
-			//PreviousPassword = Password;
-			//PreviousPort = Port;
-			//PreviousUsername = Username;
+			Debug.Console(1, this, "Creating new SshClient");
+			ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
+			Client = new SshClient(connectionInfo);
+			Client.ErrorOccurred += Client_ErrorOccurred;
 
 			//You can do it!
 			ClientStatus = SocketStatus.SOCKET_STATUS_WAITING;
 			try
 			{
 				Client.Connect();
-
-				// Have to assume client is connected cause Client.IsConnected is busted in some cases
-				// All other conditions *should* error out...
-				//if (Client.IsConnected)
-				//{
-					//Client.KeepAliveInterval = TimeSpan.FromSeconds(2);
-					//Client.SendKeepAlive();
-					TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
-					TheStream.DataReceived += Stream_DataReceived;
-					//TheStream.ErrorOccurred += TheStream_ErrorOccurred;
-					Debug.Console(1, this, "Connected");
-					ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
-					//PreviousHostname = Hostname;
-					//PreviousPassword = Password;
-					//PreviousPort = Port;
-					//PreviousUsername = Username;
-				//}
+				TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
+				TheStream.DataReceived += Stream_DataReceived;
+				//TheStream.ErrorOccurred += TheStream_ErrorOccurred;
+				Debug.Console(1, this, "Connected");
+				ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
 				return; // Success will not pass here
 			}
 			catch (SshConnectionException e)
