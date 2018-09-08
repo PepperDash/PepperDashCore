@@ -18,7 +18,7 @@ namespace PepperDash.Core
 			get
 			{
 				if (_LanHelper == null) _LanHelper = new EthernetHelper(0);
-				return LanHelper;
+				return _LanHelper;
 			}
 		}
 		static EthernetHelper _LanHelper;
