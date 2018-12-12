@@ -74,6 +74,7 @@
     <Compile Include="Comm\CommunicationGather.cs" />
     <Compile Include="Comm\EventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
+    <Compile Include="Comm\GenericUdpServer.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplPortalFileMaster.cs" />
