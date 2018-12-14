@@ -68,6 +68,12 @@ namespace PepperDash.Core
 			_PostActivationActions.Add(act);
 		}
 
+        public void PreActivate()
+        {
+            if (_PreActivationActions != null)
+                _PreActivationActions.ForEach(a => a.Invoke());
+        }
+
 		/// <summary>
 		/// Gets this device ready to be used in the system. Runs any added pre-activation items, and
 		/// all post-activation at end. Classes needing additional logic to 
@@ -75,13 +81,19 @@ namespace PepperDash.Core
 		/// </summary>
 		public bool Activate() 
 		{
-			if (_PreActivationActions != null)
-				_PreActivationActions.ForEach(a => a.Invoke());
+            //if (_PreActivationActions != null)
+            //    _PreActivationActions.ForEach(a => a.Invoke());
 			var result = CustomActivate();
-			if(result && _PostActivationActions != null)
-				_PostActivationActions.ForEach(a => a.Invoke());
+            //if(result && _PostActivationActions != null)
+            //    _PostActivationActions.ForEach(a => a.Invoke());
 			return result; 	
 		}
+
+        public void PostActivate()
+        {
+            if (_PostActivationActions != null)
+                _PostActivationActions.ForEach(a => a.Invoke());
+        }
 
 		/// <summary>
 		/// Called in between Pre and PostActivationActions when Activate() is called. 

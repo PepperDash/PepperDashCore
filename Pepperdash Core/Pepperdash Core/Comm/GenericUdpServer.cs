@@ -13,7 +13,7 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
-    public class GenericUdpServer : Device
+    public class GenericUdpServer : Device, IBasicCommunication
     {
         /// <summary>
         /// 
@@ -30,6 +30,14 @@ namespace PepperDash.Core
         /// </summary>
         //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
         public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
+
+        public SocketStatus ClientStatus
+        {
+            get
+            {
+                return Server.ServerStatus;
+            }
+        }
 
         /// <summary>
         /// Address of server
@@ -54,7 +62,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Indicates that the UDP Server is enabled
         /// </summary>
-        public bool IsEnabled
+        public bool IsConnected
         {
             get;
             private set;
@@ -75,6 +83,17 @@ namespace PepperDash.Core
             BufferSize = buffefSize;
 
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
+        }
+
+        void CrestronEnvironment_EthernetEventHandler(EthernetEventArgs ethernetEventArgs)
+        {
+            // Re-enable the server if the link comes back up and the status should be connected
+            if (ethernetEventArgs.EthernetEventType == eEthernetEventType.LinkUp
+                && IsConnected)
+            {
+                Connect();
+            }
         }
 
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
@@ -82,35 +101,53 @@ namespace PepperDash.Core
             if (programEventType == eProgramStatusEventType.Stopping)
             {
                 Debug.Console(1, this, "Program stopping. Disabling Server");
-                Disable();
+                Disconnect();
             }
         }
 
         /// <summary>
         /// Enables the UDP Server
         /// </summary>
-        public void Enable()
+        public void Connect()
         {
             if (Server == null)
             {
                 Server = new UDPServer();
 
-                // Start receiving data
-                Server.ReceiveDataAsync(Receive);
             }
 
-            if (Server.EnableUDPServer() == SocketErrorCodes.SOCKET_OK)
-                IsEnabled = true;
+            if (string.IsNullOrEmpty(Hostname))
+            {
+                Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericUdpServer '{0}': No address set", Key);
+                return;
+            }
+            if (Port < 1 || Port > 65535)
+            {
+                {
+                    Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericUdpServer '{0}': Invalid port", Key);
+                    return;
+                }
+            }
+
+            var status = Server.EnableUDPServer(Hostname, Port);
+
+            Debug.Console(2, this, "SocketErrorCode: {0}", status);
+            if (status == SocketErrorCodes.SOCKET_OK)
+                IsConnected = true;
+
+            // Start receiving data
+            Server.ReceiveDataAsync(Receive);
         }
 
         /// <summary>
         /// Disabled the UDP Server
         /// </summary>
-        public void Disable()
+        public void Disconnect()
         {
-            Server.DisableUDPServer();
+            if(Server != null)
+                Server.DisableUDPServer();
 
-            IsEnabled = false;
+            IsConnected = false;
         }
 
 
@@ -121,20 +158,29 @@ namespace PepperDash.Core
         /// <param name="numBytes"></param>
         void Receive(UDPServer server, int numBytes)
         {
+            Debug.Console(2, this, "Received {0} bytes", numBytes);
+
             if (numBytes > 0)
             {
                 var bytes = server.IncomingDataBuffer.Take(numBytes).ToArray();
+
+                Debug.Console(2, this, "Bytes: {0}", bytes.ToString());
                 var bytesHandler = BytesReceived;
                 if (bytesHandler != null)
                     bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
+                else
+                    Debug.Console(2, this, "bytesHandler is null");
                 var textHandler = TextReceived;
                 if (textHandler != null)
                 {
                     var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+                    Debug.Console(2, this, "RX: {0}", str);
                     textHandler(this, new GenericCommMethodReceiveTextArgs(str));
                 }
+                else
+                    Debug.Console(2, this, "textHandler is null");
             }
-            server.ReceiveDataAsync(Receive);
+            server.ReceiveDataAsync(Receive);          
         }
 
         /// <summary>
@@ -145,15 +191,18 @@ namespace PepperDash.Core
         {
             var bytes = Encoding.GetEncoding(28591).GetBytes(text);
 
-            if (IsEnabled && Server != null)
+            if (IsConnected && Server != null)
+            {
+                Debug.Console(2, this, "TX: {0}", text);
                 Server.SendData(bytes, bytes.Length);
+            }
         }
 
         public void SendBytes(byte[] bytes)
         {
             //if (Debug.Level == 2)
             //    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
-            if (IsEnabled && Server != null)
+            if (IsConnected && Server != null)
                 Server.SendData(bytes, bytes.Length);
         }
 
