@@ -154,6 +154,8 @@ namespace PepperDash.Core
             BufferSize = bufferSize;
 			AutoReconnectIntervalMs = 5000;
 
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+
             //if (string.IsNullOrEmpty(address))
             //{
             //    Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': No address set", key);
