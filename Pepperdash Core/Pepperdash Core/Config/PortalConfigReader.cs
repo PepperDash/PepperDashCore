@@ -75,23 +75,23 @@ namespace PepperDash.Core.Config
 
 			// Put together top-level objects
 			if (system["info"] != null)
-				merged.Add("info", Merge(template["info"], system["info"]));
+				merged.Add("info", Merge(template["info"], system["info"], "infO"));
 			else
 				merged.Add("info", template["info"]);
 
 			merged.Add("devices", MergeArraysOnTopLevelProperty(template["devices"] as JArray,
-				system["devices"] as JArray, "uid"));
+				system["devices"] as JArray, "uid", "devices"));
 
 			if (system["rooms"] == null)
 				merged.Add("rooms", template["rooms"]);
 			else
 				merged.Add("rooms", MergeArraysOnTopLevelProperty(template["rooms"] as JArray,
-					system["rooms"] as JArray, "key"));
+					system["rooms"] as JArray, "key", "rooms"));
 
 			if (system["sourceLists"] == null)
 				merged.Add("sourceLists", template["sourceLists"]);
 			else
-				merged.Add("sourceLists", Merge(template["sourceLists"], system["sourceLists"]));
+				merged.Add("sourceLists", Merge(template["sourceLists"], system["sourceLists"], "sourceLists"));
 
 			// Template tie lines take precedence.  Config tool doesn't do them at system
 			// level anyway...
@@ -103,7 +103,7 @@ namespace PepperDash.Core.Config
 				merged.Add("tieLines", new JArray());
 
 			if (system["global"] != null)
-				merged.Add("global", Merge(template["global"], system["global"]));
+				merged.Add("global", Merge(template["global"], system["global"], "global"));
 			else
 				merged.Add("global", template["global"]);
 
@@ -116,7 +116,7 @@ namespace PepperDash.Core.Config
 		/// given by propertyName.  Returns a merge of them. Items in the delta array that do not have
 		/// a matched item in base array will not be merged. 
 		/// </summary>
-		static JArray MergeArraysOnTopLevelProperty(JArray a1, JArray a2, string propertyName)
+		static JArray MergeArraysOnTopLevelProperty(JArray a1, JArray a2, string propertyName, string path)
 		{
 			var result = new JArray();
 			if (a2 == null)
@@ -130,7 +130,7 @@ namespace PepperDash.Core.Config
 					var a2Match = a2.FirstOrDefault(t => t[propertyName].Equals(a1Dev[propertyName]));// t.Value<int>("uid") == tmplDev.Value<int>("uid"));
 					if (a2Match != null)
 					{
-						var mergedItem = Merge(a1Dev, a2Match);// Merge(JObject.FromObject(a1Dev), JObject.FromObject(a2Match));
+						var mergedItem = Merge(a1Dev, a2Match, string.Format("{0}[{1}].", path, i));// Merge(JObject.FromObject(a1Dev), JObject.FromObject(a2Match));
 						result.Add(mergedItem);
 					}
 					else
@@ -144,31 +144,88 @@ namespace PepperDash.Core.Config
 		/// <summary>
 		/// Helper for using with JTokens.  Converts to JObject 
 		/// </summary>
-		static JObject Merge(JToken t1, JToken t2)
+		static JObject Merge(JToken t1, JToken t2, string path)
 		{
-			return Merge(JObject.FromObject(t1), JObject.FromObject(t2));
+			return Merge(JObject.FromObject(t1), JObject.FromObject(t2), path);
 		}
 
 		/// <summary>
-		/// Merge b ONTO a
+		/// Merge o2 onto o1
 		/// </summary>
 		/// <param name="a"></param>
 		/// <param name="b"></param>
-		static JObject Merge(JObject o1, JObject o2)
+		static JObject Merge(JObject o1, JObject o2, string path)
 		{
 			foreach (var o2Prop in o2)
 			{
-				var o1Value = o1[o2Prop.Key];
+				var propKey = o2Prop.Key;
+				var o1Value = o1[propKey];
+				var o2Value = o2[propKey];
+
+				// if the property doesn't exist on o1, then add it.
 				if (o1Value == null)
-					o1.Add(o2Prop.Key, o2Prop.Value);
-				else
 				{
-					JToken replacement = null;
-					if (o2Prop.Value.HasValues && o1Value.HasValues) // Drill down
-						replacement = Merge(JObject.FromObject(o1Value), JObject.FromObject(o2Prop.Value));
-					else
-						replacement = o2Prop.Value;
-					o1[o2Prop.Key].Replace(replacement);
+					o1.Add(propKey, o2Value);
+				}
+				// otherwise merge them
+				else
+				{	
+					// Drill down
+					var propPath = String.Format("{0}.{1}", path, propKey);
+					try
+					{
+
+						if (o1Value is JArray)
+						{
+							if (o2Value is JArray)
+							{
+								o1Value.Replace(MergeArraysOnTopLevelProperty(o1Value as JArray, o2Value as JArray, "key", propPath));
+							}
+
+							//var o2Arr = o2Value as JArray;
+							//foreach (var o2Item in o2Arr.Values())
+							//{
+							//    var key = o2Item["key"];
+							//    // Bail out if there is no key property
+							//    if (key == null)
+							//    {
+							//        Debug.Console(1, Debug.ErrorLogLevel.Warning, "Cannot merge array items for an array. 'Key' property is not present.");
+							//        break; // stop looping array and bail
+							//    }
+							//    else
+							//    {
+							//        // find matching key in o1 array
+							//        // merge item if found
+							//        var o1Item = (o1Value as JArray).FirstOrDefault(i => i["key"] == key);
+							//        if(o1Item == null)
+							//        {
+							//            Debug.Console(1, Debug.ErrorLogLevel.Warning, "Cannot merge array item with key '{0}'. Key is not present on template array", key);
+							//            continue;
+							//        }
+							//        else if (o1Item.HasValues)
+							//        {
+							//            o1Item.Replace(Merge(o1Item, o2Item));
+							//        }
+							//        else // primitives
+							//        {
+							//            o1Item.Replace(o2Item);
+							//        }
+							//    }
+							//}
+						}
+						else if (o2Prop.Value.HasValues && o1Value.HasValues)
+						{
+							o1Value.Replace(Merge(JObject.FromObject(o1Value), JObject.FromObject(o2Value), propPath));
+						}
+						else
+						{
+							o1Value.Replace(o2Prop.Value);
+						}
+					}
+					catch (Exception e)
+					{
+						Debug.Console(1, Debug.ErrorLogLevel.Warning, "Cannot merge items at path {0}: \r{1}", propPath, e);
+					}
 				}
 			}
 			return o1;
