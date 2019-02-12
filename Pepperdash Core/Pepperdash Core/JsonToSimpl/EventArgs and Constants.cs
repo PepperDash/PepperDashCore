@@ -57,6 +57,13 @@ namespace PepperDash.Core.JsonToSimpl
 	        State = state;
 	        Type = type;
 	    }
+
+        public BoolChangeEventArgs(bool state, ushort type, ushort index)
+        {
+            State = state;
+            Type = type;
+            Index = index;
+        }
 	}
 
 	//**************************************************************************************************//
@@ -75,6 +82,13 @@ namespace PepperDash.Core.JsonToSimpl
 	        IntValue = intValue;
 	        Type = type;
 	    }
+
+        public UshrtChangeEventArgs(ushort intValue, ushort type, ushort index)
+        {
+            IntValue = intValue;
+            Type = type;
+            Index = index;
+        }
 	}
 
 	//**************************************************************************************************//
@@ -93,5 +107,13 @@ namespace PepperDash.Core.JsonToSimpl
 	        StringValue = stringValue;
 	        Type = type;
 	    }
+
+        public StringChangeEventArgs(string stringValue, ushort type, ushort index)
+        {
+            StringValue = stringValue;
+            Type = type;
+            Index = index;
+        }
+
 	}
 }
