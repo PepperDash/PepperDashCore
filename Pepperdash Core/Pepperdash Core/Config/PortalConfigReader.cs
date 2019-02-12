@@ -181,37 +181,6 @@ namespace PepperDash.Core.Config
 							{
 								o1Value.Replace(MergeArraysOnTopLevelProperty(o1Value as JArray, o2Value as JArray, "key", propPath));
 							}
-
-							//var o2Arr = o2Value as JArray;
-							//foreach (var o2Item in o2Arr.Values())
-							//{
-							//    var key = o2Item["key"];
-							//    // Bail out if there is no key property
-							//    if (key == null)
-							//    {
-							//        Debug.Console(1, Debug.ErrorLogLevel.Warning, "Cannot merge array items for an array. 'Key' property is not present.");
-							//        break; // stop looping array and bail
-							//    }
-							//    else
-							//    {
-							//        // find matching key in o1 array
-							//        // merge item if found
-							//        var o1Item = (o1Value as JArray).FirstOrDefault(i => i["key"] == key);
-							//        if(o1Item == null)
-							//        {
-							//            Debug.Console(1, Debug.ErrorLogLevel.Warning, "Cannot merge array item with key '{0}'. Key is not present on template array", key);
-							//            continue;
-							//        }
-							//        else if (o1Item.HasValues)
-							//        {
-							//            o1Item.Replace(Merge(o1Item, o2Item));
-							//        }
-							//        else // primitives
-							//        {
-							//            o1Item.Replace(o2Item);
-							//        }
-							//    }
-							//}
 						}
 						else if (o2Prop.Value.HasValues && o1Value.HasValues)
 						{
