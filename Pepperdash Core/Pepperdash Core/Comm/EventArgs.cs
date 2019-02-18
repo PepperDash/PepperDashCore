@@ -18,9 +18,7 @@ using Crestron.SimplSharp.CrestronSockets;
 
 namespace PepperDash.Core
 {
-    #region GenericSocketStatusChangeEventArgs
     public delegate void GenericSocketStatusChangeEventDelegate(ISocketStatus client);
-
 	public class GenericSocketStatusChageEventArgs : EventArgs
 	{
 		public ISocketStatus Client { get; private set; }
@@ -32,44 +30,68 @@ namespace PepperDash.Core
 			Client = client;
 		}
     }
-    #endregion
 
-    #region DynamicTCPServerStateChangedEventArgs
-    public delegate void DynamicTCPServerStateChangedEventDelegate(object server);
-
-    public class DynamicTCPServerStateChangedEventArgs : EventArgs
+    public delegate void GenericTcpServerStateChangedEventDelegate(ServerState state);
+    public class GenericTcpServerStateChangedEventArgs : EventArgs
     {
-        public bool Secure { get; private set; }
-        public object Server { get; private set; }
+        public ServerState State { get; private set; }
 
-        public DynamicTCPServerStateChangedEventArgs() { }
+        public GenericTcpServerStateChangedEventArgs() { }
 
-        public DynamicTCPServerStateChangedEventArgs(object server, bool secure)
+        public GenericTcpServerStateChangedEventArgs(ServerState state)
         {
-            Secure = secure;
-            Server = server;
+            State = state;
         }
     }
-    #endregion
 
-    #region DynamicTCPSocketStatusChangeEventDelegate
-    public delegate void DynamicTCPSocketStatusChangeEventDelegate(object server);
-
-    public class DynamicTCPSocketStatusChangeEventArgs : EventArgs
+    public delegate void GenericTcpServerSocketStatusChangeEventDelegate(object socket, uint clientIndex, SocketStatus clientStatus);
+    public class GenericTcpServerSocketStatusChangeEventArgs : EventArgs
     {
-        public bool Secure { get; private set; }
-        public object Server { get; private set; }
+        public object Socket { get; private set; }
+        public uint ReceivedFromClientIndex { get; private set; }
+        public SocketStatus ClientStatus { get; set; }
+		
+        public GenericTcpServerSocketStatusChangeEventArgs() { }
 
-        public DynamicTCPSocketStatusChangeEventArgs() { }
-
-        public DynamicTCPSocketStatusChangeEventArgs(object server, bool secure)
+        public GenericTcpServerSocketStatusChangeEventArgs(object socket, SocketStatus clientStatus)
         {
-            Secure = secure;
-            Server = server;
+            Socket = socket;
+            ClientStatus = clientStatus;
+        }
+
+        public GenericTcpServerSocketStatusChangeEventArgs(object socket, uint clientIndex, SocketStatus clientStatus)
+        {
+            Socket = socket;
+            ReceivedFromClientIndex = clientIndex;
+            ClientStatus = clientStatus;
         }
     }
-    #endregion
 
+    public class GenericTcpServerCommMethodReceiveTextArgs : EventArgs
+    {
+        public uint ReceivedFromClientIndex { get; private set; }
+        public string Text { get; private set; }
+
+        public GenericTcpServerCommMethodReceiveTextArgs(string text)
+        {
+            Text = text;
+        }
+
+        public GenericTcpServerCommMethodReceiveTextArgs(string text, uint clientIndex)
+        {
+            Text = text;
+            ReceivedFromClientIndex = clientIndex;
+        }
+    }
+
+    public class GenericTcpServerClientReadyForcommunicationsEventArgs : EventArgs
+    {
+        public bool IsReady;
+        public GenericTcpServerClientReadyForcommunicationsEventArgs(bool isReady)
+        {
+            IsReady = isReady;
+        }
+    }
 
    
 

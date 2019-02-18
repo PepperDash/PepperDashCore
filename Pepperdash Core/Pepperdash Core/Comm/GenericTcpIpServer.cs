@@ -15,6 +15,8 @@ using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
@@ -24,20 +26,61 @@ namespace PepperDash.Core
         /// <summary>
         /// Event for Receiving text
         /// </summary>
-        public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
+        public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceived;
 
         /// <summary>
         /// Event for client connection socket status change
         /// </summary>
-        public event EventHandler<DynamicTCPSocketStatusChangeEventArgs> ClientConnectionChange;
+        public event EventHandler<GenericTcpServerSocketStatusChangeEventArgs> ClientConnectionChange;
 
         /// <summary>
         /// Event for Server State Change
         /// </summary>
-        public event EventHandler<DynamicTCPServerStateChangedEventArgs> ServerStateChange;
+        public event EventHandler<GenericTcpServerStateChangedEventArgs> ServerStateChange;
+
+        /// <summary>
+        /// For a server with a pre shared key, this will fire after the communication is established and the key exchange is complete. If no shared key, this will fire
+        /// after connection is successful. Use this event to know when the client is ready for communication to avoid stepping on shared key. 
+        /// </summary>
+        public event EventHandler<GenericTcpServerSocketStatusChangeEventArgs> ServerClientReadyForCommunications;
+
+        /// <summary>
+        /// A band aid event to notify user that the server has choked.
+        /// </summary>
+        public ServerHasChokedCallbackDelegate ServerHasChoked { get; set; }
+
+        public delegate void ServerHasChokedCallbackDelegate();
+
         #endregion
 
         #region Properties/Variables
+
+        /// <summary>
+        /// 
+        /// </summary>
+        CCriticalSection ServerCCSection = new CCriticalSection();
+
+
+        /// <summary>
+        /// A bandaid client that monitors whether the server is reachable
+        /// </summary>
+        GenericTcpIpClient_ForServer MonitorClient;
+
+        /// <summary>
+        /// Timer to operate the bandaid monitor client in a loop.
+        /// </summary>
+        CTimer MonitorClientTimer;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        int MonitorClientFailureCount;
+
+        /// <summary>
+        /// 3 by default
+        /// </summary>
+        public int MonitorClientMaxFailureCount { get; set; }
+
         /// <summary>
         /// Text representation of the Socket Status enum values for the server
         /// </summary>
@@ -45,10 +88,10 @@ namespace PepperDash.Core
         {
             get
             {
-                if (Server != null)
-                    return Server.State.ToString();
-                else
-                    return ServerState.SERVER_NOT_LISTENING.ToString();
+                if (SecureServer != null)
+                    return SecureServer.State.ToString();
+                return ServerState.SERVER_NOT_LISTENING.ToString();
+
             }
 
         }
@@ -58,7 +101,16 @@ namespace PepperDash.Core
         /// </summary>
         public bool IsConnected
         {
-            get { return (Server != null) && (Server.State == ServerState.SERVER_CONNECTED); }
+            get
+            {
+                if (SecureServer != null)
+                    return (SecureServer.State & ServerState.SERVER_CONNECTED) == ServerState.SERVER_CONNECTED;
+                return false;
+
+                //return (Secure ? SecureServer != null : UnsecureServer != null) && 
+                //(Secure ? (SecureServer.State & ServerState.SERVER_CONNECTED) == ServerState.SERVER_CONNECTED :
+                //          (UnsecureServer.State & ServerState.SERVER_CONNECTED) == ServerState.SERVER_CONNECTED); 
+            }
         }
 
         /// <summary>
@@ -74,7 +126,16 @@ namespace PepperDash.Core
         /// </summary>
         public bool IsListening
         {
-            get { return (Server != null) && (Server.State == ServerState.SERVER_LISTENING); }
+            get
+            {
+                if (SecureServer != null)
+                    return (SecureServer.State & ServerState.SERVER_LISTENING) == ServerState.SERVER_LISTENING;
+                else
+                    return false;
+                //return (Secure ? SecureServer != null : UnsecureServer != null) &&
+                //(Secure ? (SecureServer.State & ServerState.SERVER_LISTENING) == ServerState.SERVER_LISTENING :
+                //          (UnsecureServer.State & ServerState.SERVER_LISTENING) == ServerState.SERVER_LISTENING);
+            }
         }
 
         /// <summary>
@@ -93,8 +154,8 @@ namespace PepperDash.Core
         {
             get
             {
-                if (Server != null)
-                    return (ushort)Server.NumberOfClientsConnected;
+                if (SecureServer != null)
+                    return (ushort)SecureServer.NumberOfClientsConnected;
                 return 0;
             }
         }
@@ -175,11 +236,13 @@ namespace PepperDash.Core
         //private timers for Heartbeats per client
         Dictionary<uint, CTimer> HeartbeatTimerDictionary = new Dictionary<uint, CTimer>();
 
-        //flags to show the server is waiting for client at index to send the shared key
+        //flags to show the secure server is waiting for client at index to send the shared key
         List<uint> WaitingForSharedKey = new List<uint>();
 
+        List<uint> ClientReadyAfterKeyExchange = new List<uint>();
+
         //Store the connected client indexes
-        List<uint> ConnectedClientsIndexes = new List<uint>();
+        public List<uint> ConnectedClientsIndexes = new List<uint>();
 
         /// <summary>
         /// Defaults to 2000
@@ -192,23 +255,72 @@ namespace PepperDash.Core
         private bool ServerStopped { get; set; }
 
         //Servers
-        TCPServer Server;
+        SecureTCPServer SecureServer;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        bool ProgramIsStopping;
 
         #endregion
 
         #region Constructors
         /// <summary>
-        /// constructor
+        /// constructor S+ Does not accept a key. Use initialze with key to set the debug key on this device. If using with + make sure to set all properties manually.
         /// </summary>
         public GenericTcpIpServer()
             : base("Uninitialized Dynamic TCP Server")
         {
+            HeartbeatRequiredIntervalInSeconds = 15;
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
             BufferSize = 2000;
+            MonitorClientMaxFailureCount = 3;
+        }
+
+        /// <summary>
+        /// constructor with debug key set at instantiation. Make sure to set all properties before listening. 
+        /// </summary>
+        /// <param name="key"></param>
+        public GenericTcpIpServer(string key)
+            : base("Uninitialized Dynamic TCP Server")
+        {
+            HeartbeatRequiredIntervalInSeconds = 15;
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            BufferSize = 2000;
+            MonitorClientMaxFailureCount = 3;
+            Key = key;
+        }
+
+        /// <summary>
+        /// Contstructor that sets all properties by calling the initialize method with a config object.
+        /// </summary>
+        /// <param name="serverConfigObject"></param>
+        public GenericTcpIpServer(TcpServerConfigObject serverConfigObject)
+            : base("Uninitialized Dynamic TCP Server")
+        {
+            HeartbeatRequiredIntervalInSeconds = 15;
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            BufferSize = 2000;
+            MonitorClientMaxFailureCount = 3;
+            Initialize(serverConfigObject);
         }
         #endregion
 
         #region Methods - Server Actions
+        /// <summary>
+        /// Disconnects all clients and stops the server
+        /// </summary>
+        public void KillServer()
+        {
+            ServerStopped = true;
+            if (MonitorClient != null)
+            {
+                MonitorClient.Disconnect();
+            }
+            DisconnectAllClientsForShutdown();
+            StopListening();
+        }
+
         /// <summary>
         /// Initialize Key for device using client name from SIMPL+. Called on Listen from SIMPL+
         /// </summary>
@@ -218,37 +330,83 @@ namespace PepperDash.Core
             Key = key;
         }
 
+        public void Initialize(TcpServerConfigObject serverConfigObject)
+        {
+            try
+            {
+                if (serverConfigObject != null || string.IsNullOrEmpty(serverConfigObject.Key))
+                {
+                    Key = serverConfigObject.Key;
+                    MaxClients = serverConfigObject.MaxClients;
+                    Port = serverConfigObject.Port;
+                    SharedKeyRequired = serverConfigObject.SharedKeyRequired;
+                    SharedKey = serverConfigObject.SharedKey;
+                    HeartbeatRequired = serverConfigObject.HeartbeatRequired;
+                    HeartbeatRequiredIntervalInSeconds = serverConfigObject.HeartbeatRequiredIntervalInSeconds;
+                    HeartbeatStringToMatch = serverConfigObject.HeartbeatStringToMatch;
+                    BufferSize = serverConfigObject.BufferSize;
+
+                }
+                else
+                {
+                    ErrorLog.Error("Could not initialize server with key: {0}", serverConfigObject.Key);
+                }
+            }
+            catch
+            {
+                ErrorLog.Error("Could not initialize server with key: {0}", serverConfigObject.Key);
+            }
+        }
+
         /// <summary>
         /// Start listening on the specified port
         /// </summary>
         public void Listen()
         {
+            ServerCCSection.Enter();
             try
             {
                 if (Port < 1 || Port > 65535)
                 {
-                    Debug.Console(1, Debug.ErrorLogLevel.Warning, "Server '{0}': Invalid port", Key);
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Server '{0}': Invalid port", Key);
                     ErrorLog.Warn(string.Format("Server '{0}': Invalid port", Key));
                     return;
                 }
                 if (string.IsNullOrEmpty(SharedKey) && SharedKeyRequired)
                 {
-                    Debug.Console(1, Debug.ErrorLogLevel.Warning, "Server '{0}': No Shared Key set", Key);
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Server '{0}': No Shared Key set", Key);
                     ErrorLog.Warn(string.Format("Server '{0}': No Shared Key set", Key));
                     return;
                 }
                 if (IsListening)
                     return;
-                Server = new TCPServer(Port, MaxClients);
-                Server.SocketStatusChange += new TCPServerSocketStatusChangeEventHandler(SocketStatusChange);
+
+                if (SecureServer == null)
+                {
+                    SecureServer = new SecureTCPServer(Port, MaxClients);
+                    SecureServer.SocketSendOrReceiveTimeOutInMs = (this.HeartbeatRequiredIntervalMs * 5);
+                    SecureServer.HandshakeTimeout = 30;
+                    SecureServer.SocketStatusChange += new SecureTCPServerSocketStatusChangeEventHandler(SecureServer_SocketStatusChange);
+                }
+                else
+                {
+                    KillServer();
+                    SecureServer.PortNumber = Port;
+                }
                 ServerStopped = false;
-                Server.WaitForConnectionAsync(IPAddress.Any, ConnectCallback);
-                onServerStateChange();
-                Debug.Console(2, "Server Status: {0}, Socket Status: {1}\r\n", Server.State.ToString(), Server.ServerSocketStatus);
+                SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+                OnServerStateChange(SecureServer.State);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Secure Server Status: {0}, Socket Status: {1}", SecureServer.State, SecureServer.ServerSocketStatus);
+
+                // StartMonitorClient();
+
+
+                ServerCCSection.Leave();
             }
             catch (Exception ex)
             {
-                ErrorLog.Error("Error with Dynamic Server: {0}", ex.ToString());
+                ServerCCSection.Leave();
+                ErrorLog.Error("{1} Error with Dynamic Server: {0}", ex.ToString(), Key);
             }
         }
 
@@ -257,23 +415,80 @@ namespace PepperDash.Core
         /// </summary>
         public void StopListening()
         {
-            Debug.Console(2, "Stopping Listener");
-            if (Server != null)
-                Server.Stop();
-            ServerStopped = true;
-            onServerStateChange();
+            try
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Stopping Listener");
+                if (SecureServer != null)
+                {
+                    SecureServer.Stop();
+                    Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Server State: {0}", SecureServer.State);
+                    //SecureServer = null;
+                }
+
+                ServerStopped = true;
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Server Stopped");
+
+                OnServerStateChange(SecureServer.State);
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error stopping server. Error: {0}", ex);
+            }
         }
 
         /// <summary>
+        /// Disconnects Client
+        /// </summary>
+        /// <param name="client"></param>
+        public void DisconnectClient(uint client)
+        {
+            try
+            {
+                SecureServer.Disconnect(client);
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Disconnected client index: {0}", client);
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error Disconnecting client index: {0}. Error: {1}", client, ex);
+            }
+        }
+        /// <summary>
         /// Disconnect All Clients
         /// </summary>
-        public void DisconnectAllClients()
+        public void DisconnectAllClientsForShutdown()
         {
-            Debug.Console(2, "Disconnecting All Clients");
-            if (Server != null)
-                Server.DisconnectAll();
-            onConnectionChange();
-            onServerStateChange(); //State shows both listening and connected
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Disconnecting All Clients");
+            if (SecureServer != null)
+            {
+                SecureServer.SocketStatusChange -= SecureServer_SocketStatusChange;
+                foreach (var index in ConnectedClientsIndexes.ToList()) // copy it here so that it iterates properly
+                {
+                    var i = index;
+                    if (!SecureServer.ClientConnected(index))
+                        continue;
+                    try
+                    {
+                        SecureServer.Disconnect(i);
+                        Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Disconnected client index: {0}", i);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error Disconnecting client index: {0}. Error: {1}", i, ex);
+                    }
+                }
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Server Status: {0}", SecureServer.ServerSocketStatus);
+            }
+
+            Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Disconnected All Clients");
+            ConnectedClientsIndexes.Clear();
+
+            if (!ProgramIsStopping)
+            {
+                OnConnectionChange();
+                OnServerStateChange(SecureServer.State); //State shows both listening and connected
+            }
+
+            // var o = new { };
         }
 
         /// <summary>
@@ -282,11 +497,29 @@ namespace PepperDash.Core
         /// <param name="text"></param>
         public void BroadcastText(string text)
         {
-            if (ConnectedClientsIndexes.Count > 0)
+            CCriticalSection CCBroadcast = new CCriticalSection();
+            CCBroadcast.Enter();
+            try
             {
-                byte[] b = Encoding.GetEncoding(28591).GetBytes(text);
-                foreach (uint i in ConnectedClientsIndexes)
-                    Server.SendDataAsync(i, b, b.Length, SendDataAsyncCallback);
+                if (ConnectedClientsIndexes.Count > 0)
+                {
+                    byte[] b = Encoding.GetEncoding(28591).GetBytes(text);
+                    foreach (uint i in ConnectedClientsIndexes)
+                    {
+                        if (!SharedKeyRequired || (SharedKeyRequired && ClientReadyAfterKeyExchange.Contains(i)))
+                        {
+                            SocketErrorCodes error = SecureServer.SendDataAsync(i, b, b.Length, (x, y, z) => { });
+                            if (error != SocketErrorCodes.SOCKET_OK && error != SocketErrorCodes.SOCKET_OPERATION_PENDING)
+                                Debug.Console(0, error.ToString());
+                        }
+                    }
+                }
+                CCBroadcast.Leave();
+            }
+            catch (Exception ex)
+            {
+                CCBroadcast.Leave();
+                Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error Broadcasting messages from server. Error: {0}", ex.Message);
             }
         }
 
@@ -297,18 +530,48 @@ namespace PepperDash.Core
         /// <param name="clientIndex"></param>
         public void SendTextToClient(string text, uint clientIndex)
         {
-            byte[] b = Encoding.GetEncoding(28591).GetBytes(text);
-            Server.SendDataAsync(clientIndex, b, b.Length, SendDataAsyncCallback);
+            try
+            {
+                byte[] b = Encoding.GetEncoding(28591).GetBytes(text);
+                if (SecureServer != null && SecureServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
+                {
+                    if (!SharedKeyRequired || (SharedKeyRequired && ClientReadyAfterKeyExchange.Contains(clientIndex)))
+                        SecureServer.SendDataAsync(clientIndex, b, b.Length, (x, y, z) => { });
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, "Error sending text to client. Text: {1}. Error: {0}", ex.Message, text);
+            }
         }
 
         //private method to check heartbeat requirements and start or reset timer
-        void checkHeartbeat(uint clientIndex, string received)
+        string checkHeartbeat(uint clientIndex, string received)
         {
-            if (HeartbeatRequired)
+            try
             {
-                if (!string.IsNullOrEmpty(HeartbeatStringToMatch))
+                if (HeartbeatRequired)
                 {
-                    if (received == HeartbeatStringToMatch)
+                    if (!string.IsNullOrEmpty(HeartbeatStringToMatch))
+                    {
+                        var remainingText = received.Replace(HeartbeatStringToMatch, "");
+                        var noDelimiter = received.Trim(new char[] { '\r', '\n' });
+                        if (noDelimiter.Contains(HeartbeatStringToMatch))
+                        {
+                            if (HeartbeatTimerDictionary.ContainsKey(clientIndex))
+                                HeartbeatTimerDictionary[clientIndex].Reset(HeartbeatRequiredIntervalMs);
+                            else
+                            {
+                                CTimer HeartbeatTimer = new CTimer(HeartbeatTimer_CallbackFunction, clientIndex, HeartbeatRequiredIntervalMs);
+                                HeartbeatTimerDictionary.Add(clientIndex, HeartbeatTimer);
+                            }
+                            Debug.Console(1, this, "Heartbeat Received: {0}, from client index: {1}", HeartbeatStringToMatch, clientIndex);
+                            // Return Heartbeat
+                            SendTextToClient(HeartbeatStringToMatch, clientIndex);
+                            return remainingText;
+                        }
+                    }
+                    else
                     {
                         if (HeartbeatTimerDictionary.ContainsKey(clientIndex))
                             HeartbeatTimerDictionary[clientIndex].Reset(HeartbeatRequiredIntervalMs);
@@ -317,187 +580,405 @@ namespace PepperDash.Core
                             CTimer HeartbeatTimer = new CTimer(HeartbeatTimer_CallbackFunction, clientIndex, HeartbeatRequiredIntervalMs);
                             HeartbeatTimerDictionary.Add(clientIndex, HeartbeatTimer);
                         }
+                        Debug.Console(1, this, "Heartbeat Received: {0}, from client index: {1}", received, clientIndex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(1, this, "Error checking heartbeat: {0}", ex.Message);
+            }
+            return received;
+        }
+
+        public string GetClientIPAddress(uint clientIndex)
+        {
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "GetClientIPAddress Index: {0}", clientIndex);
+            if (!SharedKeyRequired || (SharedKeyRequired && ClientReadyAfterKeyExchange.Contains(clientIndex)))
+            {
+                var ipa = this.SecureServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "GetClientIPAddress IPAddreess: {0}", ipa);
+                return ipa;
+
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        #endregion
+
+        #region Methods - HeartbeatTimer Callback
+
+        void HeartbeatTimer_CallbackFunction(object o)
+        {
+            uint clientIndex = 99999;
+            string address = string.Empty;
+            try
+            {
+                clientIndex = (uint)o;
+                address = SecureServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex);
+
+                Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Heartbeat not received for Client index {2} IP: {0}, DISCONNECTING BECAUSE HEARTBEAT REQUIRED IS TRUE {1}",
+                    address, string.IsNullOrEmpty(HeartbeatStringToMatch) ? "" : ("HeartbeatStringToMatch: " + HeartbeatStringToMatch), clientIndex);
+
+                if (SecureServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
+                    SendTextToClient("Heartbeat not received by server, closing connection", clientIndex);
+
+                var discoResult = SecureServer.Disconnect(clientIndex);
+                //Debug.Console(1, this, "{0}", discoResult);  
+
+                if (HeartbeatTimerDictionary.ContainsKey(clientIndex))
+                {
+                    HeartbeatTimerDictionary[clientIndex].Stop();
+                    HeartbeatTimerDictionary[clientIndex].Dispose();
+                    HeartbeatTimerDictionary.Remove(clientIndex);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorLog.Error("{3}: Heartbeat timeout Error on Client Index: {0}, at address: {1}, error: {2}", clientIndex, address, ex.Message, Key);
+            }
+        }
+
+        #endregion
+
+        #region Methods - Socket Status Changed Callbacks
+        /// <summary>
+        /// Secure Server Socket Status Changed Callback
+        /// </summary>
+        /// <param name="mySecureTCPServer"></param>
+        /// <param name="clientIndex"></param>
+        /// <param name="serverSocketStatus"></param>
+        void SecureServer_SocketStatusChange(SecureTCPServer server, uint clientIndex, SocketStatus serverSocketStatus)
+        {
+            try
+            {
+
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "SecureServerSocketStatusChange Index:{0} status:{1} Port:{2} IP:{3}", clientIndex, serverSocketStatus, this.SecureServer.GetPortNumberServerAcceptedConnectionFromForSpecificClient(clientIndex), this.SecureServer.GetLocalAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
+                if (serverSocketStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
+                {
+                    if (ConnectedClientsIndexes.Contains(clientIndex))
+                        ConnectedClientsIndexes.Remove(clientIndex);
+                    if (HeartbeatRequired && HeartbeatTimerDictionary.ContainsKey(clientIndex))
+                    {
+                        HeartbeatTimerDictionary[clientIndex].Stop();
+                        HeartbeatTimerDictionary[clientIndex].Dispose();
+                        HeartbeatTimerDictionary.Remove(clientIndex);
+                    }
+                    if (ClientReadyAfterKeyExchange.Contains(clientIndex))
+                        ClientReadyAfterKeyExchange.Remove(clientIndex);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Change Callback. Error: {0}", ex);
+            }
+            onConnectionChange(clientIndex, server.GetServerSocketStatusForSpecificClient(clientIndex));
+        }
+
+        #endregion
+
+        #region Methods Connected Callbacks
+        /// <summary>
+        /// Secure TCP Client Connected to Secure Server Callback
+        /// </summary>
+        /// <param name="mySecureTCPServer"></param>
+        /// <param name="clientIndex"></param>
+        void SecureConnectCallback(SecureTCPServer server, uint clientIndex)
+        {
+            try
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "ConnectCallback: IPAddress: {0}. Index: {1}. Status: {2}",
+                    server.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex),
+                    clientIndex, server.GetServerSocketStatusForSpecificClient(clientIndex));
+                if (clientIndex != 0)
+                {
+                    if (server.ClientConnected(clientIndex))
+                    {
+
+                        if (!ConnectedClientsIndexes.Contains(clientIndex))
+                        {
+                            ConnectedClientsIndexes.Add(clientIndex);
+                        }
+                        if (SharedKeyRequired)
+                        {
+                            if (!WaitingForSharedKey.Contains(clientIndex))
+                            {
+                                WaitingForSharedKey.Add(clientIndex);
+                            }
+                            byte[] b = Encoding.GetEncoding(28591).GetBytes("SharedKey:");
+                            server.SendDataAsync(clientIndex, b, b.Length, (x, y, z) => { });
+                            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Sent Shared Key Request to client at {0}", server.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
+                        }
+                        else
+                        {
+                            OnServerClientReadyForCommunications(clientIndex);
+                        }
+                        if (HeartbeatRequired)
+                        {
+                            if (!HeartbeatTimerDictionary.ContainsKey(clientIndex))
+                            {
+                                HeartbeatTimerDictionary.Add(clientIndex, new CTimer(HeartbeatTimer_CallbackFunction, clientIndex, HeartbeatRequiredIntervalMs));
+                            }
+                        }
+
+                        server.ReceiveDataAsync(clientIndex, SecureReceivedDataAsyncCallback);
                     }
                 }
                 else
                 {
-                    if (HeartbeatTimerDictionary.ContainsKey(clientIndex))
-                        HeartbeatTimerDictionary[clientIndex].Reset(HeartbeatRequiredIntervalMs);
-                    else
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Client attempt faulty.");
+                    if (!ServerStopped)
                     {
-                        CTimer HeartbeatTimer = new CTimer(HeartbeatTimer_CallbackFunction, clientIndex, HeartbeatRequiredIntervalMs);
-                        HeartbeatTimerDictionary.Add(clientIndex, HeartbeatTimer);
+                        server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+                        return;
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Connect Callback. Error: {0}", ex);
+            }
+            //Debug.Console(1, this, Debug.ErrorLogLevel, "((((((Server State bitfield={0}; maxclient={1}; ServerStopped={2}))))))",
+            //    server.State, 
+            //    MaxClients,
+            //    ServerStopped);
+            if ((server.State & ServerState.SERVER_LISTENING) != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Waiting for next connection");
+                server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+
+            }
         }
+
         #endregion
 
-        #region Methods - Callbacks
+        #region Methods - Send/Receive Callbacks
         /// <summary>
-        /// Callback to disconnect if heartbeat timer finishes without being reset
+        /// Secure Received Data Async Callback
         /// </summary>
-        /// <param name="o"></param>
-        void HeartbeatTimer_CallbackFunction(object o)
-        {
-            uint clientIndex = (uint)o;
-
-            string address = Server.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex);
-
-            ErrorLog.Error("Heartbeat not received for Client at IP: {0}, DISCONNECTING BECAUSE HEARTBEAT REQUIRED IS TRUE", address);
-            Debug.Console(2, "Heartbeat not received for Client at IP: {0}, DISCONNECTING BECAUSE HEARTBEAT REQUIRED IS TRUE", address);
-
-            SendTextToClient("Heartbeat not received by server, closing connection", clientIndex);
-            Server.Disconnect(clientIndex);
-            HeartbeatTimerDictionary.Remove(clientIndex);
-        }
-
-        /// <summary>
-        /// TCP Server Socket Status Change Callback
-        /// </summary>
-        /// <param name="server"></param>
-        /// <param name="clientIndex"></param>
-        /// <param name="serverSocketStatus"></param>
-        void SocketStatusChange(TCPServer server, uint clientIndex, SocketStatus serverSocketStatus)
-        {
-            Debug.Console(2, "Client at {0} ServerSocketStatus {1}",
-                server.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex), serverSocketStatus.ToString());
-            if (server.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
-            {
-                if (SharedKeyRequired && !WaitingForSharedKey.Contains(clientIndex))
-                    WaitingForSharedKey.Add(clientIndex);
-                if (!ConnectedClientsIndexes.Contains(clientIndex))
-                    ConnectedClientsIndexes.Add(clientIndex);
-            }
-            else
-            {
-                if (ConnectedClientsIndexes.Contains(clientIndex))
-                    ConnectedClientsIndexes.Remove(clientIndex);
-                if (HeartbeatRequired && HeartbeatTimerDictionary.ContainsKey(clientIndex))
-                    HeartbeatTimerDictionary.Remove(clientIndex);
-            }
-            if (Server.ServerSocketStatus.ToString() != Status)
-                onConnectionChange();
-        }
-
-        /// <summary>
-        /// TCP Client Connected to Server Callback
-        /// </summary>
-        /// <param name="myTCPServer"></param>
-        /// <param name="clientIndex"></param>
-        void ConnectCallback(TCPServer myTCPServer, uint clientIndex)
-        {
-            if (myTCPServer.ClientConnected(clientIndex))
-            {
-                if (SharedKeyRequired)
-                {
-                    byte[] b = Encoding.GetEncoding(28591).GetBytes(SharedKey + "\n");
-                    myTCPServer.SendDataAsync(clientIndex, b, b.Length, SendDataAsyncCallback);
-                    Debug.Console(2, "Sent Shared Key to client at {0}", myTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
-                }
-                if (HeartbeatRequired)
-                {
-                    CTimer HeartbeatTimer = new CTimer(HeartbeatTimer_CallbackFunction, clientIndex, HeartbeatRequiredIntervalMs);
-                    HeartbeatTimerDictionary.Add(clientIndex, HeartbeatTimer);
-                }
-                myTCPServer.ReceiveDataAsync(clientIndex, ReceivedDataAsyncCallback);
-                if (myTCPServer.State != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
-                    myTCPServer.WaitForConnectionAsync(IPAddress.Any, ConnectCallback);
-            }
-            if (myTCPServer.State != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
-                myTCPServer.WaitForConnectionAsync(IPAddress.Any, ConnectCallback);
-        }
-
-        /// <summary>
-        /// Send Data Asyc Callback
-        /// </summary>
-        /// <param name="myTCPServer"></param>
-        /// <param name="clientIndex"></param>
-        /// <param name="numberOfBytesSent"></param>
-        void SendDataAsyncCallback(TCPServer myTCPServer, uint clientIndex, int numberOfBytesSent)
-        {
-            //Seems there is nothing to do here
-        }
-
-        /// <summary>
-        /// Received Data Async Callback
-        /// </summary>
-        /// <param name="myTCPServer"></param>
+        /// <param name="mySecureTCPServer"></param>
         /// <param name="clientIndex"></param>
         /// <param name="numberOfBytesReceived"></param>
-        void ReceivedDataAsyncCallback(TCPServer myTCPServer, uint clientIndex, int numberOfBytesReceived)
+        void SecureReceivedDataAsyncCallback(SecureTCPServer mySecureTCPServer, uint clientIndex, int numberOfBytesReceived)
         {
             if (numberOfBytesReceived > 0)
             {
                 string received = "Nothing";
-                byte[] bytes = myTCPServer.GetIncomingDataBufferForSpecificClient(clientIndex);
-                received = System.Text.Encoding.GetEncoding(28591).GetString(bytes, 0, numberOfBytesReceived);
-                if (WaitingForSharedKey.Contains(clientIndex))
+                try
                 {
-                    received = received.Replace("\r", "");
-                    received = received.Replace("\n", "");
-                    if (received != SharedKey)
+                    byte[] bytes = mySecureTCPServer.GetIncomingDataBufferForSpecificClient(clientIndex);
+                    received = System.Text.Encoding.GetEncoding(28591).GetString(bytes, 0, numberOfBytesReceived);
+                    if (WaitingForSharedKey.Contains(clientIndex))
                     {
-                        byte[] b = Encoding.GetEncoding(28591).GetBytes("Shared key did not match server. Disconnecting");
-                        Debug.Console(2, "Client at index {0} Shared key did not match the server, disconnecting client", clientIndex);
-                        ErrorLog.Error("Client at index {0} Shared key did not match the server, disconnecting client", clientIndex);
-                        myTCPServer.SendDataAsync(clientIndex, b, b.Length, null);
-                        myTCPServer.Disconnect(clientIndex);
+                        received = received.Replace("\r", "");
+                        received = received.Replace("\n", "");
+                        if (received != SharedKey)
+                        {
+                            byte[] b = Encoding.GetEncoding(28591).GetBytes("Shared key did not match server. Disconnecting");
+                            Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Client at index {0} Shared key did not match the server, disconnecting client. Key: {1}", clientIndex, received);
+                            mySecureTCPServer.SendData(clientIndex, b, b.Length);
+                            mySecureTCPServer.Disconnect(clientIndex);
+                            WaitingForSharedKey.Remove(clientIndex);
+                            return;
+                        }
+                        if (mySecureTCPServer.NumberOfClientsConnected > 0)
+                            mySecureTCPServer.ReceiveDataAsync(clientIndex, SecureReceivedDataAsyncCallback);
+                        WaitingForSharedKey.Remove(clientIndex);
+                        byte[] success = Encoding.GetEncoding(28591).GetBytes("Shared Key Match");
+                        mySecureTCPServer.SendDataAsync(clientIndex, success, success.Length, null);
+                        OnServerClientReadyForCommunications(clientIndex);
+                        Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Client with index {0} provided the shared key and successfully connected to the server", clientIndex);
+                        return;
                     }
-                    if (myTCPServer.NumberOfClientsConnected > 0)
-                        myTCPServer.ReceiveDataAsync(ReceivedDataAsyncCallback);
-                    WaitingForSharedKey.Remove(clientIndex);
-                    byte[] skResponse = Encoding.GetEncoding(28591).GetBytes("Shared Key Match, Connected and ready for communication");
-                    myTCPServer.SendDataAsync(clientIndex, skResponse, skResponse.Length, null);
-                    myTCPServer.ReceiveDataAsync(ReceivedDataAsyncCallback);
+                    //var address = mySecureTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex);
+                    //Debug.Console(1, this, "Secure Server Listening on Port: {0}, client IP: {1}, Client Index: {4}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
+                    //       mySecureTCPServer.PortNumber.ToString(), address , numberOfBytesReceived.ToString(), received, clientIndex.ToString());
+                    if (!string.IsNullOrEmpty(checkHeartbeat(clientIndex, received)))
+                        onTextReceived(received, clientIndex);
                 }
-                else
+                catch (Exception ex)
                 {
-                    myTCPServer.ReceiveDataAsync(ReceivedDataAsyncCallback);
-                    Debug.Console(2, "Server Listening on Port: {0}, client IP: {1}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
-                        myTCPServer.PortNumber, myTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex), numberOfBytesReceived, received);
-                    onTextReceived(received);
+                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error Receiving data: {0}. Error: {1}", received, ex);
                 }
-                checkHeartbeat(clientIndex, received);
             }
-            if (myTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
-                myTCPServer.ReceiveDataAsync(clientIndex, ReceivedDataAsyncCallback);
+            if (mySecureTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
+                mySecureTCPServer.ReceiveDataAsync(clientIndex, SecureReceivedDataAsyncCallback);
         }
+
         #endregion
 
         #region Methods - EventHelpers/Callbacks
+
         //Private Helper method to call the Connection Change Event
-        void onConnectionChange()
+        void onConnectionChange(uint clientIndex, SocketStatus clientStatus)
         {
+            if (clientIndex != 0) //0 is error not valid client change
+            {
+                var handler = ClientConnectionChange;
+                if (handler != null)
+                {
+                    handler(this, new GenericTcpServerSocketStatusChangeEventArgs(SecureServer, clientIndex, clientStatus));
+                }
+            }
+        }
+
+        //Private Helper method to call the Connection Change Event
+        void OnConnectionChange()
+        {
+            if (ProgramIsStopping)
+            {
+                return;
+            }
             var handler = ClientConnectionChange;
             if (handler != null)
-                handler(this, new DynamicTCPSocketStatusChangeEventArgs(Server, false));
+            {
+                handler(this, new GenericTcpServerSocketStatusChangeEventArgs());
+            }
         }
 
         //Private Helper Method to call the Text Received Event
-        void onTextReceived(string text)
+        void onTextReceived(string text, uint clientIndex)
         {
             var handler = TextReceived;
             if (handler != null)
-                handler(this, new GenericCommMethodReceiveTextArgs(text));
+                handler(this, new GenericTcpServerCommMethodReceiveTextArgs(text, clientIndex));
         }
 
         //Private Helper Method to call the Server State Change Event
-        void onServerStateChange()
+        void OnServerStateChange(ServerState state)
         {
+            if (ProgramIsStopping)
+            {
+                return;
+            }
             var handler = ServerStateChange;
             if (handler != null)
-                handler(this, new DynamicTCPServerStateChangedEventArgs(Server, false));
+            {
+                handler(this, new GenericTcpServerStateChangedEventArgs(state));
+            }
         }
 
-        //Private Event Handler method to handle the closing of connections when the program stops
+        /// <summary>
+        /// Private Event Handler method to handle the closing of connections when the program stops
+        /// </summary>
+        /// <param name="programEventType"></param>
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
             if (programEventType == eProgramStatusEventType.Stopping)
             {
-                Debug.Console(1, this, "Program stopping. Closing server");
-                DisconnectAllClients();
-                StopListening();
+                ProgramIsStopping = true;
+                // kill bandaid things
+                if (MonitorClientTimer != null)
+                    MonitorClientTimer.Stop();
+                if (MonitorClient != null)
+                    MonitorClient.Disconnect();
+
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Program stopping. Closing server");
+                KillServer();
+            }
+        }
+
+        //Private event handler method to raise the event that the server is ready to send data after a successful client shared key negotiation
+        void OnServerClientReadyForCommunications(uint clientIndex)
+        {
+            ClientReadyAfterKeyExchange.Add(clientIndex);
+            var handler = ServerClientReadyForCommunications;
+            if (handler != null)
+                handler(this, new GenericTcpServerSocketStatusChangeEventArgs(
+                    this, clientIndex, SecureServer.GetServerSocketStatusForSpecificClient(clientIndex)));
+        }
+        #endregion
+
+        #region Monitor Client
+        /// <summary>
+        /// Starts the monitor client cycle. Timed wait, then call RunMonitorClient
+        /// </summary>
+        void StartMonitorClient()
+        {
+            if (MonitorClientTimer != null)
+            {
+                return;
+            }
+            MonitorClientTimer = new CTimer(o => RunMonitorClient(), 60000);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        void RunMonitorClient()
+        {
+            MonitorClient = new GenericTcpIpClient_ForServer(Key + "-MONITOR", "127.0.0.1", Port, 2000);
+            MonitorClient.SharedKeyRequired = this.SharedKeyRequired;
+            MonitorClient.SharedKey = this.SharedKey;
+            MonitorClient.ConnectionHasHungCallback = MonitorClientHasHungCallback;
+            //MonitorClient.ConnectionChange += MonitorClient_ConnectionChange;
+            MonitorClient.ClientReadyForCommunications += MonitorClient_IsReadyForComm;
+
+            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Starting monitor check");
+
+            MonitorClient.Connect();
+            // From here MonitorCLient either connects or hangs, MonitorClient will call back 
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        void StopMonitorClient()
+        {
+            if (MonitorClient == null)
+                return;
+
+            MonitorClient.ClientReadyForCommunications -= MonitorClient_IsReadyForComm;
+            MonitorClient.Disconnect();
+            MonitorClient = null;
+        }
+
+        /// <summary>
+        /// On monitor connect, restart the operation
+        /// </summary>
+        void MonitorClient_IsReadyForComm(object sender, GenericTcpServerClientReadyForcommunicationsEventArgs args)
+        {
+            if (args.IsReady)
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Monitor client connection success. Disconnecting in 2s");
+                MonitorClientTimer.Stop();
+                MonitorClientTimer = null;
+                MonitorClientFailureCount = 0;
+                CrestronEnvironment.Sleep(2000);
+                StopMonitorClient();
+                StartMonitorClient();
+            }
+        }
+
+        /// <summary>
+        /// If the client hangs, add to counter and maybe fire the choke event
+        /// </summary>
+        void MonitorClientHasHungCallback()
+        {
+            MonitorClientFailureCount++;
+            MonitorClientTimer.Stop();
+            MonitorClientTimer = null;
+            StopMonitorClient();
+            if (MonitorClientFailureCount < MonitorClientMaxFailureCount)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Monitor client connection has hung {0} time{1}, maximum {2}",
+                    MonitorClientFailureCount, MonitorClientFailureCount > 1 ? "s" : "", MonitorClientMaxFailureCount);
+                StartMonitorClient();
+            }
+            else
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error,
+                    "\r***************************\rMonitor client connection has hung a maximum of {0} times.\r***************************",
+                    MonitorClientMaxFailureCount);
+
+                var handler = ServerHasChoked;
+                if (handler != null)
+                    handler();
+                // Some external thing is in charge here.  Expected reset of program
             }
         }
         #endregion
