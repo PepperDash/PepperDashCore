@@ -64,9 +64,10 @@
   <ItemGroup>
     <Compile Include="CommunicationExtras.cs" />
     <Compile Include="Comm\ControlPropertiesConfig.cs" />
+    <Compile Include="Comm\GenericTcpIpClient_ForServer.cs" />
     <Compile Include="Comm\GenericHttpSseClient.cs" />
     <Compile Include="Comm\GenericSecureTcpIpServer.cs" />
-    <Compile Include="Comm\GenericSecureTcpIpClient.cs">
+    <Compile Include="Comm\GenericSecureTcpIpClient_ForServer.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Comm\eControlMethods.cs" />
@@ -75,6 +76,7 @@
     <Compile Include="Comm\EventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
     <Compile Include="Comm\GenericUdpServer.cs" />
+    <Compile Include="Comm\TcpServerConfigObject.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplPortalFileMaster.cs" />
