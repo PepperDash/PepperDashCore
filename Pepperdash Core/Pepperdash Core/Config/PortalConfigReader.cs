@@ -67,7 +67,7 @@ namespace PepperDash.Core.Config
 		/// </summary>
 		/// <param name="doubleConfig"></param>
 		/// <returns></returns>
-		static JObject MergeConfigs(JObject doubleConfig)
+		public static JObject MergeConfigs(JObject doubleConfig)
 		{
 			var system = JObject.FromObject(doubleConfig["system"]);
 			var template = JObject.FromObject(doubleConfig["template"]);
@@ -114,28 +114,35 @@ namespace PepperDash.Core.Config
 		/// <summary>
 		/// Merges the contents of a base and a delta array, matching the entries on a top-level property
 		/// given by propertyName.  Returns a merge of them. Items in the delta array that do not have
-		/// a matched item in base array will not be merged. 
+		/// a matched item in base array will not be merged. Non keyed system items will replace the template items.
 		/// </summary>
 		static JArray MergeArraysOnTopLevelProperty(JArray a1, JArray a2, string propertyName, string path)
 		{
 			var result = new JArray();
-			if (a2 == null)
-				result = a1;
+			if (a2 == null || a2.Count == 0) // If the system array is null or empty, return the template array
+				return a1;
 			else if (a1 != null)
 			{
-				for (int i = 0; i < a1.Count(); i++)
-				{
-					var a1Dev = a1[i];
-					// Try to get a system device and if found, merge it onto template
-					var a2Match = a2.FirstOrDefault(t => t[propertyName].Equals(a1Dev[propertyName]));// t.Value<int>("uid") == tmplDev.Value<int>("uid"));
-					if (a2Match != null)
-					{
-						var mergedItem = Merge(a1Dev, a2Match, string.Format("{0}[{1}].", path, i));// Merge(JObject.FromObject(a1Dev), JObject.FromObject(a2Match));
-						result.Add(mergedItem);
-					}
-					else
-						result.Add(a1Dev);
-				}
+                if (a2[0]["key"] == null) // If the first item in the system array has no key, overwrite the template array
+                {                                                       // with the system array
+                    return a2;
+                }
+                else    // The arrays are keyed, merge them by key
+                {
+                    for (int i = 0; i < a1.Count(); i++)
+                    {
+                        var a1Dev = a1[i];
+                        // Try to get a system device and if found, merge it onto template
+                        var a2Match = a2.FirstOrDefault(t => t[propertyName].Equals(a1Dev[propertyName]));// t.Value<int>("uid") == tmplDev.Value<int>("uid"));
+                        if (a2Match != null)
+                        {
+                            var mergedItem = Merge(a1Dev, a2Match, string.Format("{0}[{1}].", path, i));// Merge(JObject.FromObject(a1Dev), JObject.FromObject(a2Match));
+                            result.Add(mergedItem);
+                        }
+                        else
+                            result.Add(a1Dev);
+                    }
+                }
 			}
 			return result;
 		}
