@@ -71,17 +71,19 @@ namespace PepperDash.Core
 
             try
             {
-                LoggerModeEnum loggerMode = LoggerModeEnum.DEFAULT;
                 if (InitialParametersClass.NumberOfRemovableDrives > 0)
-                    loggerMode = LoggerModeEnum.RM;
-
-                CrestronLogger.Initialize(2, loggerMode); // Use RM instead of DEFAULT as not to double-up console messages
+                {
+                    CrestronConsole.PrintLine("{0} RM Drive(s) Present.", InitialParametersClass.NumberOfRemovableDrives);
+                    CrestronLogger.Initialize(2, LoggerModeEnum.DEFAULT); // Use RM instead of DEFAULT as not to double-up console messages.
+                }
+                else
+                    CrestronConsole.PrintLine("No RM Drive(s) Present.");
             }
             catch (Exception e)
             {
-                CrestronConsole.Print("Error Initilizing Crestron Logger: {0}", e);
-            }
 
+                CrestronConsole.PrintLine("Initializing of CrestronLogger failed: {0}", e);
+            }
         }
 
         /// <summary>
