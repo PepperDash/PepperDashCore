@@ -69,7 +69,21 @@ namespace PepperDash.Core
             LoadMemory();
             Level = Contexts.GetOrCreateItem("DEFAULT").Level;
 
-            CrestronLogger.Initialize(2, LoggerModeEnum.RM); // Use RM instead of DEFAULT as not to double-up console messages.
+            try
+            {
+                if (InitialParametersClass.NumberOfRemovableDrives > 0)
+                {
+                    CrestronConsole.PrintLine("{0} RM Drive(s) Present.", InitialParametersClass.NumberOfRemovableDrives);
+                    CrestronLogger.Initialize(2, LoggerModeEnum.DEFAULT); // Use RM instead of DEFAULT as not to double-up console messages.
+                }
+                else
+                    CrestronConsole.PrintLine("No RM Drive(s) Present.");
+            }
+            catch (Exception e)
+            {
+
+                CrestronConsole.PrintLine("Initializing of CrestronLogger failed: {0}", e);
+            }
         }
 
         /// <summary>
