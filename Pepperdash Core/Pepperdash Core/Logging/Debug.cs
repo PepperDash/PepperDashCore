@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
+using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.CrestronLogger;
 using Crestron.SimplSharp.CrestronIO;
 using Newtonsoft.Json;
@@ -45,6 +46,17 @@ namespace PepperDash.Core
 
         static Debug()
         {
+            // Get the assembly version and print it to console and the log
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+
+            var versionString = string.Format("{0}.{1}.{2}", version.Major, version.Minor, version.Build);
+
+            var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, versionString);
+
+            CrestronConsole.PrintLine(msg);
+
+            LogError(ErrorLogLevel.Notice, msg);
+
 			IncludedExcludedKeys = new Dictionary<string, object>();
 
             //CrestronDataStoreStatic.InitCrestronDataStore();
