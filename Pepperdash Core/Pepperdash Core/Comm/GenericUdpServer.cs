@@ -44,6 +44,15 @@ namespace PepperDash.Core
         /// </summary>
         public string Hostname { get; set; }
 
+		/// <summary>
+		/// IP Address of the sender of the last recieved message 
+		/// </summary>
+		public string LastMessageReceivedFrom 
+		{
+			get { return Server.IPAddressLastMessageReceivedFrom; }
+
+		}
+
         /// <summary>
         /// Port on server
         /// </summary>
