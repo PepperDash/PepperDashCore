@@ -11,6 +11,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 
+
+
 namespace PepperDash.Core
 {
     public class GenericUdpServer : Device, IBasicCommunication
@@ -24,6 +26,8 @@ namespace PepperDash.Core
         /// 
         /// </summary>
         public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
+		public event EventHandler<GenericUdpReceiveTextExtraArgs> DataRecievedExtra;
+		private CrestronQueue<GenericUdpReceiveTextExtraArgs> MessageQueue;
 
         /// <summary>
         /// 
@@ -39,6 +43,8 @@ namespace PepperDash.Core
             }
         }
 
+
+		CCriticalSection DequeueLock;
         /// <summary>
         /// Address of server
         /// </summary>
@@ -47,11 +53,7 @@ namespace PepperDash.Core
 		/// <summary>
 		/// IP Address of the sender of the last recieved message 
 		/// </summary>
-		public string LastMessageReceivedFrom 
-		{
-			get { return Server.IPAddressLastMessageReceivedFrom; }
 
-		}
 
         /// <summary>
         /// Port on server
@@ -90,6 +92,9 @@ namespace PepperDash.Core
             Hostname = address;
             Port = port;
             BufferSize = buffefSize;
+
+			DequeueLock = new CCriticalSection();
+			MessageQueue = new CrestronQueue<GenericUdpReceiveTextExtraArgs>();
 
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
             CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
@@ -171,9 +176,13 @@ namespace PepperDash.Core
 
             if (numBytes > 0)
             {
+				var sourceIp = Server.IPAddressLastMessageReceivedFrom;
+				var sourcePort = Server.IPPortLastMessageReceivedFrom;
                 var bytes = server.IncomingDataBuffer.Take(numBytes).ToArray();
+				var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+				MessageQueue.TryToEnqueue(new GenericUdpReceiveTextExtraArgs(str, sourceIp, sourcePort, bytes));
 
-                Debug.Console(2, this, "Bytes: {0}", bytes.ToString());
+				Debug.Console(2, this, "Bytes: {0}", bytes.ToString());
                 var bytesHandler = BytesReceived;
                 if (bytesHandler != null)
                     bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
@@ -182,15 +191,46 @@ namespace PepperDash.Core
                 var textHandler = TextReceived;
                 if (textHandler != null)
                 {
-                    var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+                   
                     Debug.Console(2, this, "RX: {0}", str);
                     textHandler(this, new GenericCommMethodReceiveTextArgs(str));
                 }
                 else
                     Debug.Console(2, this, "textHandler is null");
             }
-            server.ReceiveDataAsync(Receive);          
+            server.ReceiveDataAsync(Receive);
+			CrestronInvoke.BeginInvoke(DequeueEvent);
         }
+
+		void DequeueEvent(object notUsed)
+		{
+			try
+			{
+				// Add CCritical Section 
+				DequeueLock.TryEnter();
+				while (!MessageQueue.IsEmpty)
+				{
+					// Pull from Queue and fire an event. 
+					var Message = MessageQueue.TryToDequeue();
+					var dataRecivedExtra = DataRecievedExtra;
+					if (dataRecivedExtra != null)
+					{
+						dataRecivedExtra(this, Message);
+					}
+
+					
+				}
+				
+			}
+			catch (Exception e)
+			{
+				Debug.Console(0, "GenericUdpServer DequeueEvent error: {0}\r", e);
+			}
+			finally
+			{
+				DequeueLock.Leave();
+			}
+		}
 
         /// <summary>
         /// General send method
@@ -218,6 +258,27 @@ namespace PepperDash.Core
 
 
     }
+
+	public class GenericUdpReceiveTextExtraArgs : EventArgs
+	{
+		public string Text { get; private set; }
+		public string IpAddress { get; private set; }
+		public int	Port { get; private set; }
+		public byte[] Bytes { get; private set; }
+
+		public GenericUdpReceiveTextExtraArgs(string text, string ipAddress, int port, byte[] bytes)
+		{
+			Text = text;
+			IpAddress = ipAddress;
+			Port = port;
+			Bytes = bytes;
+		}
+
+		/// <summary>
+		/// Stupid S+ Constructor
+		/// </summary>
+		public GenericUdpReceiveTextExtraArgs() { }
+	}
 
     public class UdpServerPropertiesConfig
     {
