@@ -199,35 +199,38 @@ namespace PepperDash.Core
                     Debug.Console(2, this, "textHandler is null");
             }
             server.ReceiveDataAsync(Receive);
-			CrestronInvoke.BeginInvoke(DequeueEvent);
+
+            var gotLock = DequeueLock.TryEnter();
+            if (gotLock)
+                CrestronInvoke.BeginInvoke((o) => DequeueEvent());
         }
 
-		void DequeueEvent(object notUsed)
+        /// <summary>
+        /// This method gets spooled up in its own thread an protected by a CCriticalSection to prevent multiple threads from running concurrently.
+        /// It will dequeue items as they are enqueued automatically.
+        /// </summary>
+		void DequeueEvent()
 		{
 			try
 			{
-				// Add CCritical Section 
-				DequeueLock.TryEnter();
-				while (!MessageQueue.IsEmpty)
-				{
-					// Pull from Queue and fire an event. 
-					var Message = MessageQueue.TryToDequeue();
-					var dataRecivedExtra = DataRecievedExtra;
-					if (dataRecivedExtra != null)
-					{
-						dataRecivedExtra(this, Message);
-					}
-
-					
-				}
-				
-			}
+                while (true)
+                {
+                    // Pull from Queue and fire an event. Block indefinitely until an item can be removed, similar to a Gather.
+                    var message = MessageQueue.Dequeue();
+                    var dataRecivedExtra = DataRecievedExtra;
+                    if (dataRecivedExtra != null)
+                    {
+                        dataRecivedExtra(this, message);
+                    }
+                }
+            }
 			catch (Exception e)
 			{
 				Debug.Console(0, "GenericUdpServer DequeueEvent error: {0}\r", e);
 			}
 			finally
 			{
+                // Make sure to leave the CCritical section in case an exception above stops this thread, or we won't be able to restart it.
 				DequeueLock.Leave();
 			}
 		}
@@ -254,8 +257,6 @@ namespace PepperDash.Core
             if (IsConnected && Server != null)
                 Server.SendData(bytes, bytes.Length);
         }
-
-
 
     }
 
