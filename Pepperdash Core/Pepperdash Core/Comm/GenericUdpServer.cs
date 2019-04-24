@@ -26,7 +26,15 @@ namespace PepperDash.Core
         /// 
         /// </summary>
         public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
+
+        /// <summary>
+        /// This event will fire when a message is dequeued that includes the source IP and Port info if needed to determine the source of the received data.
+        /// </summary>
 		public event EventHandler<GenericUdpReceiveTextExtraArgs> DataRecievedExtra;
+
+        /// <summary>
+        /// Queue to temporarily store received messages with the source IP and Port info
+        /// </summary>
 		private CrestronQueue<GenericUdpReceiveTextExtraArgs> MessageQueue;
 
         /// <summary>
@@ -200,6 +208,7 @@ namespace PepperDash.Core
             }
             server.ReceiveDataAsync(Receive);
 
+            //  Attempt to enter the CCritical Secion and if we can, start the dequeue thread 
             var gotLock = DequeueLock.TryEnter();
             if (gotLock)
                 CrestronInvoke.BeginInvoke((o) => DequeueEvent());
