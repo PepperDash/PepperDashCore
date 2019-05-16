@@ -395,7 +395,7 @@ namespace PepperDash.Core
                 }
 
                 myTcpServer.SocketStatusChange -= TcpServer_SocketStatusChange;
-                myTcpServer.SocketStatusChange += new TCPServerSocketStatusChangeEventHandler(TcpServer_SocketStatusChange);
+                myTcpServer.SocketStatusChange += TcpServer_SocketStatusChange;
 
                 ServerStopped = false;
                 myTcpServer.WaitForConnectionAsync(IPAddress.Any, TcpConnectCallback);
