@@ -175,7 +175,7 @@ namespace PepperDash.Core
 				{
 					Debug.Console(1, this, "Program stopping. Closing connection");
                     Disconnect();
-                    Client.Dispose();
+                    //Client.Dispose();
 				}
 			}
 		}

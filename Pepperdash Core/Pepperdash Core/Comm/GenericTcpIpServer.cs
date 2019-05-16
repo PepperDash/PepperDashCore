@@ -387,13 +387,16 @@ namespace PepperDash.Core
                     myTcpServer.SocketSendOrReceiveTimeOutInMs = (this.HeartbeatRequiredIntervalMs * 5);
                     
 					// myTcpServer.HandshakeTimeout = 30;
-                    myTcpServer.SocketStatusChange += new TCPServerSocketStatusChangeEventHandler(TcpServer_SocketStatusChange);
                 }
                 else
                 {
                     KillServer();
                     myTcpServer.PortNumber = Port;
                 }
+
+                myTcpServer.SocketStatusChange -= TcpServer_SocketStatusChange;
+                myTcpServer.SocketStatusChange += new TCPServerSocketStatusChangeEventHandler(TcpServer_SocketStatusChange);
+
                 ServerStopped = false;
                 myTcpServer.WaitForConnectionAsync(IPAddress.Any, TcpConnectCallback);
                 OnServerStateChange(myTcpServer.State);
