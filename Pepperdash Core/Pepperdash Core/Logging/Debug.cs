@@ -32,6 +32,8 @@ namespace PepperDash.Core
 
         static int SaveTimeoutMs = 30000;
 
+        public static string PepperDashCoreVersion { get; private set; } 
+
         static CTimer SaveTimer;
 
 		/// <summary>
@@ -49,9 +51,9 @@ namespace PepperDash.Core
             // Get the assembly version and print it to console and the log
             var version = Assembly.GetExecutingAssembly().GetName().Version;
 
-            var versionString = string.Format("{0}.{1}.{2}", version.Major, version.Minor, version.Build);
+            PepperDashCoreVersion = string.Format("{0}.{1}.{2}", version.Major, version.Minor, version.Build);
 
-            var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, versionString);
+            var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
 
             CrestronConsole.PrintLine(msg);
 
