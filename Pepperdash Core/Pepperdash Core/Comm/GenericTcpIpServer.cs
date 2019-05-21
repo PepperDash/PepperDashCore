@@ -673,6 +673,8 @@ namespace PepperDash.Core
                     }
                     if (ClientReadyAfterKeyExchange.Contains(clientIndex))
                         ClientReadyAfterKeyExchange.Remove(clientIndex);
+					if (WaitingForSharedKey.Contains(clientIndex))
+						WaitingForSharedKey.Remove(clientIndex);
                 }
             }
             catch (Exception ex)
@@ -766,50 +768,51 @@ namespace PepperDash.Core
         /// <param name="mySecureTCPServer"></param>
         /// <param name="clientIndex"></param>
         /// <param name="numberOfBytesReceived"></param>
-        void TcpServerReceivedDataAsyncCallback(TCPServer mySecureTCPServer, uint clientIndex, int numberOfBytesReceived)
+        void TcpServerReceivedDataAsyncCallback(TCPServer myTCPServer, uint clientIndex, int numberOfBytesReceived)
         {
-            if (numberOfBytesReceived > 0)
-            {
-                string received = "Nothing";
-                try
-                {
-                    byte[] bytes = mySecureTCPServer.GetIncomingDataBufferForSpecificClient(clientIndex);
-                    received = System.Text.Encoding.GetEncoding(28591).GetString(bytes, 0, numberOfBytesReceived);
-                    if (WaitingForSharedKey.Contains(clientIndex))
-                    {
-                        received = received.Replace("\r", "");
-                        received = received.Replace("\n", "");
-                        if (received != SharedKey)
-                        {
-                            byte[] b = Encoding.GetEncoding(28591).GetBytes("Shared key did not match server. Disconnecting");
-                            Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Client at index {0} Shared key did not match the server, disconnecting client. Key: {1}", clientIndex, received);
-                            mySecureTCPServer.SendData(clientIndex, b, b.Length);
-                            mySecureTCPServer.Disconnect(clientIndex);
-                            WaitingForSharedKey.Remove(clientIndex);
-                            return;
-                        }
-                        if (mySecureTCPServer.NumberOfClientsConnected > 0)
-                            mySecureTCPServer.ReceiveDataAsync(clientIndex, TcpServerReceivedDataAsyncCallback);
-                        WaitingForSharedKey.Remove(clientIndex);
-                        byte[] success = Encoding.GetEncoding(28591).GetBytes("Shared Key Match");
-                        mySecureTCPServer.SendDataAsync(clientIndex, success, success.Length, null);
-                        OnServerClientReadyForCommunications(clientIndex);
-                        Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Client with index {0} provided the shared key and successfully connected to the server", clientIndex);
-                        return;
-                    }
-                    //var address = mySecureTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex);
-                    //Debug.Console(1, this, "Secure Server Listening on Port: {0}, client IP: {1}, Client Index: {4}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
-                    //       mySecureTCPServer.PortNumber.ToString(), address , numberOfBytesReceived.ToString(), received, clientIndex.ToString());
-                    if (!string.IsNullOrEmpty(checkHeartbeat(clientIndex, received)))
-                        onTextReceived(received, clientIndex);
-                }
-                catch (Exception ex)
-                {
-                    Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error Receiving data: {0}. Error: {1}", received, ex);
-                }
-            }
-            if (mySecureTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
-                mySecureTCPServer.ReceiveDataAsync(clientIndex, TcpServerReceivedDataAsyncCallback);
+			if (numberOfBytesReceived > 0)
+			{
+				string received = "Nothing";
+				try
+				{
+					byte[] bytes = myTCPServer.GetIncomingDataBufferForSpecificClient(clientIndex);
+					received = System.Text.Encoding.GetEncoding(28591).GetString(bytes, 0, numberOfBytesReceived);
+					if (WaitingForSharedKey.Contains(clientIndex))
+					{
+						received = received.Replace("\r", "");
+						received = received.Replace("\n", "");
+						if (received != SharedKey)
+						{
+							byte[] b = Encoding.GetEncoding(28591).GetBytes("Shared key did not match server. Disconnecting");
+							Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Client at index {0} Shared key did not match the server, disconnecting client. Key: {1}", clientIndex, received);
+							myTCPServer.SendData(clientIndex, b, b.Length);
+							myTCPServer.Disconnect(clientIndex);
+							return;
+						}
+
+						WaitingForSharedKey.Remove(clientIndex);
+						byte[] success = Encoding.GetEncoding(28591).GetBytes("Shared Key Match");
+						myTCPServer.SendDataAsync(clientIndex, success, success.Length, null);
+						OnServerClientReadyForCommunications(clientIndex);
+						Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Client with index {0} provided the shared key and successfully connected to the server", clientIndex);
+					}
+
+					else if (!string.IsNullOrEmpty(checkHeartbeat(clientIndex, received)))
+						onTextReceived(received, clientIndex);
+				}
+				catch (Exception ex)
+				{
+					Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error Receiving data: {0}. Error: {1}", received, ex);
+				}
+				if (myTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
+					myTCPServer.ReceiveDataAsync(clientIndex, TcpServerReceivedDataAsyncCallback);
+			}
+			else
+			{
+				// If numberOfBytesReceived <= 0
+				myTCPServer.Disconnect();
+			}
+
         }
 
         #endregion
