@@ -51,7 +51,7 @@ namespace PepperDash.Core
             // Get the assembly version and print it to console and the log
             var version = Assembly.GetExecutingAssembly().GetName().Version;
 
-            PepperDashCoreVersion = string.Format("{0}.{1}.{2}", version.Major, version.Minor, version.Build);
+            PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
 
             var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
 
