@@ -669,6 +669,8 @@ namespace PepperDash.Core
                     }
                     if (ClientReadyAfterKeyExchange.Contains(clientIndex))
                         ClientReadyAfterKeyExchange.Remove(clientIndex);
+					if (WaitingForSharedKey.Contains(clientIndex))
+						WaitingForSharedKey.Remove(clientIndex);
                 }
             }
             catch (Exception ex)
@@ -781,31 +783,33 @@ namespace PepperDash.Core
                             Debug.Console(1, this, Debug.ErrorLogLevel.Warning, "Client at index {0} Shared key did not match the server, disconnecting client. Key: {1}", clientIndex, received);
                             mySecureTCPServer.SendData(clientIndex, b, b.Length);
                             mySecureTCPServer.Disconnect(clientIndex);
-                            WaitingForSharedKey.Remove(clientIndex);
+                            
                             return;
                         }
-                        if (mySecureTCPServer.NumberOfClientsConnected > 0)
-                            mySecureTCPServer.ReceiveDataAsync(clientIndex, SecureReceivedDataAsyncCallback);
+
                         WaitingForSharedKey.Remove(clientIndex);
                         byte[] success = Encoding.GetEncoding(28591).GetBytes("Shared Key Match");
                         mySecureTCPServer.SendDataAsync(clientIndex, success, success.Length, null);
                         OnServerClientReadyForCommunications(clientIndex);
                         Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Client with index {0} provided the shared key and successfully connected to the server", clientIndex);
-                        return;
+                        
                     }
-                    //var address = mySecureTCPServer.GetAddressServerAcceptedConnectionFromForSpecificClient(clientIndex);
-                    //Debug.Console(1, this, "Secure Server Listening on Port: {0}, client IP: {1}, Client Index: {4}, NumberOfBytesReceived: {2}, Received: {3}\r\n",
-                    //       mySecureTCPServer.PortNumber.ToString(), address , numberOfBytesReceived.ToString(), received, clientIndex.ToString());
-                    if (!string.IsNullOrEmpty(checkHeartbeat(clientIndex, received)))
-                        onTextReceived(received, clientIndex);
+					else if (!string.IsNullOrEmpty(checkHeartbeat(clientIndex, received)))
+						onTextReceived(received, clientIndex);
                 }
                 catch (Exception ex)
                 {
                     Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error Receiving data: {0}. Error: {1}", received, ex);
                 }
+				if (mySecureTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
+					mySecureTCPServer.ReceiveDataAsync(clientIndex, SecureReceivedDataAsyncCallback);
             }
-            if (mySecureTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
-                mySecureTCPServer.ReceiveDataAsync(clientIndex, SecureReceivedDataAsyncCallback);
+			else
+			{
+				// If numberOfBytesReceived <= 0
+				mySecureTCPServer.Disconnect(clientIndex);
+			}
+
         }
 
         #endregion

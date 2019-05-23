@@ -222,24 +222,24 @@ namespace PepperDash.Core
 		{
 			try
 			{
-                while (true)
-                {
-                    // Pull from Queue and fire an event. Block indefinitely until an item can be removed, similar to a Gather.
-                    var message = MessageQueue.Dequeue();
-                    var dataRecivedExtra = DataRecievedExtra;
-                    if (dataRecivedExtra != null)
-                    {
-                        dataRecivedExtra(this, message);
-                    }
-                }
-            }
+				while (true)
+				{
+					// Pull from Queue and fire an event. Block indefinitely until an item can be removed, similar to a Gather.
+					var message = MessageQueue.Dequeue();
+					var dataRecivedExtra = DataRecievedExtra;
+					if (dataRecivedExtra != null)
+					{
+						dataRecivedExtra(this, message);
+					}
+				}
+			}
 			catch (Exception e)
 			{
 				Debug.Console(0, "GenericUdpServer DequeueEvent error: {0}\r", e);
 			}
-			finally
+			// Make sure to leave the CCritical section in case an exception above stops this thread, or we won't be able to restart it.
+			if (DequeueLock != null)
 			{
-                // Make sure to leave the CCritical section in case an exception above stops this thread, or we won't be able to restart it.
 				DequeueLock.Leave();
 			}
 		}
