@@ -174,8 +174,8 @@ namespace PepperDash.Core
 				if (Client != null)
 				{
 					Debug.Console(1, this, "Program stopping. Closing connection");
-					Client.Disconnect();
-					Client.Dispose();
+                    Disconnect();
+                    //Client.Dispose();
 				}
 			}
 		}
