@@ -12,9 +12,19 @@ namespace PepperDash.Core.JsonToSimpl
 	{
 		public string SearchPropertyName { get; set; }
 		public string SearchPropertyValue { get; set; }
+		public string AppendToPathPrefix { get; set; }
 
 		int ArrayIndex;
 
+		/// <summary>
+		/// For <2.4.1 array lookups
+		/// </summary>
+		/// <param name="file"></param>
+		/// <param name="key"></param>
+		/// <param name="pathPrefix"></param>
+		/// <param name="pathSuffix"></param>
+		/// <param name="searchPropertyName"></param>
+		/// <param name="searchPropertyValue"></param>
 		public void Initialize(string file, string key, string pathPrefix, string pathSuffix,
 			string searchPropertyName, string searchPropertyValue)
 		{
@@ -22,6 +32,27 @@ namespace PepperDash.Core.JsonToSimpl
 			SearchPropertyName = searchPropertyName;
 			SearchPropertyValue = searchPropertyValue;
 		}
+
+
+		/// <summary>
+		/// For newer >=2.4.1 array lookups. 
+		/// </summary>
+		/// <param name="file"></param>
+		/// <param name="key"></param>
+		/// <param name="pathPrefix"></param>
+		/// <param name="pathAppend"></param>
+		/// <param name="pathSuffix"></param>
+		/// <param name="searchPropertyName"></param>
+		/// <param name="searchPropertyValue"></param>
+		public void Initialize(string file, string key, string pathPrefix, string pathAppend, string pathSuffix,
+			string searchPropertyName, string searchPropertyValue)
+		{
+			base.Initialize(file, key, pathPrefix, pathSuffix);
+			SearchPropertyName = searchPropertyName;
+			SearchPropertyValue = searchPropertyValue;
+			AppendToPathPrefix = pathAppend;
+		}
+
 
 
 		//PathPrefix+ArrayName+[x]+path+PathSuffix
@@ -32,9 +63,11 @@ namespace PepperDash.Core.JsonToSimpl
 		/// <returns></returns>
 		protected override string GetFullPath(string path)
 		{
-			return string.Format("{0}[{1}].{2}{3}", 
+			return string.Format("{0}[{1}]{2}.{3}{4}", 
 				PathPrefix == null ? "" : PathPrefix, 
-				ArrayIndex, path, 
+				ArrayIndex, 
+				GetPathAppend(),
+				path, 
 				PathSuffix == null ? "" : PathSuffix);
 		}
 
@@ -44,6 +77,31 @@ namespace PepperDash.Core.JsonToSimpl
 				base.ProcessAll();
 		}
 
+		/// <summary>
+		/// Provides the path append for GetFullPath
+		/// </summary>
+		/// <returns></returns>
+		string GetPathAppend()
+		{
+			var a = AppendToPathPrefix;
+			if (string.IsNullOrEmpty(a))
+			{
+				return "";
+			}
+			if (a.StartsWith("."))
+			{
+				return a;
+			}
+			else
+			{
+				return "." + a;
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
 		bool FindInArray()
 		{
 			if (Master == null)
@@ -75,6 +133,7 @@ namespace PepperDash.Core.JsonToSimpl
 
 					this.LinkedToObject = true;
 					ArrayIndex = array.IndexOf(item);
+					OnStringChange(GetFullPath(""), 0, JsonToSimplConstants.FullPathToArrayChange);
 					Debug.Console(1, "JSON Child[{0}] Found array match at index {1}", Key, ArrayIndex);
 					return true;
 				}
