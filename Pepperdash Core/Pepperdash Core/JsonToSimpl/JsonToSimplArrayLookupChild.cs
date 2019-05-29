@@ -44,8 +44,8 @@ namespace PepperDash.Core.JsonToSimpl
 		/// <param name="pathSuffix"></param>
 		/// <param name="searchPropertyName"></param>
 		/// <param name="searchPropertyValue"></param>
-		public void Initialize(string file, string key, string pathPrefix, string pathAppend, string pathSuffix,
-			string searchPropertyName, string searchPropertyValue)
+		public void InitializeWithAppend(string file, string key, string pathPrefix, string pathAppend, 
+			string pathSuffix, string searchPropertyName, string searchPropertyValue)
 		{
 			base.Initialize(file, key, pathPrefix, pathSuffix);
 			SearchPropertyName = searchPropertyName;
