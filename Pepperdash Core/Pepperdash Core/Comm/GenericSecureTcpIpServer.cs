@@ -384,7 +384,8 @@ namespace PepperDash.Core
                 if (SecureServer == null)
                 {
                     SecureServer = new SecureTCPServer(Port, MaxClients);
-                    SecureServer.SocketSendOrReceiveTimeOutInMs = (this.HeartbeatRequiredIntervalMs * 5);
+                    if(HeartbeatRequired)
+                        SecureServer.SocketSendOrReceiveTimeOutInMs = (this.HeartbeatRequiredIntervalMs * 5);
                     SecureServer.HandshakeTimeout = 30;
                     SecureServer.SocketStatusChange += new SecureTCPServerSocketStatusChangeEventHandler(SecureServer_SocketStatusChange);
                 }

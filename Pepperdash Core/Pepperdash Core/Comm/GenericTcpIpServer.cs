@@ -384,7 +384,8 @@ namespace PepperDash.Core
                 if (myTcpServer == null)
                 {
                     myTcpServer = new TCPServer(Port, MaxClients);
-                    myTcpServer.SocketSendOrReceiveTimeOutInMs = (this.HeartbeatRequiredIntervalMs * 5);
+                    if(HeartbeatRequired)
+                        myTcpServer.SocketSendOrReceiveTimeOutInMs = (this.HeartbeatRequiredIntervalMs * 5);
                     
 					// myTcpServer.HandshakeTimeout = 30;
                 }

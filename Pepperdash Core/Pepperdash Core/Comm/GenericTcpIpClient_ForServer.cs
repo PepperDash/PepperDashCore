@@ -328,7 +328,8 @@ namespace PepperDash.Core
 
                 Client = new TCPClient(Hostname, Port, BufferSize);
                 Client.SocketStatusChange += Client_SocketStatusChange;
-                Client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
+                if(HeartbeatEnabled)
+                    Client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
                 Client.AddressClientConnectedTo = Hostname;
                 Client.PortNumber = Port;
                 // SecureClient = c;
