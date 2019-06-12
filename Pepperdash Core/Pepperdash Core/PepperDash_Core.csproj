@@ -42,6 +42,7 @@
     <FileAlignment>512</FileAlignment>
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
+    <DocumentationFile>bin\PepperDash_Core.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
