@@ -11,10 +11,19 @@ namespace PepperDash.Core.JsonToSimpl
 	public class JsonToSimplArrayLookupChild : JsonToSimplChildObjectBase
 	{
 		public string SearchPropertyName { get; set; }
-		public string SearchPropertyValue { get; set; }
+		public string SearchPropertyValue { get; set; }		
 
 		int ArrayIndex;
 
+		/// <summary>
+		/// For <2.4.1 array lookups
+		/// </summary>
+		/// <param name="file"></param>
+		/// <param name="key"></param>
+		/// <param name="pathPrefix"></param>
+		/// <param name="pathSuffix"></param>
+		/// <param name="searchPropertyName"></param>
+		/// <param name="searchPropertyValue"></param>
 		public void Initialize(string file, string key, string pathPrefix, string pathSuffix,
 			string searchPropertyName, string searchPropertyValue)
 		{
@@ -22,6 +31,28 @@ namespace PepperDash.Core.JsonToSimpl
 			SearchPropertyName = searchPropertyName;
 			SearchPropertyValue = searchPropertyValue;
 		}
+
+
+		/// <summary>
+		/// For newer >=2.4.1 array lookups. 
+		/// </summary>
+		/// <param name="file"></param>
+		/// <param name="key"></param>
+		/// <param name="pathPrefix"></param>
+		/// <param name="pathAppend"></param>
+		/// <param name="pathSuffix"></param>
+		/// <param name="searchPropertyName"></param>
+		/// <param name="searchPropertyValue"></param>
+		public void InitializeWithAppend(string file, string key, string pathPrefix, string pathAppend, 
+			string pathSuffix, string searchPropertyName, string searchPropertyValue)
+		{
+			string pathPrefixWithAppend = (pathPrefix != null ? pathPrefix : "") + GetPathAppend(pathAppend);
+			base.Initialize(file, key, pathPrefixWithAppend, pathSuffix);
+			
+			SearchPropertyName = searchPropertyName;
+			SearchPropertyValue = searchPropertyValue;			
+		}
+
 
 
 		//PathPrefix+ArrayName+[x]+path+PathSuffix
@@ -32,9 +63,10 @@ namespace PepperDash.Core.JsonToSimpl
 		/// <returns></returns>
 		protected override string GetFullPath(string path)
 		{
-			return string.Format("{0}[{1}].{2}{3}", 
-				PathPrefix == null ? "" : PathPrefix, 
-				ArrayIndex, path, 
+			return string.Format("{0}[{1}].{2}{3}",
+				PathPrefix == null ? "" : PathPrefix,
+				ArrayIndex,				
+				path,
 				PathSuffix == null ? "" : PathSuffix);
 		}
 
@@ -44,6 +76,30 @@ namespace PepperDash.Core.JsonToSimpl
 				base.ProcessAll();
 		}
 
+		/// <summary>
+		/// Provides the path append for GetFullPath
+		/// </summary>
+		/// <returns></returns>
+		string GetPathAppend(string a)
+		{
+			if (string.IsNullOrEmpty(a))
+			{
+				return "";
+			}
+			if (a.StartsWith("."))
+			{
+				return a;
+			}
+			else
+			{
+				return "." + a;
+			}
+		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
 		bool FindInArray()
 		{
 			if (Master == null)
@@ -53,13 +109,14 @@ namespace PepperDash.Core.JsonToSimpl
 			if (PathPrefix == null)
 				throw new InvalidOperationException("Cannot do operations before PathPrefix is set");
 
-			var token = Master.JsonObject.SelectToken(PathPrefix);
+
+			var token = Master.JsonObject.SelectToken(PathPrefix);			
 			if (token is JArray)
 			{
 				var array = token as JArray;
 				try
 				{
-					var item = array.FirstOrDefault(o => 
+					var item = array.FirstOrDefault(o =>
 					{
 						var prop = o[SearchPropertyName];
 						return prop != null && prop.Value<string>()
@@ -75,17 +132,20 @@ namespace PepperDash.Core.JsonToSimpl
 
 					this.LinkedToObject = true;
 					ArrayIndex = array.IndexOf(item);
+					OnStringChange(string.Format("{0}[{1}]", PathPrefix, ArrayIndex), 0, JsonToSimplConstants.FullPathToArrayChange);
 					Debug.Console(1, "JSON Child[{0}] Found array match at index {1}", Key, ArrayIndex);
 					return true;
 				}
 				catch (Exception e)
 				{
-					Debug.Console(1, "JSON Child[{0}] Array '{1}' lookup error: '{2}={3}'\r{4}", Key, 
-						PathPrefix, SearchPropertyName, SearchPropertyValue, e);
+					Debug.Console(1, "JSON Child[{0}] Array '{1}' lookup error: '{2}={3}'\r{4}", Key,
+						PathPrefix, SearchPropertyName, SearchPropertyValue, e);					
 				}
 			}
 			else
-				Debug.Console(1, "JSON Child[{0}] Path '{1}' is not an array", Key, PathPrefix);
+			{
+				Debug.Console(1, "JSON Child[{0}] Path '{1}' is not an array", Key, PathPrefix);				
+			}
 
 			return false;
 		}
