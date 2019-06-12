@@ -328,7 +328,8 @@ namespace PepperDash.Core
 
                 Client = new TCPClient(Hostname, Port, BufferSize);
                 Client.SocketStatusChange += Client_SocketStatusChange;
-                Client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
+                if(HeartbeatEnabled)
+                    Client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
                 Client.AddressClientConnectedTo = Hostname;
                 Client.PortNumber = Port;
                 // SecureClient = c;
@@ -380,6 +381,15 @@ namespace PepperDash.Core
                                 //CheckClosedAndTryReconnect();
                                 //OnClientReadyForcommunications(false); // Should send false event
                             }, 15000);
+                        }
+                        else
+                        {
+                            //CLient connected and shared key is not required so just raise the ready for communication event. if Shared key 
+                            //required this is called by the shared key being negotiated
+                            if (IsReadyForCommunication == false)
+                            {
+                                OnClientReadyForcommunications(true); // Key not required
+                            }
                         }
                     }
                     else
@@ -485,7 +495,6 @@ namespace PepperDash.Core
                     Debug.Console(2, this, "Client Received:\r--------\r{0}\r--------", str);
                     if (!string.IsNullOrEmpty(checkHeartbeat(str)))
                     {
-
                         if (SharedKeyRequired && str == "SharedKey:")
                         {
                             Debug.Console(1, this, "Server asking for shared key, sending");
@@ -494,19 +503,11 @@ namespace PepperDash.Core
                         else if (SharedKeyRequired && str == "Shared Key Match")
                         {
                             StopWaitForSharedKeyTimer();
-
-
                             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Shared key confirmed. Ready for communication");
                             OnClientReadyForcommunications(true); // Successful key exchange
                         }
-                        else if (SharedKeyRequired == false && IsReadyForCommunication == false)
-                        {
-                            OnClientReadyForcommunications(true); // Key not required
-                        }
-
                         else
                         {
-
                             //var bytesHandler = BytesReceived;
                             //if (bytesHandler != null)
                             //    bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
@@ -698,6 +699,7 @@ namespace PepperDash.Core
                 Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Socket status change: {0} ({1})", client.ClientStatus, (ushort)(client.ClientStatus));
 
                 OnConnectionChange();
+                
                 // The client could be null or disposed by this time...
                 if (Client == null || Client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
                 {

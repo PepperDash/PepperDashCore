@@ -328,7 +328,8 @@ namespace PepperDash.Core
 
                 Client = new SecureTCPClient(Hostname, Port, BufferSize);
                 Client.SocketStatusChange += Client_SocketStatusChange;
-                Client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
+                if(HeartbeatEnabled)
+                    Client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
                 Client.AddressClientConnectedTo = Hostname;
                 Client.PortNumber = Port;
                 // SecureClient = c;
@@ -380,6 +381,15 @@ namespace PepperDash.Core
                                 //CheckClosedAndTryReconnect();
                                 //OnClientReadyForcommunications(false); // Should send false event
                             }, 15000);
+                        }
+                        else
+                        {
+                            //CLient connected and shared key is not required so just raise the ready for communication event. if Shared key 
+                            //required this is called by the shared key being negotiated
+                            if (IsReadyForCommunication == false)
+                            {
+                                OnClientReadyForcommunications(true); // Key not required
+                            }
                         }
                     }
                     else
@@ -499,14 +509,8 @@ namespace PepperDash.Core
                             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Shared key confirmed. Ready for communication");
                             OnClientReadyForcommunications(true); // Successful key exchange
                         }
-                        else if (SharedKeyRequired == false && IsReadyForCommunication == false)
-                        {
-                            OnClientReadyForcommunications(true); // Key not required
-                        }
-
                         else
                         {
-
                             //var bytesHandler = BytesReceived;
                             //if (bytesHandler != null)
                             //    bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
