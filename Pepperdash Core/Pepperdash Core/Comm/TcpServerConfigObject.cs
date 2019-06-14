@@ -9,8 +9,8 @@ namespace PepperDash.Core
     public class TcpServerConfigObject
     {
         public string Key { get; set; }
-        public bool Secure { get; set; }
         public ushort MaxClients { get; set; }
+        public bool Secure { get; set; }
         public int Port { get; set; }
         public bool SharedKeyRequired { get; set; }
         public string SharedKey { get; set; }
@@ -18,5 +18,6 @@ namespace PepperDash.Core
         public ushort HeartbeatRequiredIntervalInSeconds { get; set; }
         public string HeartbeatStringToMatch { get; set; }
         public int BufferSize { get; set; }
+        public int ReceiveQueueSize { get; set; }
     }
 }
