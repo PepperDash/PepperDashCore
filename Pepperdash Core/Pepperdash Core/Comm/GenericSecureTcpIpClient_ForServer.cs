@@ -652,7 +652,7 @@ namespace PepperDash.Core
             }
             catch (Exception e)
             {
-                Debug.Console(0, "GenericUdpServer DequeueEvent error: {0}\r", e);
+                Debug.Console(0, "DequeueEvent error: {0}\r", e);
             }
             // Make sure to leave the CCritical section in case an exception above stops this thread, or we won't be able to restart it.
             if (DequeueLock != null)
