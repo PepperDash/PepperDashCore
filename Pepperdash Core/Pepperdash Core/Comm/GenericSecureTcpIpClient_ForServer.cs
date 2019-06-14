@@ -311,22 +311,29 @@ namespace PepperDash.Core
             Key = key;
         }
 
+        /// <summary>
+        /// Initialize called by the constructor that accepts a client config object. Can be called later to reset properties of client. 
+        /// </summary>
+        /// <param name="clientConfigObject"></param>
         public void Initialize(TcpClientConfigObject clientConfigObject)
         {
             try
             {
                 if (clientConfigObject != null)
                 {
-                    Hostname = clientConfigObject.Address;
-                    AutoReconnect = clientConfigObject.AutoReconnect;
-                    AutoReconnectIntervalMs = clientConfigObject.AutoReconnectIntervalMs > 1000 ? clientConfigObject.AutoReconnectIntervalMs : 5000;
+                    var TcpSshProperties = clientConfigObject.Control.TcpSshProperties;
+                    Hostname = TcpSshProperties.Address;
+                    AutoReconnect = TcpSshProperties.AutoReconnect;
+                    AutoReconnectIntervalMs = TcpSshProperties.AutoReconnectIntervalMs > 1000 ?
+                        TcpSshProperties.AutoReconnectIntervalMs : 5000;
                     SharedKey = clientConfigObject.SharedKey;
                     SharedKeyRequired = clientConfigObject.SharedKeyRequired;
                     HeartbeatEnabled = clientConfigObject.HeartbeatRequired;
-                    HeartbeatRequiredIntervalInSeconds = clientConfigObject.HeartbeatRequiredIntervalInSeconds > 0 ? clientConfigObject.HeartbeatRequiredIntervalInSeconds : (ushort)15;
+                    HeartbeatRequiredIntervalInSeconds = clientConfigObject.HeartbeatRequiredIntervalInSeconds > 0 ? 
+                        clientConfigObject.HeartbeatRequiredIntervalInSeconds : (ushort)15;
                     HeartbeatString = string.IsNullOrEmpty(clientConfigObject.HeartbeatStringToMatch) ? "heartbeat" : clientConfigObject.HeartbeatStringToMatch;
-                    Port = clientConfigObject.Port;
-                    BufferSize = clientConfigObject.BufferSize > 2000 ? clientConfigObject.BufferSize : 2000;
+                    Port = TcpSshProperties.Port;
+                    BufferSize = TcpSshProperties.BufferSize > 2000 ? TcpSshProperties.BufferSize : 2000;
                     ReceiveQueueSize = clientConfigObject.ReceiveQueueSize > 20 ? clientConfigObject.ReceiveQueueSize : 20;
                     MessageQueue = new CrestronQueue<GenericTcpServerCommMethodReceiveTextArgs>(ReceiveQueueSize);
                 }

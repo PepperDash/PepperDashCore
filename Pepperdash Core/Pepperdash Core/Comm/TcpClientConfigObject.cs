@@ -11,8 +11,12 @@ namespace PepperDash.Core
     /// <summary>
     /// Client config object for TCP client with server that inherits from TcpSshPropertiesConfig and adds properties for shared key and heartbeat
     /// </summary>
-    public class TcpClientConfigObject : TcpSshPropertiesConfig
+    public class TcpClientConfigObject
     {
+        /// <summary>
+        /// TcpSsh Properties 
+        /// </summary>
+        public ControlPropertiesConfig Control { get; set; }
         /// <summary>
         /// Bool value for secure. Currently not implemented in TCP sockets as they are not dynamic
         /// </summary>
