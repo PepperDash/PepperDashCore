@@ -17,7 +17,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
-using PepperDash_Core.Comm;
 
 namespace PepperDash.Core
 {
