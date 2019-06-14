@@ -167,7 +167,9 @@ namespace PepperDash.Core
         {
             get { return (ushort)(IsListening ? 1 : 0); }
         }
-
+        /// <summary>
+        /// Max number of clients this server will allow for connection. Crestron max is 64. This number should be less than 65 
+        /// </summary>
         public ushort MaxClients { get; set; } // should be set by parameter in SIMPL+ in the MAIN method, Should not ever need to be configurable
         /// <summary>
         /// Number of clients currently connected.
