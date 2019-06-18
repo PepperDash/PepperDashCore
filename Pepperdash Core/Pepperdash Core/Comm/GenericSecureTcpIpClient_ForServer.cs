@@ -33,6 +33,8 @@ namespace PepperDash.Core
 
         public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceived;
 
+        public event EventHandler AutoReconnectTriggered;
+
         /// <summary>
         /// Event for Receiving text. Once subscribed to this event the receive callback will start a thread that dequeues the messages and invokes the event on a new thread. 
         /// It is not recommended to use both the TextReceived event and the TextReceivedQueueInvoke event. 
@@ -559,6 +561,8 @@ namespace PepperDash.Core
                     RetryTimer.Stop();
                     RetryTimer = null;
                 }
+                if(AutoReconnectTriggered != null)
+                    AutoReconnectTriggered(this, new EventArgs());
                 RetryTimer = new CTimer(o => Connect(), rndTime);
             }
         }

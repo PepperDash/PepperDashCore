@@ -416,7 +416,7 @@ namespace PepperDash.Core
                 }
                 else
                 {
-                    KillServer();
+                    //KillServer();  Remove this to be able to reactivate listener if it stops itself due to max clients without disconnecting connected clients.
                     SecureServer.PortNumber = Port;
                 }
                 ServerStopped = false;
@@ -703,7 +703,10 @@ namespace PepperDash.Core
             {
                 Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Change Callback. Error: {0}", ex);
             }
-            onConnectionChange(clientIndex, server.GetServerSocketStatusForSpecificClient(clientIndex));
+            //Use a thread for this event so that the server state updates to listening while this event is processed. Listening must be added to the server state
+            //after every client connection so that the server can check and see if it is at max clients. Due to this the event fires and server listening enum bit flag
+            //is not set. Putting in a thread allows the state to update before this event processes so that the subscribers to this event get accurate isListening in the event. 
+            CrestronInvoke.BeginInvoke(o => onConnectionChange(clientIndex, server.GetServerSocketStatusForSpecificClient(clientIndex)), null);
         }
 
         #endregion
