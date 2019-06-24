@@ -29,10 +29,27 @@ namespace PepperDash.Core
 		//public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
 		public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
+
+		private string _Hostname { get; set;} 
         /// <summary>
         /// Address of server
         /// </summary>
-        public string Hostname { get; set; }
+        public string Hostname {
+			get
+			{
+				return _Hostname;
+			}
+
+			set
+			{
+				_Hostname = value;
+				if (Client != null)
+				{
+
+					Client.AddressClientConnectedTo = _Hostname;
+				}
+			}
+		}
 
         /// <summary>
         /// Port on server
@@ -233,10 +250,13 @@ namespace PepperDash.Core
 
             if (Client == null)
             {
+			
+				
                 Client = new TCPClient(Hostname, Port, BufferSize);
                 Client.SocketStatusChange += Client_SocketStatusChange;
             }
 			DisconnectCalledByUser = false;
+			
 			Client.ConnectToServerAsync(ConnectToServerCallback); // (null);
 		}
 
