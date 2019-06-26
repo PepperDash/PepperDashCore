@@ -51,6 +51,11 @@ namespace PepperDash.Core
             }
         }
 
+        public ushort UStatus
+        {
+            get { return (ushort)Server.ServerStatus; }
+        }
+
 
 		CCriticalSection DequeueLock;
         /// <summary>
@@ -87,6 +92,11 @@ namespace PepperDash.Core
             private set;
         }
 
+        public ushort UIsConnected
+        {
+            get { return IsConnected ? (ushort)1 : (ushort)0; }
+        }
+
         /// <summary>
         /// Defaults to 2000
         /// </summary>
@@ -94,6 +104,20 @@ namespace PepperDash.Core
 
         public UDPServer Server { get; private set; }
 
+        /// <summary>
+        /// Constructor for S+. Make sure to set key, address, port, and buffersize using init method
+        /// </summary>
+        public GenericUdpServer()
+            : base("Uninitialized Udp Server")
+        {
+            BufferSize = 5000;
+            DequeueLock = new CCriticalSection();
+            MessageQueue = new CrestronQueue<GenericUdpReceiveTextExtraArgs>();
+
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
+        }
+       
         public GenericUdpServer(string key, string address, int port, int buffefSize)
             : base(key)
         {
@@ -106,6 +130,13 @@ namespace PepperDash.Core
 
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
             CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
+        }
+
+        public void Initialize(string key, string address, ushort port)
+        {
+            Key = key;
+            Hostname = address;
+            UPort = port;
         }
 
         void CrestronEnvironment_EthernetEventHandler(EthernetEventArgs ethernetEventArgs)
@@ -135,7 +166,6 @@ namespace PepperDash.Core
             if (Server == null)
             {
                 Server = new UDPServer();
-
             }
 
             if (string.IsNullOrEmpty(Hostname))
