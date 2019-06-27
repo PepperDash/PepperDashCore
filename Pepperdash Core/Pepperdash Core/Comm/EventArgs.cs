@@ -93,6 +93,24 @@ namespace PepperDash.Core
         }
     }
 
+    public class GenericUdpConnectedEventArgs : EventArgs
+    {
+        public ushort UConnected;
+        public bool Connected;
+
+        public GenericUdpConnectedEventArgs() { }
+
+        public GenericUdpConnectedEventArgs(ushort uconnected)
+        {
+            UConnected = uconnected;
+        }
+
+        public GenericUdpConnectedEventArgs(bool connected)
+        {
+            Connected = connected;
+        }
+    }
+
    
 
 }

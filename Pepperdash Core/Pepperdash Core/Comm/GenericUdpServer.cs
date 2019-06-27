@@ -43,6 +43,8 @@ namespace PepperDash.Core
         //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
         public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
+        public event EventHandler<GenericUdpConnectedEventArgs> UpdateConnectionStatus;
+
         public SocketStatus ClientStatus
         {
             get
@@ -187,6 +189,10 @@ namespace PepperDash.Core
             if (status == SocketErrorCodes.SOCKET_OK)
                 IsConnected = true;
 
+            var handler = UpdateConnectionStatus;
+            if (handler != null)
+                handler(this, new GenericUdpConnectedEventArgs(UIsConnected));
+
             // Start receiving data
             Server.ReceiveDataAsync(Receive);
         }
@@ -200,6 +206,10 @@ namespace PepperDash.Core
                 Server.DisableUDPServer();
 
             IsConnected = false;
+
+            var handler = UpdateConnectionStatus;
+            if (handler != null)
+                handler(this, new GenericUdpConnectedEventArgs(UIsConnected));
         }
 
 
