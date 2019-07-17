@@ -6,6 +6,9 @@ using Crestron.SimplSharp;
 
 namespace PepperDash.Core.JsonToSimpl
 {
+    /// <summary>
+    /// Constants for Simpl modules
+    /// </summary>
 	public class JsonToSimplConstants
 	{
 		public const ushort JsonIsValidBoolChange = 2;
