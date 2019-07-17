@@ -31,6 +31,7 @@
     <FileAlignment>512</FileAlignment>
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
+    <DocumentationFile>bin\PepperDash_Core.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <AllowedReferenceRelatedFileExtensions>.allowedReferenceRelatedFileExtensions</AllowedReferenceRelatedFileExtensions>
@@ -81,6 +82,7 @@
     <Compile Include="Comm\EventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
     <Compile Include="Comm\GenericUdpServer.cs" />
+    <Compile Include="Comm\TcpClientConfigObject.cs" />
     <Compile Include="Comm\TcpServerConfigObject.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />

@@ -372,7 +372,6 @@ namespace PepperDash.Core
 		}
 	}
 
-
 	public class TcpSshPropertiesConfig
 	{
 		[JsonProperty(Required = Required.Always)]

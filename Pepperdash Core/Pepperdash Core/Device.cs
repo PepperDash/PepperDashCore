@@ -10,8 +10,17 @@ namespace PepperDash.Core
 	/// </summary>
 	public class Device : IKeyName
 	{
+        /// <summary>
+        /// Unique Key
+        /// </summary>
 		public string Key { get; protected set; }
-		public string Name { get; protected set; }
+		/// <summary>
+		/// Name of the devie
+		/// </summary>
+        public string Name { get; protected set; }
+        /// <summary>
+        /// 
+        /// </summary>
 		public bool Enabled { get; protected set; }
 
         ///// <summary>
