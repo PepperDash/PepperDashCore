@@ -422,22 +422,18 @@ namespace PepperDash.Core
         {
             try
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Stopping Listener");
+                Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Stopping Listener");
                 if (myTcpServer != null)
                 {
                     myTcpServer.Stop();
-                    Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Server State: {0}", myTcpServer.State);
-                    //SecureServer = null;
+                    Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Server State: {0}", myTcpServer.State);
+					OnServerStateChange(myTcpServer.State);
                 }
-
-                ServerStopped = true;
-                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Server Stopped");
-
-                OnServerStateChange(myTcpServer.State);
+		        ServerStopped = true;
             }
             catch (Exception ex)
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error stopping server. Error: {0}", ex);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error stopping server. Error: {0}", ex);
             }
         }
 
@@ -450,11 +446,11 @@ namespace PepperDash.Core
             try
             {
                 myTcpServer.Disconnect(client);
-                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Disconnected client index: {0}", client);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Disconnected client index: {0}", client);
             }
             catch (Exception ex)
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error Disconnecting client index: {0}. Error: {1}", client, ex);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error Disconnecting client index: {0}. Error: {1}", client, ex);
             }
         }
         /// <summary>
@@ -474,17 +470,17 @@ namespace PepperDash.Core
                     try
                     {
                         myTcpServer.Disconnect(i);
-                        Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Disconnected client index: {0}", i);
+                        Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Disconnected client index: {0}", i);
                     }
                     catch (Exception ex)
                     {
-                        Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error Disconnecting client index: {0}. Error: {1}", i, ex);
+                        Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error Disconnecting client index: {0}. Error: {1}", i, ex);
                     }
                 }
-                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Server Status: {0}", myTcpServer.ServerSocketStatus);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Server Status: {0}", myTcpServer.ServerSocketStatus);
             }
 
-            Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Disconnected All Clients");
+            Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Disconnected All Clients");
             ConnectedClientsIndexes.Clear();
 
             if (!ProgramIsStopping)
@@ -515,7 +511,7 @@ namespace PepperDash.Core
                         {
                             SocketErrorCodes error = myTcpServer.SendDataAsync(i, b, b.Length, (x, y, z) => { });
                             if (error != SocketErrorCodes.SOCKET_OK && error != SocketErrorCodes.SOCKET_OPERATION_PENDING)
-                                Debug.Console(0, error.ToString());
+                                Debug.Console(2, error.ToString());
                         }
                     }
                 }
@@ -546,7 +542,7 @@ namespace PepperDash.Core
             }
             catch (Exception ex)
             {
-                Debug.Console(0, this, "Error sending text to client. Text: {1}. Error: {0}", ex.Message, text);
+                Debug.Console(2, this, "Error sending text to client. Text: {1}. Error: {0}", ex.Message, text);
             }
         }
 
@@ -680,7 +676,7 @@ namespace PepperDash.Core
             }
             catch (Exception ex)
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Change Callback. Error: {0}", ex);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Change Callback. Error: {0}", ex);
             }
             onConnectionChange(clientIndex, server.GetServerSocketStatusForSpecificClient(clientIndex));
         }
@@ -746,7 +742,7 @@ namespace PepperDash.Core
             }
             catch (Exception ex)
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Connect Callback. Error: {0}", ex);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Connect Callback. Error: {0}", ex);
             }
             //Debug.Console(1, this, Debug.ErrorLogLevel, "((((((Server State bitfield={0}; maxclient={1}; ServerStopped={2}))))))",
             //    server.State, 
@@ -803,7 +799,7 @@ namespace PepperDash.Core
 				}
 				catch (Exception ex)
 				{
-					Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error Receiving data: {0}. Error: {1}", received, ex);
+					Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error Receiving data: {0}. Error: {1}", received, ex);
 				}
 				if (myTCPServer.GetServerSocketStatusForSpecificClient(clientIndex) == SocketStatus.SOCKET_STATUS_CONNECTED)
 					myTCPServer.ReceiveDataAsync(clientIndex, TcpServerReceivedDataAsyncCallback);
@@ -973,13 +969,13 @@ namespace PepperDash.Core
             StopMonitorClient();
             if (MonitorClientFailureCount < MonitorClientMaxFailureCount)
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Monitor client connection has hung {0} time{1}, maximum {2}",
+                Debug.Console(2, this, Debug.ErrorLogLevel.Warning, "Monitor client connection has hung {0} time{1}, maximum {2}",
                     MonitorClientFailureCount, MonitorClientFailureCount > 1 ? "s" : "", MonitorClientMaxFailureCount);
                 StartMonitorClient();
             }
             else
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error,
+                Debug.Console(2, this, Debug.ErrorLogLevel.Error,
                     "\r***************************\rMonitor client connection has hung a maximum of {0} times.\r***************************",
                     MonitorClientMaxFailureCount);
 
