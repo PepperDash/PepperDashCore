@@ -23,12 +23,14 @@ namespace PepperDash.Core
 	{
 		public ISocketStatus Client { get; private set; }
 
-		public GenericSocketStatusChageEventArgs() { }
-
 		public GenericSocketStatusChageEventArgs(ISocketStatus client)
 		{
 			Client = client;
 		}
+		/// <summary>
+		/// Stupid S+ Constructor
+		/// </summary>
+		public GenericSocketStatusChageEventArgs() { }
     }
 
     public delegate void GenericTcpServerStateChangedEventDelegate(ServerState state);
@@ -36,12 +38,14 @@ namespace PepperDash.Core
     {
         public ServerState State { get; private set; }
 
-        public GenericTcpServerStateChangedEventArgs() { }
-
         public GenericTcpServerStateChangedEventArgs(ServerState state)
         {
             State = state;
         }
+		/// <summary>
+		/// Stupid S+ Constructor
+		/// </summary>
+		public GenericTcpServerStateChangedEventArgs() { }
     }
 
     public delegate void GenericTcpServerSocketStatusChangeEventDelegate(object socket, uint clientIndex, SocketStatus clientStatus);
@@ -50,8 +54,6 @@ namespace PepperDash.Core
         public object Socket { get; private set; }
         public uint ReceivedFromClientIndex { get; private set; }
         public SocketStatus ClientStatus { get; set; }
-		
-        public GenericTcpServerSocketStatusChangeEventArgs() { }
 
         public GenericTcpServerSocketStatusChangeEventArgs(object socket, SocketStatus clientStatus)
         {
@@ -65,6 +67,10 @@ namespace PepperDash.Core
             ReceivedFromClientIndex = clientIndex;
             ClientStatus = clientStatus;
         }
+		/// <summary>
+		/// Stupid S+ Constructor
+		/// </summary>
+		public GenericTcpServerSocketStatusChangeEventArgs() { }
     }
 
     public class GenericTcpServerCommMethodReceiveTextArgs : EventArgs
@@ -82,6 +88,10 @@ namespace PepperDash.Core
             Text = text;
             ReceivedFromClientIndex = clientIndex;
         }
+		/// <summary>
+		/// Stupid S+ Constructor
+		/// </summary>
+		public GenericTcpServerCommMethodReceiveTextArgs() { }
     }
 
     public class GenericTcpServerClientReadyForcommunicationsEventArgs : EventArgs
@@ -91,6 +101,10 @@ namespace PepperDash.Core
         {
             IsReady = isReady;
         }
+		/// <summary>
+		/// Stupid S+ Constructor
+		/// </summary>
+		public GenericTcpServerClientReadyForcommunicationsEventArgs() { }
     }
 
     public class GenericUdpConnectedEventArgs : EventArgs
@@ -109,6 +123,7 @@ namespace PepperDash.Core
         {
             Connected = connected;
         }
+
     }
 
    
