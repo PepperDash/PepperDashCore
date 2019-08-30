@@ -11,6 +11,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 
+
+
 namespace PepperDash.Core
 {
     public class GenericUdpServer : Device, IBasicCommunication
@@ -26,10 +28,22 @@ namespace PepperDash.Core
         public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
 
         /// <summary>
+        /// This event will fire when a message is dequeued that includes the source IP and Port info if needed to determine the source of the received data.
+        /// </summary>
+		public event EventHandler<GenericUdpReceiveTextExtraArgs> DataRecievedExtra;
+
+        /// <summary>
+        /// Queue to temporarily store received messages with the source IP and Port info
+        /// </summary>
+		private CrestronQueue<GenericUdpReceiveTextExtraArgs> MessageQueue;
+
+        /// <summary>
         /// 
         /// </summary>
         //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
         public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
+
+        public event EventHandler<GenericUdpConnectedEventArgs> UpdateConnectionStatus;
 
         public SocketStatus ClientStatus
         {
@@ -39,10 +53,22 @@ namespace PepperDash.Core
             }
         }
 
+        public ushort UStatus
+        {
+            get { return (ushort)Server.ServerStatus; }
+        }
+
+
+		CCriticalSection DequeueLock;
         /// <summary>
         /// Address of server
         /// </summary>
         public string Hostname { get; set; }
+
+		/// <summary>
+		/// IP Address of the sender of the last recieved message 
+		/// </summary>
+
 
         /// <summary>
         /// Port on server
@@ -68,6 +94,11 @@ namespace PepperDash.Core
             private set;
         }
 
+        public ushort UIsConnected
+        {
+            get { return IsConnected ? (ushort)1 : (ushort)0; }
+        }
+
         /// <summary>
         /// Defaults to 2000
         /// </summary>
@@ -75,6 +106,20 @@ namespace PepperDash.Core
 
         public UDPServer Server { get; private set; }
 
+        /// <summary>
+        /// Constructor for S+. Make sure to set key, address, port, and buffersize using init method
+        /// </summary>
+        public GenericUdpServer()
+            : base("Uninitialized Udp Server")
+        {
+            BufferSize = 5000;
+            DequeueLock = new CCriticalSection();
+            MessageQueue = new CrestronQueue<GenericUdpReceiveTextExtraArgs>();
+
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
+        }
+       
         public GenericUdpServer(string key, string address, int port, int buffefSize)
             : base(key)
         {
@@ -82,8 +127,18 @@ namespace PepperDash.Core
             Port = port;
             BufferSize = buffefSize;
 
+			DequeueLock = new CCriticalSection();
+			MessageQueue = new CrestronQueue<GenericUdpReceiveTextExtraArgs>();
+
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
             CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
+        }
+
+        public void Initialize(string key, string address, ushort port)
+        {
+            Key = key;
+            Hostname = address;
+            UPort = port;
         }
 
         void CrestronEnvironment_EthernetEventHandler(EthernetEventArgs ethernetEventArgs)
@@ -113,7 +168,6 @@ namespace PepperDash.Core
             if (Server == null)
             {
                 Server = new UDPServer();
-
             }
 
             if (string.IsNullOrEmpty(Hostname))
@@ -135,6 +189,10 @@ namespace PepperDash.Core
             if (status == SocketErrorCodes.SOCKET_OK)
                 IsConnected = true;
 
+            var handler = UpdateConnectionStatus;
+            if (handler != null)
+                handler(this, new GenericUdpConnectedEventArgs(UIsConnected));
+
             // Start receiving data
             Server.ReceiveDataAsync(Receive);
         }
@@ -148,6 +206,10 @@ namespace PepperDash.Core
                 Server.DisableUDPServer();
 
             IsConnected = false;
+
+            var handler = UpdateConnectionStatus;
+            if (handler != null)
+                handler(this, new GenericUdpConnectedEventArgs(UIsConnected));
         }
 
 
@@ -162,9 +224,13 @@ namespace PepperDash.Core
 
             if (numBytes > 0)
             {
+				var sourceIp = Server.IPAddressLastMessageReceivedFrom;
+				var sourcePort = Server.IPPortLastMessageReceivedFrom;
                 var bytes = server.IncomingDataBuffer.Take(numBytes).ToArray();
+				var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+				MessageQueue.TryToEnqueue(new GenericUdpReceiveTextExtraArgs(str, sourceIp, sourcePort, bytes));
 
-                Debug.Console(2, this, "Bytes: {0}", bytes.ToString());
+				Debug.Console(2, this, "Bytes: {0}", bytes.ToString());
                 var bytesHandler = BytesReceived;
                 if (bytesHandler != null)
                     bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
@@ -173,15 +239,50 @@ namespace PepperDash.Core
                 var textHandler = TextReceived;
                 if (textHandler != null)
                 {
-                    var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+                   
                     Debug.Console(2, this, "RX: {0}", str);
                     textHandler(this, new GenericCommMethodReceiveTextArgs(str));
                 }
                 else
                     Debug.Console(2, this, "textHandler is null");
             }
-            server.ReceiveDataAsync(Receive);          
+            server.ReceiveDataAsync(Receive);
+
+            //  Attempt to enter the CCritical Secion and if we can, start the dequeue thread 
+            var gotLock = DequeueLock.TryEnter();
+            if (gotLock)
+                CrestronInvoke.BeginInvoke((o) => DequeueEvent());
         }
+
+        /// <summary>
+        /// This method gets spooled up in its own thread an protected by a CCriticalSection to prevent multiple threads from running concurrently.
+        /// It will dequeue items as they are enqueued automatically.
+        /// </summary>
+		void DequeueEvent()
+		{
+			try
+			{
+				while (true)
+				{
+					// Pull from Queue and fire an event. Block indefinitely until an item can be removed, similar to a Gather.
+					var message = MessageQueue.Dequeue();
+					var dataRecivedExtra = DataRecievedExtra;
+					if (dataRecivedExtra != null)
+					{
+						dataRecivedExtra(this, message);
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				Debug.Console(0, "GenericUdpServer DequeueEvent error: {0}\r", e);
+			}
+			// Make sure to leave the CCritical section in case an exception above stops this thread, or we won't be able to restart it.
+			if (DequeueLock != null)
+			{
+				DequeueLock.Leave();
+			}
+		}
 
         /// <summary>
         /// General send method
@@ -206,9 +307,28 @@ namespace PepperDash.Core
                 Server.SendData(bytes, bytes.Length);
         }
 
-
-
     }
+
+	public class GenericUdpReceiveTextExtraArgs : EventArgs
+	{
+		public string Text { get; private set; }
+		public string IpAddress { get; private set; }
+		public int	Port { get; private set; }
+		public byte[] Bytes { get; private set; }
+
+		public GenericUdpReceiveTextExtraArgs(string text, string ipAddress, int port, byte[] bytes)
+		{
+			Text = text;
+			IpAddress = ipAddress;
+			Port = port;
+			Bytes = bytes;
+		}
+
+		/// <summary>
+		/// Stupid S+ Constructor
+		/// </summary>
+		public GenericUdpReceiveTextExtraArgs() { }
+	}
 
     public class UdpServerPropertiesConfig
     {

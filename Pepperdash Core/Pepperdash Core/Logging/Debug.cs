@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
+using Crestron.SimplSharp.Reflection;
 using Crestron.SimplSharp.CrestronLogger;
 using Crestron.SimplSharp.CrestronIO;
 using Newtonsoft.Json;
@@ -31,6 +32,8 @@ namespace PepperDash.Core
 
         static int SaveTimeoutMs = 30000;
 
+        public static string PepperDashCoreVersion { get; private set; } 
+
         static CTimer SaveTimer;
 
 		/// <summary>
@@ -45,6 +48,17 @@ namespace PepperDash.Core
 
         static Debug()
         {
+            // Get the assembly version and print it to console and the log
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+
+            PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
+
+            var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
+
+            CrestronConsole.PrintLine(msg);
+
+            LogError(ErrorLogLevel.Notice, msg);
+
 			IncludedExcludedKeys = new Dictionary<string, object>();
 
             //CrestronDataStoreStatic.InitCrestronDataStore();
@@ -69,7 +83,21 @@ namespace PepperDash.Core
             LoadMemory();
             Level = Contexts.GetOrCreateItem("DEFAULT").Level;
 
-            CrestronLogger.Initialize(2, LoggerModeEnum.RM); // Use RM instead of DEFAULT as not to double-up console messages.
+            try
+            {
+                if (InitialParametersClass.NumberOfRemovableDrives > 0)
+                {
+                    CrestronConsole.PrintLine("{0} RM Drive(s) Present.", InitialParametersClass.NumberOfRemovableDrives);
+                    CrestronLogger.Initialize(2, LoggerModeEnum.DEFAULT); // Use RM instead of DEFAULT as not to double-up console messages.
+                }
+                else
+                    CrestronConsole.PrintLine("No RM Drive(s) Present.");
+            }
+            catch (Exception e)
+            {
+
+                CrestronConsole.PrintLine("Initializing of CrestronLogger failed: {0}", e);
+            }
         }
 
         /// <summary>

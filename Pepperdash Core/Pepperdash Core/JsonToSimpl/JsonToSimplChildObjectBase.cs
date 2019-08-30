@@ -285,7 +285,7 @@ namespace PepperDash.Core.JsonToSimpl
 		protected virtual string GetFullPath(string path)
 		{
 			return (PathPrefix != null ? PathPrefix : "") +
-				path + (PathSuffix != null ? PathSuffix : "");
+			    path + (PathSuffix != null ? PathSuffix : "");
 		}
 
 		// Helpers for events

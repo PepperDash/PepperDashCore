@@ -31,6 +31,7 @@
     <FileAlignment>512</FileAlignment>
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
+    <DocumentationFile>bin\PepperDash_Core.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <AllowedReferenceRelatedFileExtensions>.allowedReferenceRelatedFileExtensions</AllowedReferenceRelatedFileExtensions>
@@ -42,6 +43,7 @@
     <FileAlignment>512</FileAlignment>
     <NoStdLib>true</NoStdLib>
     <NoConfig>true</NoConfig>
+    <DocumentationFile>bin\PepperDash_Core.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -56,6 +58,10 @@
     <Reference Include="SimplSharpNewtonsoft, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpNewtonsoft.dll</HintPath>
+    </Reference>
+    <Reference Include="SimplSharpReflectionInterface, Version=1.0.5583.25238, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpReflectionInterface.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -76,6 +82,7 @@
     <Compile Include="Comm\EventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
     <Compile Include="Comm\GenericUdpServer.cs" />
+    <Compile Include="Comm\TcpClientConfigObject.cs" />
     <Compile Include="Comm\TcpServerConfigObject.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />
