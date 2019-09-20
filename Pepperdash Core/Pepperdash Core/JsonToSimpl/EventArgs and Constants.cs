@@ -12,11 +12,13 @@ namespace PepperDash.Core.JsonToSimpl
 	public class JsonToSimplConstants
 	{
 		public const ushort JsonIsValidBoolChange = 2;
+        
 
 		public const ushort BoolValueChange = 1;
 		public const ushort UshortValueChange = 101;
 		public const ushort StringValueChange = 201;
 		public const ushort FullPathToArrayChange = 202;
+        public const ushort JsonActualFileChange = 203;
 	}
 
 	//**************************************************************************************************//

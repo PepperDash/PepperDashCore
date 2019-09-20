@@ -19,7 +19,7 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public string PortalFilepath { get; private set; }
 
-		string ActualFilePath;
+        public string ActualFilePath { get; private set; }
 
 		/*****************************************************************************************/
 		/** Privates **/
@@ -62,6 +62,7 @@ namespace PepperDash.Core.JsonToSimpl
 			if (actualLocalFile != null)
 			{
 				ActualFilePath = actualLocalFile.FullName;
+                OnStringChange(ActualFilePath, 0, JsonToSimplConstants.JsonActualFileChange);
 			}
 			// If the local file does not exist, then read the portal file xyz.json
 			// and create the local.
