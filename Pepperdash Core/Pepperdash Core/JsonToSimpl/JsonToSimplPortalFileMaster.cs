@@ -62,7 +62,7 @@ namespace PepperDash.Core.JsonToSimpl
 			if (actualLocalFile != null)
 			{
 				ActualFilePath = actualLocalFile.FullName;
-                OnStringChange(ActualFilePath, 0, JsonToSimplConstants.JsonActualFileChange);
+                OnStringChange(ActualFilePath, 0, JsonToSimplConstants.ActualFilePathChange);
 			}
 			// If the local file does not exist, then read the portal file xyz.json
 			// and create the local.
@@ -76,6 +76,7 @@ namespace PepperDash.Core.JsonToSimpl
 					// got the portal file, hand off to the merge / save method				
 					PortalConfigReader.ReadAndMergeFileIfNecessary(actualPortalFile.FullName, newLocalPath);
 					ActualFilePath = newLocalPath;
+                    OnStringChange(ActualFilePath, 0, JsonToSimplConstants.ActualFilePathChange);
 				}
 				else
 				{

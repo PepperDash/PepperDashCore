@@ -68,7 +68,7 @@ namespace PepperDash.Core.JsonToSimpl
 			}
 			//var actualFileName = actualFile.FullName;
 			ActualFilePath = actualFile.FullName;
-            OnStringChange(ActualFilePath, 0, JsonToSimplConstants.JsonActualFileChange);
+            OnStringChange(ActualFilePath, 0, JsonToSimplConstants.ActualFilePathChange);
 			Debug.Console(1, "Actual JSON file is {0}", ActualFilePath);
 
 			string json = File.ReadToEnd(ActualFilePath, System.Text.Encoding.ASCII);

@@ -18,7 +18,7 @@ namespace PepperDash.Core.JsonToSimpl
 		public const ushort UshortValueChange = 101;
 		public const ushort StringValueChange = 201;
 		public const ushort FullPathToArrayChange = 202;
-        public const ushort JsonActualFileChange = 203;
+        public const ushort ActualFilePathChange = 203;
 	}
 
 	//**************************************************************************************************//
