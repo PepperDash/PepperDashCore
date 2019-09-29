@@ -10,8 +10,8 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core.JsonToSimpl
 {
-    public class JsonToSimplFileMaster : JsonToSimplMaster
-    {
+	public class JsonToSimplFileMaster : JsonToSimplMaster
+	{
 		/// <summary>
 		///  Sets the filepath as well as registers this with the Global.Masters list
 		/// </summary>
@@ -19,10 +19,14 @@ namespace PepperDash.Core.JsonToSimpl
 
 		public string ActualFilePath { get; private set; }
 
+		// TODO: pdc-20: added to return filename back to SIMPL
+		public string Filename { get; private set; }
+		public string FilePathName { get; private set; }
+
 		/*****************************************************************************************/
 		/** Privates **/
 
-        
+
 		// The JSON file in JObject form
 		// For gathering the incoming data
 		object StringBuilderLock = new object();
@@ -32,10 +36,10 @@ namespace PepperDash.Core.JsonToSimpl
 		/*****************************************************************************************/
 
 		/// <summary>
-        /// SIMPL+ default constructor.
-        /// </summary>
+		/// SIMPL+ default constructor.
+		/// </summary>
 		public JsonToSimplFileMaster()
-        {
+		{
 		}
 
 		/// <summary>
@@ -49,7 +53,7 @@ namespace PepperDash.Core.JsonToSimpl
 			if (string.IsNullOrEmpty(Filepath))
 			{
 				CrestronConsole.PrintLine("Cannot evaluate file. JSON file path not set");
-				return; 
+				return;
 			}
 
 			// Resolve wildcard
@@ -59,17 +63,29 @@ namespace PepperDash.Core.JsonToSimpl
 			var directory = new DirectoryInfo(dir);
 
 			var actualFile = directory.GetFiles(fileName).FirstOrDefault();
-			if(actualFile == null) 
+			if (actualFile == null)
 			{
 				var msg = string.Format("JSON file not found: {0}", Filepath);
 				CrestronConsole.PrintLine(msg);
 				ErrorLog.Error(msg);
 				return;
 			}
-			//var actualFileName = actualFile.FullName;
+
+			// \xSE\xR\PDT000-Template_Main_Config-Combined_DSP_v00.02.json
+			// \USER\PDT000-Template_Main_Config-Combined_DSP_v00.02.json
 			ActualFilePath = actualFile.FullName;
-            OnStringChange(ActualFilePath, 0, JsonToSimplConstants.ActualFilePathChange);
+			OnStringChange(ActualFilePath, 0, JsonToSimplConstants.ActualFilePathChange);
 			Debug.Console(1, "Actual JSON file is {0}", ActualFilePath);
+
+			// TODO: pdc-20: added to retrun filename to SIMPL
+			Filename = actualFile.Name;
+			OnStringChange(Filename, 0, JsonToSimplConstants.FilenameResolvedChange);
+			Debug.Console(1, "JSON Filename is {0}", Filename);
+
+			// TODO: pdc-20: added to return the file path to SIMPL
+			FilePathName = string.Format(@"{0}\", actualFile.DirectoryName);
+			OnStringChange(FilePathName, 0, JsonToSimplConstants.FilePathResolvedChange);
+			Debug.Console(1, "JSON File Path is {0}", FilePathName);
 
 			string json = File.ReadToEnd(ActualFilePath, System.Text.Encoding.ASCII);
 
@@ -87,10 +103,11 @@ namespace PepperDash.Core.JsonToSimpl
 				ErrorLog.Error(msg);
 				return;
 			}
-        }
-        public void setDebugLevel(int level) {
-            Debug.SetDebugLevel(level);
-            }
+		}
+		public void setDebugLevel(int level)
+		{
+			Debug.SetDebugLevel(level);
+		}
 		public override void Save()
 		{
 			// this code is duplicated in the other masters!!!!!!!!!!!!!
@@ -122,39 +139,39 @@ namespace PepperDash.Core.JsonToSimpl
 					{
 						//http://stackoverflow.com/questions/17455052/how-to-set-the-value-of-a-json-path-using-json-net
 						Debug.Console(1, "JSON Master[{0}] Cannot write value onto missing property: '{1}'", UniqueID, path);
-						
-//                        JContainer jpart = JsonObject;
-//                        // walk down the path and find where it goes
-//#warning Does not handle arrays.
-//                        foreach (var part in path.Split('.'))
-//                        {
 
-//                            var openPos = part.IndexOf('[');
-//                            if (openPos > -1)
-//                            {
-//                                openPos++; // move to number
-//                                var closePos = part.IndexOf(']');
-//                                var arrayName = part.Substring(0, openPos - 1); // get the name
-//                                var index = Convert.ToInt32(part.Substring(openPos, closePos - openPos));
+						//                        JContainer jpart = JsonObject;
+						//                        // walk down the path and find where it goes
+						//#warning Does not handle arrays.
+						//                        foreach (var part in path.Split('.'))
+						//                        {
 
-//                                // Check if the array itself exists and add the item if so
-//                                if (jpart[arrayName] != null)
-//                                {
-//                                    var arrayObj = jpart[arrayName] as JArray;
-//                                    var item = arrayObj[index];
-//                                    if (item == null)
-//                                        arrayObj.Add(new JObject());
-//                                }
-								
-//                                Debug.Console(0, "IGNORING MISSING ARRAY VALUE FOR NOW");
-//                                continue;
-//                            }
-//                            // Build the 
-//                            if (jpart[part] == null)
-//                                jpart.Add(new JProperty(part, new JObject()));
-//                            jpart = jpart[part] as JContainer;
-//                        }
-//                        jpart.Replace(UnsavedValues[path]);
+						//                            var openPos = part.IndexOf('[');
+						//                            if (openPos > -1)
+						//                            {
+						//                                openPos++; // move to number
+						//                                var closePos = part.IndexOf(']');
+						//                                var arrayName = part.Substring(0, openPos - 1); // get the name
+						//                                var index = Convert.ToInt32(part.Substring(openPos, closePos - openPos));
+
+						//                                // Check if the array itself exists and add the item if so
+						//                                if (jpart[arrayName] != null)
+						//                                {
+						//                                    var arrayObj = jpart[arrayName] as JArray;
+						//                                    var item = arrayObj[index];
+						//                                    if (item == null)
+						//                                        arrayObj.Add(new JObject());
+						//                                }
+
+						//                                Debug.Console(0, "IGNORING MISSING ARRAY VALUE FOR NOW");
+						//                                continue;
+						//                            }
+						//                            // Build the 
+						//                            if (jpart[part] == null)
+						//                                jpart.Add(new JProperty(part, new JObject()));
+						//                            jpart = jpart[part] as JContainer;
+						//                        }
+						//                        jpart.Replace(UnsavedValues[path]);
 					}
 				}
 				using (StreamWriter sw = new StreamWriter(ActualFilePath))
