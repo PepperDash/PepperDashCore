@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core.JsonToSimpl;
 
 namespace PepperDash.Core.JsonStandardObjects
-{	
+{
 	/*
 	Convert JSON snippt to C#: http://json2csharp.com/#
 	
@@ -52,8 +54,8 @@ namespace PepperDash.Core.JsonStandardObjects
 	/// <summary>
 	/// Device class
 	/// </summary>
-	public class DeviceConfig
-	{
+	public class DeviceConfig : JsonToSimplChildObjectBase
+	{		
 		/// <summary>
 		/// JSON config key property
 		/// </summary>
@@ -93,53 +95,63 @@ namespace PepperDash.Core.JsonStandardObjects
 		/// </summary>
 		public DeviceConfig()
 		{
-			// add logic here if necessary
+			properties = new PropertiesConfig();
 		}
 
 		/// <summary>
-		/// Initialize Device Module
+		/// Initialize method
 		/// </summary>
-		/// <param name="uniqueID">JSON master unique ID</param>
-		/// <param name="key">Device key to search for</param>
-		public void Initialize(string uniqueID, string key)
+		/// <param name="uniqueID"></param>
+		/// <param name="deviceKey"></param>
+		public void Initialize(string uniqueID, string deviceKey)
 		{
 			// S+ set EvaluateFb low
 			OnBoolChange(false, 0, JsonStandardDeviceConstants.JsonObjectEvaluated);
 			// validate parameters
-			if (string.IsNullOrEmpty(uniqueID))
+			if (string.IsNullOrEmpty(uniqueID) || string.IsNullOrEmpty(deviceKey))
 			{
-				Debug.Console(1, "UniqueID is null or empty");
+				Debug.Console(1, "UniqueID ({0} or key ({1} is null or empty", uniqueID, deviceKey);
+				// S+ set EvaluteFb high
+				OnBoolChange(true, 0, JsonStandardDeviceConstants.JsonObjectEvaluated);
 				return;
 			}
-			if (string.IsNullOrEmpty(key))
-			{
-				Debug.Console(1, "Device key is null or empty");
-				return;
-			}
+
+			key = deviceKey;
 
 			try
 			{
 				// get the file using the unique ID
 				JsonToSimplMaster jsonMaster = J2SGlobal.GetMasterByFile(uniqueID);
-				var device = jsonMaster.JsonObject.ToObject<RootObject>().devices.FirstOrDefault(d => d.key.Equals(key));
+				if (jsonMaster == null)
+				{
+					Debug.Console(1, "Could not find JSON file with uniqueID {0}", uniqueID);
+					return;
+				}
 
-				name = device.name;
-				type = device.type;
-				properties = device.properties;
-				// Pass object to S+
-				OnObjectChange(this, 0, JsonStandardDeviceConstants.JsonObjectChanged);
+				// get the device configuration using the key
+				var devices = jsonMaster.JsonObject.ToObject<RootObject>().devices;
+				var device = devices.FirstOrDefault(d => d.key.Equals(key));
+				if (device == null)
+				{
+					Debug.Console(1, "Could not find device with key {0}", key);
+					return;
+				}
+				OnObjectChange(device, 0, JsonStandardDeviceConstants.JsonObjectChanged);
 
+				var index = devices.IndexOf(device);
+				OnStringChange(string.Format("devices[{0}]", index), 0, JsonToSimplConstants.FullPathToArrayChange);
 			}
 			catch (Exception e)
 			{
-				var msg = string.Format("Device lookup failed:\r{0}", e);
+				var msg = string.Format("Device {0} lookup failed:\r{1}", key, e);
 				CrestronConsole.PrintLine(msg);
 				ErrorLog.Error(msg);
-				return;
 			}
-
-			// S+ set EvaluteFb high
-			OnBoolChange(true, 0, JsonStandardDeviceConstants.JsonObjectEvaluated);
+			finally
+			{
+				// S+ set EvaluteFb high
+				OnBoolChange(true, 0, JsonStandardDeviceConstants.JsonObjectEvaluated);
+			}
 		}
 
 		#region EventHandler Helpers
@@ -228,10 +240,18 @@ namespace PepperDash.Core.JsonStandardObjects
 		public int pacing { get; set; }
 
 		// convert properties for simpl
-		public ushort simplBaudRate { get { return (ushort)Convert.ToUInt16(baudRate); } }
+		public ushort simplBaudRate { get { return Convert.ToUInt16(baudRate); } }
 		public ushort simplDataBits { get { return Convert.ToUInt16(dataBits); } }
 		public ushort simplStopBits { get { return Convert.ToUInt16(stopBits); } }
 		public ushort simplPacing { get { return Convert.ToUInt16(pacing); } }
+
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		public ComParamsConfig()
+		{
+
+		}
 	}
 
 	/// <summary>
@@ -247,9 +267,17 @@ namespace PepperDash.Core.JsonStandardObjects
 		public int autoReconnectIntervalMs { get; set; }
 
 		// convert properties for simpl
-		public ushort simplPort { get { return (ushort)Convert.ToUInt16(port); } }
+		public ushort simplPort { get { return Convert.ToUInt16(port); } }
 		public ushort simplAutoReconnect { get { return (ushort)(autoReconnect ? 1 : 0); } }
 		public ushort simplAutoReconnectIntervalMs { get { return Convert.ToUInt16(autoReconnectIntervalMs); } }
+
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		public TcpSshPropertiesConfig()
+		{
+			
+		}
 	}
 
 	/// <summary>
@@ -265,6 +293,15 @@ namespace PepperDash.Core.JsonStandardObjects
 
 		// convert properties for simpl
 		public ushort simplControlPortNumber { get { return Convert.ToUInt16(controlPortNumber); } }
+
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		public ControlConfig()
+		{
+			comParams = new ComParamsConfig();
+			tcpSshProperties = new TcpSshPropertiesConfig();
+		}
 	}
 
 	/// <summary>
@@ -279,6 +316,14 @@ namespace PepperDash.Core.JsonStandardObjects
 		// convert properties for simpl
 		public ushort simplDeviceId { get { return Convert.ToUInt16(deviceId); } }
 		public ushort simplEnabled { get { return (ushort)(enabled ? 1 : 0); } }
+
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		public PropertiesConfig()
+		{
+			control = new ControlConfig();
+		}
 	}
 
 	/// <summary>

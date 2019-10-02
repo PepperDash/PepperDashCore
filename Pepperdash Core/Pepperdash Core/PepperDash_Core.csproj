@@ -119,5 +119,7 @@
   </ProjectExtensions>
   <PropertyGroup>
     <PostBuildEvent>rem  S# preparation will execute after these operations</PostBuildEvent>
+    <PreBuildEvent>del "$(TargetDir)PepperDash_Core.*" /q
+</PreBuildEvent>
   </PropertyGroup>
 </Project>
