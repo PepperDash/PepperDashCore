@@ -6,36 +6,46 @@ using Crestron.SimplSharp;
 
 namespace PepperDash.Core.JsonStandardObjects
 {
-	#region Constants
-
 	/// <summary>
 	/// Constants for simpl modules
 	/// </summary>
 	public class JsonStandardDeviceConstants
 	{
+		/// <summary>
+		/// Json object evaluated constant
+		/// </summary>
 		public const ushort JsonObjectEvaluated = 2;
 
+		/// <summary>
+		/// Json object changed constant
+		/// </summary>
 		public const ushort JsonObjectChanged = 104;
 	}
-
-	#endregion Constants
-
-
-	#region ObjectChangeEventArgs
 
 	/// <summary>
 	/// 
 	/// </summary>
-	public class ObjectChangeEventArgs : EventArgs
+	public class DeviceChangeEventArgs : EventArgs
 	{
+		/// <summary>
+		/// Device change event args object
+		/// </summary>
 		public DeviceConfig Device { get; set; }
+
+		/// <summary>
+		/// Device change event args type
+		/// </summary>
 		public ushort Type { get; set; }
+
+		/// <summary>
+		/// Device change event args index
+		/// </summary>
 		public ushort Index { get; set; }
 
 		/// <summary>
 		/// Default constructor
 		/// </summary>
-		public ObjectChangeEventArgs()
+		public DeviceChangeEventArgs()
 		{
 
 		}
@@ -45,7 +55,7 @@ namespace PepperDash.Core.JsonStandardObjects
 		/// </summary>
 		/// <param name="device"></param>
 		/// <param name="type"></param>
-		public ObjectChangeEventArgs(DeviceConfig device, ushort type)
+		public DeviceChangeEventArgs(DeviceConfig device, ushort type)
 		{
 			Device = device;
 			Type = type;
@@ -57,13 +67,11 @@ namespace PepperDash.Core.JsonStandardObjects
 		/// <param name="device"></param>
 		/// <param name="type"></param>
 		/// <param name="index"></param>
-		public ObjectChangeEventArgs(DeviceConfig device, ushort type, ushort index)
+		public DeviceChangeEventArgs(DeviceConfig device, ushort type, ushort index)
 		{
 			Device = device;
 			Type = type;
 			Index = index;
 		}
 	}
-
-	#endregion ObjectChangeEventArgs
 }
