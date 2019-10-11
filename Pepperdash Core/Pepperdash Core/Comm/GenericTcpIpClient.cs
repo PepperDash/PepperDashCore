@@ -250,8 +250,6 @@ namespace PepperDash.Core
 
             if (Client == null)
             {
-			
-				
                 Client = new TCPClient(Hostname, Port, BufferSize);
                 Client.SocketStatusChange += Client_SocketStatusChange;
             }
