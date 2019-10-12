@@ -110,14 +110,10 @@
     <Compile Include="JsonToSimpl\JsonToSimplGenericMaster.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplMaster.cs" />
     <Compile Include="Network\DiscoveryThings.cs" />
-    <Compile Include="SystemInfo\ConsoleHelper.cs" />
-    <Compile Include="SystemInfo\ControlSubnetInfo.cs" />
-    <Compile Include="SystemInfo\EthernetInfo.cs" />
     <Compile Include="SystemInfo\EventArgs and Constants.cs" />
-    <Compile Include="SystemInfo\ProcessorInfo.cs" />
-    <Compile Include="SystemInfo\ProgramInfo.cs" />
-    <Compile Include="SystemInfo\SystemInfoToSimpl.cs" />
+    <Compile Include="SystemInfo\SystemInfoConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SystemInfo\SystemInfoToSimpl.cs" />
     <Compile Include="WebApi\Presets\Preset.cs" />
     <Compile Include="WebApi\Presets\User.cs" />
     <Compile Include="WebApi\Presets\WebApiPasscodeClient.cs" />

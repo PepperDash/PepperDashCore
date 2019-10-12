@@ -23,10 +23,10 @@ namespace PepperDash.Core.SystemInfo
 		public const ushort ProgramUptimeChange = 204;
 
 		public const ushort ObjectChange = 301;
-		public const ushort ProcessorObjectChange = 302;
-		public const ushort EthernetObjectChange = 303;
-		public const ushort ControlSubnetObjectChange = 304;
-		public const ushort ProgramObjectChange = 305;
+		public const ushort ProcessorConfigChange = 302;
+		public const ushort EthernetConfigChange = 303;
+		public const ushort ControlSubnetConfigChange = 304;
+		public const ushort ProgramConfigChange = 305;
 	}
 
 	/// <summary>
@@ -34,7 +34,7 @@ namespace PepperDash.Core.SystemInfo
 	/// </summary>
 	public class ProcessorChangeEventArgs : EventArgs
 	{
-		public ProcessorConfig Processor { get; set; }
+		public ProcessorInfo Processor { get; set; }
 		public ushort Type { get; set; }
 		public ushort Index { get; set; }
 
@@ -49,7 +49,7 @@ namespace PepperDash.Core.SystemInfo
 		/// <summary>
 		/// Constructor overload
 		/// </summary>
-		public ProcessorChangeEventArgs(ProcessorConfig processor, ushort type)
+		public ProcessorChangeEventArgs(ProcessorInfo processor, ushort type)
 		{
 			Processor = processor;
 			Type = type;
@@ -58,7 +58,7 @@ namespace PepperDash.Core.SystemInfo
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		public ProcessorChangeEventArgs(ProcessorConfig processor, ushort type, ushort index)
+		public ProcessorChangeEventArgs(ProcessorInfo processor, ushort type, ushort index)
 		{
 			Processor = processor;
 			Type = type;
@@ -71,7 +71,7 @@ namespace PepperDash.Core.SystemInfo
 	/// </summary>
 	public class EthernetChangeEventArgs : EventArgs
 	{
-		public EthernetConfig Adapter { get; set; }
+		public EthernetInfo Adapter { get; set; }
 		public ushort Type { get; set; }
 		public ushort Index { get; set; }
 
@@ -88,7 +88,7 @@ namespace PepperDash.Core.SystemInfo
 		/// </summary>
 		/// <param name="Ethernet"></param>
 		/// <param name="type"></param>
-		public EthernetChangeEventArgs(EthernetConfig ethernet, ushort type)
+		public EthernetChangeEventArgs(EthernetInfo ethernet, ushort type)
 		{
 			Adapter = ethernet;
 			Type = type;
@@ -99,7 +99,7 @@ namespace PepperDash.Core.SystemInfo
 		/// </summary>
 		/// <param name="Ethernet"></param>
 		/// <param name="type"></param>
-		public EthernetChangeEventArgs(EthernetConfig ethernet, ushort type, ushort index)
+		public EthernetChangeEventArgs(EthernetInfo ethernet, ushort type, ushort index)
 		{
 			Adapter = ethernet;
 			Type = type;
@@ -112,7 +112,7 @@ namespace PepperDash.Core.SystemInfo
 	/// </summary>
 	public class ControlSubnetChangeEventArgs : EventArgs
 	{
-		public ControlSubnetConfig Adapter { get; set; }
+		public ControlSubnetInfo Adapter { get; set; }
 		public ushort Type { get; set; }
 		public ushort Index { get; set; }
 
@@ -127,7 +127,7 @@ namespace PepperDash.Core.SystemInfo
 		/// <summary>
 		/// Constructor overload
 		/// </summary>
-		public ControlSubnetChangeEventArgs(ControlSubnetConfig controlSubnet, ushort type)
+		public ControlSubnetChangeEventArgs(ControlSubnetInfo controlSubnet, ushort type)
 		{
 			Adapter = controlSubnet;
 			Type = type;
@@ -136,7 +136,7 @@ namespace PepperDash.Core.SystemInfo
 		/// <summary>
 		/// Constructor overload
 		/// </summary>
-		public ControlSubnetChangeEventArgs(ControlSubnetConfig controlSubnet, ushort type, ushort index)
+		public ControlSubnetChangeEventArgs(ControlSubnetInfo controlSubnet, ushort type, ushort index)
 		{
 			Adapter = controlSubnet;
 			Type = type;
@@ -149,7 +149,7 @@ namespace PepperDash.Core.SystemInfo
 	/// </summary>
 	public class ProgramChangeEventArgs : EventArgs
 	{
-		public ProgramConfig Program { get; set; }
+		public ProgramInfo Program { get; set; }
 		public ushort Type { get; set; }
 		public ushort Index { get; set; }
 
@@ -166,7 +166,7 @@ namespace PepperDash.Core.SystemInfo
 		/// </summary>
 		/// <param name="Program"></param>
 		/// <param name="type"></param>
-		public ProgramChangeEventArgs(ProgramConfig program, ushort type)
+		public ProgramChangeEventArgs(ProgramInfo program, ushort type)
 		{
 			Program = program;
 			Type = type;
@@ -177,7 +177,7 @@ namespace PepperDash.Core.SystemInfo
 		/// </summary>
 		/// <param name="Program"></param>
 		/// <param name="type"></param>
-		public ProgramChangeEventArgs(ProgramConfig program, ushort type, ushort index)
+		public ProgramChangeEventArgs(ProgramInfo program, ushort type, ushort index)
 		{
 			Program = program;
 			Type = type;
