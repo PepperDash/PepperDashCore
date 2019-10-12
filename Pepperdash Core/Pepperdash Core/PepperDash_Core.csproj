@@ -88,7 +88,7 @@
     <Compile Include="CoreInterfaces.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="GenericRESTfulCommunications\Constants.cs" />
-    <Compile Include="GenericRESTfulCommunications\GenericRESTful.cs" />
+    <Compile Include="GenericRESTfulCommunications\GenericRESTfulClient.cs" />
     <Compile Include="JsonStandardObjects\EventArgs and Constants.cs" />
     <Compile Include="JsonStandardObjects\JsonToSimplDeviceConfig.cs" />
     <Compile Include="JsonStandardObjects\JsonToSimplDevice.cs" />
