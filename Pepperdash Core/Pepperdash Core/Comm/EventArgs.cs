@@ -76,6 +76,14 @@ namespace PepperDash.Core
     public class GenericTcpServerCommMethodReceiveTextArgs : EventArgs
     {
         public uint ReceivedFromClientIndex { get; private set; }
+		public ushort ReceivedFromClientIndexShort
+		{
+			get
+			{
+				return (ushort)ReceivedFromClientIndex;
+			}
+		}
+
         public string Text { get; private set; }
 
         public GenericTcpServerCommMethodReceiveTextArgs(string text)

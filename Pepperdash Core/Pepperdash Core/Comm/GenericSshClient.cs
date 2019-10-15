@@ -221,7 +221,12 @@ namespace PepperDash.Core
 
 			Debug.Console(1, this, "Creating new SshClient");
 			ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
-			Client = new SshClient(connectionInfo);
+
+			if (Client == null)
+			{
+				Client = new SshClient(connectionInfo);
+			}
+			Client.ErrorOccurred -= Client_ErrorOccurred;
 			Client.ErrorOccurred += Client_ErrorOccurred;
 
 			//You can do it!

@@ -86,6 +86,12 @@
     <Compile Include="Comm\TcpServerConfigObject.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />
+    <Compile Include="EventArgs.cs" />
+    <Compile Include="GenericRESTfulCommunications\Constants.cs" />
+    <Compile Include="GenericRESTfulCommunications\GenericRESTfulClient.cs" />
+    <Compile Include="JsonStandardObjects\EventArgs and Constants.cs" />
+    <Compile Include="JsonStandardObjects\JsonToSimplDeviceConfig.cs" />
+    <Compile Include="JsonStandardObjects\JsonToSimplDevice.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplPortalFileMaster.cs" />
     <Compile Include="Logging\Debug.cs" />
     <Compile Include="Logging\DebugContext.cs" />
@@ -94,7 +100,7 @@
     <Compile Include="Comm\GenericTcpIpServer.cs" />
     <Compile Include="EthernetHelper.cs" />
     <Compile Include="Comm\GenericTcpIpClient.cs" />
-    <Compile Include="JsonToSimpl\EventArgs and Constants.cs" />
+    <Compile Include="JsonToSimpl\Constants.cs" />
     <Compile Include="JsonToSimpl\Global.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplArrayLookupChild.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplChildObjectBase.cs" />
@@ -104,7 +110,10 @@
     <Compile Include="JsonToSimpl\JsonToSimplGenericMaster.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplMaster.cs" />
     <Compile Include="Network\DiscoveryThings.cs" />
+    <Compile Include="SystemInfo\EventArgs and Constants.cs" />
+    <Compile Include="SystemInfo\SystemInfoConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SystemInfo\SystemInfoToSimpl.cs" />
     <Compile Include="WebApi\Presets\Preset.cs" />
     <Compile Include="WebApi\Presets\User.cs" />
     <Compile Include="WebApi\Presets\WebApiPasscodeClient.cs" />
@@ -117,5 +126,7 @@
   </ProjectExtensions>
   <PropertyGroup>
     <PostBuildEvent>rem  S# preparation will execute after these operations</PostBuildEvent>
+    <PreBuildEvent>del "$(TargetDir)PepperDash_Core.*" /q
+</PreBuildEvent>
   </PropertyGroup>
 </Project>
