@@ -163,9 +163,17 @@ namespace PepperDash.Core
 
 		CTimer RetryTimer;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="address"></param>
+        /// <param name="port"></param>
+        /// <param name="bufferSize"></param>
 		public GenericTcpIpClient(string key, string address, int port, int bufferSize)
 			: base(key)
 		{
+
             Hostname = address;
             Port = port;
             BufferSize = bufferSize;
@@ -190,6 +198,21 @@ namespace PepperDash.Core
             //Client.SocketStatusChange += Client_SocketStatusChange;
 		}
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        public GenericTcpIpClient(string key)
+            : base(key)
+        {
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            AutoReconnectIntervalMs = 5000;
+            BufferSize = 2000;
+        }
+
+        /// <summary>
+        /// Default constructor for S+
+        /// </summary>
         public GenericTcpIpClient()
 			: base("Uninitialized TcpIpClient")
 		{

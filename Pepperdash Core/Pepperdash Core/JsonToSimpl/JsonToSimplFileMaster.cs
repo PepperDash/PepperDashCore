@@ -77,12 +77,10 @@ namespace PepperDash.Core.JsonToSimpl
 			OnStringChange(ActualFilePath, 0, JsonToSimplConstants.ActualFilePathChange);
 			Debug.Console(1, "Actual JSON file is {0}", ActualFilePath);
 
-			// TODO: pdc-20: added to retrun filename to SIMPL
 			Filename = actualFile.Name;
 			OnStringChange(Filename, 0, JsonToSimplConstants.FilenameResolvedChange);
 			Debug.Console(1, "JSON Filename is {0}", Filename);
 
-			// TODO: pdc-20: added to return the file path to SIMPL
 			FilePathName = string.Format(@"{0}\", actualFile.DirectoryName);
 			OnStringChange(FilePathName, 0, JsonToSimplConstants.FilePathResolvedChange);
 			Debug.Console(1, "JSON File Path is {0}", FilePathName);

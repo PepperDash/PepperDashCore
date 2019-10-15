@@ -4,4 +4,4 @@
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Pepperdash_Core")]
 [assembly: AssemblyCopyright("Copyright © PepperDash 2019")]
-[assembly: AssemblyVersion("1.0.23.*")]
+[assembly: AssemblyVersion("1.0.0.*")]
