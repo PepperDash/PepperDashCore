@@ -7,14 +7,14 @@ using Newtonsoft.Json.Linq;
 using Crestron.SimplSharp;
 using PepperDash.Core.JsonToSimpl;
 
-namespace PepperDash.Core.PasswordManager
+namespace PepperDash.Core.PasswordManagement
 {
-	public class PasswordManager : IKeyed
+	public class PasswordManager
 	{
-		public string Key { get; set; }
-
-		public List<PasswordConfig> Passwords { get; set; }
-
+		/// <summary>
+		/// List of passwords configured
+		/// </summary>
+		public static List<PasswordConfig> Passwords = new List<PasswordConfig>();
 		/// <summary>
 		/// Boolean event 
 		/// </summary>
@@ -33,7 +33,7 @@ namespace PepperDash.Core.PasswordManager
 		/// </summary>
 		public PasswordManager()
 		{
-
+			Passwords.Clear();
 		}
 
 		/// <summary>
@@ -43,7 +43,7 @@ namespace PepperDash.Core.PasswordManager
 		/// <param name="uniqueId"></param>
 		public void Initialize(string uniqueId, string key)
 		{
-			OnBoolChange(false, 0, PasswordManagerConstants.BoolEvaluatedChange);
+			OnBoolChange(false, 0, PasswordManagementConstants.BoolEvaluatedChange);
 
 			try
 			{
@@ -52,8 +52,6 @@ namespace PepperDash.Core.PasswordManager
 					Debug.Console(1, "PasswordManager.Initialize({0}, {1}) null or empty parameters", uniqueId, key);
 					return;
 				}
-
-				Key = key;
 
 				JsonToSimplMaster master = J2SGlobal.GetMasterByFile(uniqueId);
 				if(master == null)
@@ -64,25 +62,31 @@ namespace PepperDash.Core.PasswordManager
 
 				var passwords = master.JsonObject.ToObject<RootObject>().global.passwords;
 				if(passwords == null)
-				{
+				{					
 					Debug.Console(1, "PasswordManager.Initialize failed:\rCould not find password object");
 					return;
 				}
 
 				foreach(var password in passwords)
 				{
-					AddPassword(password);
+					if (password != null)
+					{
+						Debug.Console(1, "PasswordManager.Initialize: {0}, {1}, {2}, {3}, {4}", password.key, password.name, password.simplEnabled, password.simplType, password.password);
+						AddPassword(password);
+					}
 				}
+
+				OnUshrtChange(Convert.ToUInt16(Passwords.Count), 0, PasswordManagementConstants.PasswordListCount);
 			}
 			catch(Exception e)
 			{
-				var msg = string.Format("PasswordManager.Initialize({0}, {1}) failed:\r{2}", uniqueId, Key, e.Message);
+				var msg = string.Format("PasswordManager.Initialize({0}, {1}) failed:\r{2}", uniqueId, key, e.Message);
 				CrestronConsole.PrintLine(msg);
 				ErrorLog.Error(msg);
 			}
 			finally
 			{
-				OnBoolChange(true, 0, PasswordManagerConstants.BoolEvaluatedChange);
+				OnBoolChange(true, 0, PasswordManagementConstants.BoolEvaluatedChange);
 			}
 		}
 
@@ -95,7 +99,9 @@ namespace PepperDash.Core.PasswordManager
 			if (password == null)
 				return;
 
-			RemovePassword(password);
+			var item = Passwords.FirstOrDefault(i => i.key.Equals(password.key));
+			if (item != null)
+				Passwords.Remove(item);
 			Passwords.Add(password);
 		}
 
@@ -108,7 +114,7 @@ namespace PepperDash.Core.PasswordManager
 			if (password == null)
 				return;
 
-			var item = Passwords.FirstOrDefault(p => p.key.Equals(password.key));
+			var item = Passwords.FirstOrDefault(i => i.key.Equals(password.key));
 			if (item != null)
 				Passwords.Remove(item);
 		}

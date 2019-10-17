@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 
-namespace PepperDash.Core.PasswordManager
+namespace PepperDash.Core.PasswordManagement
 {
 	// Example JSON password configuration object
 	//{
@@ -13,7 +13,7 @@ namespace PepperDash.Core.PasswordManager
 	//            {
 	//                "key": "Password01",
 	//                "name": "Technician Password",
-	//                "enable": true,
+	//                "enabled": true,
 	//                "password": "1988"
 	//            }
 	//        ]
@@ -36,18 +36,38 @@ namespace PepperDash.Core.PasswordManager
 		/// <summary>
 		/// Password object enabled
 		/// </summary>
-		public bool enable { get; set; }
+		public bool enabled { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public ushort simplEnabled
+		{
+			get { return (ushort)(enabled ? 1 : 0); }
+			set { enabled = Convert.ToBoolean(value); }
+		}
 		/// <summary>
 		/// Password object configured password
 		/// </summary>
 		public string password { get; set; }
-
+		/// <summary>
+		/// Password type
+		/// </summary>
+		private int type { get; set; }
+		/// <summary>
+		/// Password Type for S+
+		/// </summary>
+		public ushort simplType
+		{
+			get { return Convert.ToUInt16(type); }
+			set { type = value; }
+		}
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		public PasswordConfig()
 		{
-
+			simplEnabled = 0;
+			simplType = 0;
 		}
 	}
 
@@ -63,7 +83,7 @@ namespace PepperDash.Core.PasswordManager
 		/// </summary>
 		public GlobalConfig()
 		{
-			
+
 		}
 	}
 
