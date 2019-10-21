@@ -24,6 +24,7 @@ function Update-AllAssemblyInfoFiles ( $version )
 $r= [System.Text.RegularExpressions.Regex]::Match($args[0], "^\d+\.\d+\.\d+$");
 if ($r.Success)
 {
+    echo "Updating Assembly Version...";
     Update-AllAssemblyInfoFiles $args[0];
 }
 else
