@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core.JsonToSimpl
 {
-	public abstract class JsonToSimplChildObjectBase: IKeyed
+	public abstract class JsonToSimplChildObjectBase : IKeyed
 	{
 
 		public event EventHandler<BoolChangeEventArgs> BoolChange;
@@ -64,9 +64,10 @@ namespace PepperDash.Core.JsonToSimpl
 				Debug.Console(1, "JSON Child [{0}] cannot link to master {1}", key, masterUniqueId);
 		}
 
-		public void SetPathPrefix(string pathPrefix) {
+		public void SetPathPrefix(string pathPrefix)
+		{
 			PathPrefix = pathPrefix;
-			}
+		}
 		/// <summary>
 		/// Set the JPath to evaluate for a given bool out index.
 		/// </summary>
@@ -133,20 +134,22 @@ namespace PepperDash.Core.JsonToSimpl
 				OnBoolChange(response.Equals("true", StringComparison.OrdinalIgnoreCase),
 					index, JsonToSimplConstants.BoolValueChange);
 			else { }
-				// OnBoolChange(false, index, JsonToSimplConstants.BoolValueChange);
+			// OnBoolChange(false, index, JsonToSimplConstants.BoolValueChange);
 		}
 
 		// Processes the path to a ushort, converting to ushort if able, firing off UshrtChange event
 		void ProcessUshortPath(ushort index)
 		{
 			string response;
-			if (Process(UshortPaths[index], out response)) {
+			if (Process(UshortPaths[index], out response))
+			{
 				ushort val;
-				try { val = Convert.ToUInt16(response); } catch { val = 0; }
+				try { val = Convert.ToUInt16(response); }
+				catch { val = 0; }
 				OnUShortChange(val, index, JsonToSimplConstants.UshortValueChange);
-				} 
+			}
 			else { }
-				// OnUShortChange(0, index, JsonToSimplConstants.UshortValueChange);
+			// OnUShortChange(0, index, JsonToSimplConstants.UshortValueChange);
 		}
 
 		// Processes the path to a string property and fires of a StringChange event.
@@ -156,7 +159,7 @@ namespace PepperDash.Core.JsonToSimpl
 			if (Process(StringPaths[index], out response))
 				OnStringChange(response, index, JsonToSimplConstants.StringValueChange);
 			else { }
-				// OnStringChange("", index, JsonToSimplConstants.StringValueChange);
+			// OnStringChange("", index, JsonToSimplConstants.StringValueChange);
 		}
 
 		/// <summary>
@@ -170,7 +173,7 @@ namespace PepperDash.Core.JsonToSimpl
 		bool Process(string path, out string response)
 		{
 			path = GetFullPath(path);
-			Debug.Console(1, "JSON Child[{0}] Processing {1}", Key, path); 
+			Debug.Console(1, "JSON Child[{0}] Processing {1}", Key, path);
 			response = "";
 			if (Master == null)
 			{
@@ -285,7 +288,7 @@ namespace PepperDash.Core.JsonToSimpl
 		protected virtual string GetFullPath(string path)
 		{
 			return (PathPrefix != null ? PathPrefix : "") +
-			    path + (PathSuffix != null ? PathSuffix : "");
+				path + (PathSuffix != null ? PathSuffix : "");
 		}
 
 		// Helpers for events

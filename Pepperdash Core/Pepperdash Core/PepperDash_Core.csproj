@@ -110,6 +110,10 @@
     <Compile Include="JsonToSimpl\JsonToSimplGenericMaster.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplMaster.cs" />
     <Compile Include="Network\DiscoveryThings.cs" />
+    <Compile Include="PasswordManagement\Config.cs" />
+    <Compile Include="PasswordManagement\Constants.cs" />
+    <Compile Include="PasswordManagement\PasswordClient.cs" />
+    <Compile Include="PasswordManagement\PasswordManager.cs" />
     <Compile Include="SystemInfo\EventArgs and Constants.cs" />
     <Compile Include="SystemInfo\SystemInfoConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
