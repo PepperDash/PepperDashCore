@@ -6,15 +6,30 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Crestron.SimplSharp;
 using PepperDash.Core.JsonToSimpl;
+using PepperDash.Core.JsonStandardObjects;
 
 namespace PepperDash.Core.PasswordManagement
 {
 	public class PasswordManager
 	{
 		/// <summary>
-		/// List of passwords configured
+		/// Public dictionary of known passwords
 		/// </summary>
-		public static List<PasswordConfig> Passwords = new List<PasswordConfig>();
+		public static Dictionary<uint, string> Passwords = new Dictionary<uint, string>();
+		/// <summary>
+		/// Private dictionary, used when passwords are updated
+		/// </summary>
+		private Dictionary<uint, string> _passwords = new Dictionary<uint, string>();
+
+		/// <summary>
+		/// Timer used to wait until password changes have stopped before updating the dictionary
+		/// </summary>
+		CTimer PasswordTimer;
+		/// <summary>
+		/// Timer length
+		/// </summary>
+		public long PasswordTimerElapsedMs = 5000;
+
 		/// <summary>
 		/// Boolean event 
 		/// </summary>
@@ -27,96 +42,135 @@ namespace PepperDash.Core.PasswordManagement
 		/// String event
 		/// </summary>
 		public event EventHandler<StringChangeEventArgs> StringChange;
+		/// <summary>
+		/// Event to notify clients of an updated password at the specified index (uint)
+		/// </summary>
+		public static event EventHandler<StringChangeEventArgs> PasswordChange;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
 		public PasswordManager()
 		{
-			Passwords.Clear();
+
 		}
 
 		/// <summary>
-		/// Initialize method
+		/// Initialize password manager
+		/// </summary>
+		public void Initialize()
+		{
+			if (Passwords == null)
+				Passwords = new Dictionary<uint, string>();
+
+			if (_passwords == null)
+				_passwords = new Dictionary<uint, string>();
+
+			OnBoolChange(true, 0, PasswordManagementConstants.PasswordInitializedChange);
+		}
+
+		/// <summary>
+		/// Updates password stored in the dictonary
 		/// </summary>
 		/// <param name="key"></param>
-		/// <param name="uniqueId"></param>
-		public void Initialize(string uniqueId, string key)
+		/// <param name="password"></param>
+		public void UpdatePassword(ushort key, string password)
 		{
-			OnBoolChange(false, 0, PasswordManagementConstants.BoolEvaluatedChange);
+			// validate the parameters
+			if (key > 0 && string.IsNullOrEmpty(password))
+			{
+				Debug.Console(1, string.Format("PasswordManager.UpdatePassword: key [{0}] or password are not valid", key, password));
+				return;
+			}
 
 			try
 			{
-				if(string.IsNullOrEmpty(uniqueId) || string.IsNullOrEmpty(key))
-				{
-					Debug.Console(1, "PasswordManager.Initialize({0}, {1}) null or empty parameters", uniqueId, key);
-					return;
-				}
+				// if key exists, update the value
+				if(_passwords.ContainsKey(key))
+					_passwords[key] = password;
+				// else add the key & value
+				else
+					_passwords.Add(key, password);
+				
+				Debug.Console(1, string.Format("PasswordManager.UpdatePassword: _password[{0}] = {1}", key, _passwords[key]));
 
-				JsonToSimplMaster master = J2SGlobal.GetMasterByFile(uniqueId);
-				if(master == null)
+				if (PasswordTimer == null)
 				{
-					Debug.Console(1, "PassowrdManager.Initialize failed:\rCould not find JSON file with uniqueID {0}", uniqueId);
-					return;
+					PasswordTimer = new CTimer((o) => PasswordTimerElapsed(), PasswordTimerElapsedMs);
+					Debug.Console(1, string.Format("PasswordManager.UpdatePassword: CTimer Started"));
+					OnBoolChange(true, 0, PasswordManagementConstants.PasswordUpdateBusyChange);
 				}
-
-				var passwords = master.JsonObject.ToObject<RootObject>().global.passwords;
-				if(passwords == null)
-				{					
-					Debug.Console(1, "PasswordManager.Initialize failed:\rCould not find password object");
-					return;
-				}
-
-				foreach(var password in passwords)
+				else
 				{
-					if (password != null)
+					PasswordTimer.Reset(PasswordTimerElapsedMs);
+					Debug.Console(1, string.Format("PasswordManager.UpdatePassword: CTimer Reset"));
+				}
+			}
+			catch (Exception e)
+			{
+				var msg = string.Format("PasswordManager.UpdatePassword key-value[{0}, {1}] failed:\r{2}", key, password, e);
+				Debug.Console(1, msg);
+			}
+		}
+
+		/// <summary>
+		/// CTimer callback function
+		/// </summary>
+		private void PasswordTimerElapsed()
+		{
+			try
+			{
+				PasswordTimer.Stop();
+				Debug.Console(1, string.Format("PasswordManager.PasswordTimerElapsed: CTimer Stopped"));
+				OnBoolChange(false, 0, PasswordManagementConstants.PasswordUpdateBusyChange);
+				foreach (var pw in _passwords)
+				{
+					// if key exists, continue
+					if (Passwords.ContainsKey(pw.Key))
 					{
-						Debug.Console(1, "PasswordManager.Initialize: {0}, {1}, {2}, {3}, {4}", password.key, password.name, password.simplEnabled, password.simplType, password.password);
-						AddPassword(password);
+						Debug.Console(1, string.Format("PasswordManager.PasswordTimerElapsed: pw.key[{0}] = {1}", pw.Key, pw.Value));
+						if (Passwords[pw.Key] != _passwords[pw.Key])
+						{
+							Passwords[pw.Key] = _passwords[pw.Key];
+							Debug.Console(1, string.Format("PasswordManager.PasswordTimerElapsed: Updated Password[{0} = {1}", pw.Key, Passwords[pw.Key]));
+							OnPasswordChange(Passwords[pw.Key], (ushort)pw.Key, PasswordManagementConstants.StringValueChange);
+						}
+					}
+					// else add the key & value
+					else
+					{
+						Passwords.Add(pw.Key, pw.Value);
 					}
 				}
-
-				OnUshrtChange(Convert.ToUInt16(Passwords.Count), 0, PasswordManagementConstants.PasswordListCount);
+				OnUshrtChange((ushort)Passwords.Count, 0, PasswordManagementConstants.PasswordManagerCountChange);
 			}
-			catch(Exception e)
+			catch (Exception e)
 			{
-				var msg = string.Format("PasswordManager.Initialize({0}, {1}) failed:\r{2}", uniqueId, key, e.Message);
-				CrestronConsole.PrintLine(msg);
-				ErrorLog.Error(msg);
-			}
-			finally
-			{
-				OnBoolChange(true, 0, PasswordManagementConstants.BoolEvaluatedChange);
+				var msg = string.Format("PasswordManager.PasswordTimerElapsed failed:\r{0}", e);
+				Debug.Console(1, msg);
 			}
 		}
 
 		/// <summary>
-		///	Adds password to the list 
+		/// Method to change the default timer value, (default 5000ms/5s)
 		/// </summary>
-		/// <param name="password"></param>
-		private void AddPassword(PasswordConfig password)
+		/// <param name="time"></param>
+		public void PasswordTimerMs(ushort time)
 		{
-			if (password == null)
-				return;
-
-			var item = Passwords.FirstOrDefault(i => i.key.Equals(password.key));
-			if (item != null)
-				Passwords.Remove(item);
-			Passwords.Add(password);
+			PasswordTimerElapsedMs = Convert.ToInt64(time);
 		}
 
 		/// <summary>
-		/// Removes password from the list
+		/// Helper method for debugging to see what passwords are in the lists
 		/// </summary>
-		/// <param name="password"></param>
-		private void RemovePassword(PasswordConfig password)
+		public void ListPasswords()
 		{
-			if (password == null)
-				return;
-
-			var item = Passwords.FirstOrDefault(i => i.key.Equals(password.key));
-			if (item != null)
-				Passwords.Remove(item);
+			Debug.Console(0, "PasswordManager.ListPasswords:\r");
+			foreach (var pw in Passwords)
+				Debug.Console(0, "Passwords[{0}]: {1}\r", pw.Key, pw.Value);
+			Debug.Console(0, "\n");
+			foreach (var pw in _passwords)
+				Debug.Console(0, "_passwords[{0}]: {1}\r", pw.Key, pw.Value);
 		}
 
 		/// <summary>
@@ -167,6 +221,23 @@ namespace PepperDash.Core.PasswordManagement
 				var args = new StringChangeEventArgs(value, type);
 				args.Index = index;
 				StringChange(this, args);
+			}
+		}
+
+		/// <summary>
+		/// Protected password change event handler
+		/// </summary>
+		/// <param name="value"></param>
+		/// <param name="index"></param>
+		/// <param name="type"></param>
+		protected void OnPasswordChange(string value, ushort index, ushort type)
+		{
+			var handler = PasswordChange;
+			if (handler != null)
+			{
+				var args = new StringChangeEventArgs(value, type);
+				args.Index = index;
+				PasswordChange(this, args);
 			}
 		}
 	}

@@ -9,13 +9,9 @@ namespace PepperDash.Core.PasswordManagement
 	public class PasswordClient
 	{
 		/// <summary>
-		/// Password selected
+		/// Password Client
 		/// </summary>
-		public string Password { get; set; }
-		/// <summary>
-		/// Password selected key
-		/// </summary>
-		public ushort Key { get; set; }
+		public PasswordConfig Client { get; set; }
 		/// <summary>
 		/// Used to build the password entered by the user
 		/// </summary>
@@ -39,43 +35,71 @@ namespace PepperDash.Core.PasswordManagement
 		/// </summary>
 		public PasswordClient()
 		{
-			PasswordManager.PasswordChange += new EventHandler<StringChangeEventArgs>(PasswordManager_PasswordChange);
-		}		
+
+		}
 
 		/// <summary>
 		/// Initialize method
 		/// </summary>
-		public void Initialize()
+		/// <param name="key"></param>
+		public void Initialize(string key)
 		{
-			OnBoolChange(false, 0, PasswordManagementConstants.PasswordInitializedChange);
+			OnBoolChange(false, 0, PasswordManagementConstants.BoolEvaluatedChange);
 
-			Password = "";
+			Client = new PasswordConfig();
 			PasswordToValidate = "";
 
-			OnUshrtChange((ushort)PasswordManager.Passwords.Count, 0, PasswordManagementConstants.PasswordManagerCountChange);
-			OnBoolChange(true, 0, PasswordManagementConstants.PasswordInitializedChange);
+			// there has to be a better way to get the index of the current index of password
+			ushort i = 0;
+			foreach (var password in PasswordManager.Passwords)
+			{
+				i++;
+				OnUshrtChange((ushort)password.Key, (ushort)password.Key, PasswordManagementConstants.PasswordKey);
+			}
+
+			OnBoolChange(true, 0, PasswordManagementConstants.BoolEvaluatedChange);
 		}
+
+		/// <summary>
+		/// Retrieves password by key
+		/// </summary>
+		/// <param name="key"></param>
+		//public void GetPasswordByKey(string key)
+		//{
+		//    if (string.IsNullOrEmpty(key))
+		//    {
+		//        Debug.Console(1, "PassowrdClient.GetPasswordByKey failed:\rKey {0} is null or empty", key);
+		//        return;
+		//    }
+
+		//    PasswordConfig password = PasswordManager.Passwords.FirstOrDefault(p => p.key.Equals(key));
+		//    if (password == null)
+		//    {
+		//        OnUshrtChange(0, 0, PasswordManagementConstants.SelectedPasswordLength);
+		//        return;
+		//    }
+
+		//    Client = password;
+		//    OnUshrtChange((ushort)Client.password.Length, 0, PasswordManagementConstants.SelectedPasswordLength);
+		//    OnStringChange(Client.key, 0, PasswordManagementConstants.PasswordKeySelected);
+		//}
 
 		/// <summary>
 		/// Retrieve password by index
 		/// </summary>
-		/// <param name="key"></param>
+		/// <param name="index"></param>
 		public void GetPasswordByIndex(ushort key)
 		{
-			OnUshrtChange((ushort)PasswordManager.Passwords.Count, 0, PasswordManagementConstants.PasswordManagerCountChange);
-
-			Key = key;
-
-			var pw = PasswordManager.Passwords[Key];
+			PasswordConfig pw = PasswordManager.Passwords[key];
 			if (pw == null)
 			{
-				OnUshrtChange(0, 0, PasswordManagementConstants.PasswordLengthChange);
+				OnUshrtChange(0, 0, PasswordManagementConstants.SelectedPasswordLength);
 				return;
 			}
 
-			Password = pw;
-			OnUshrtChange((ushort)Password.Length, 0, PasswordManagementConstants.PasswordLengthChange);
-			OnUshrtChange(key, 0, PasswordManagementConstants.PasswordSelectIndexChange);
+			Client = pw;
+			OnUshrtChange((ushort)Client.password.Length, 0, PasswordManagementConstants.SelectedPasswordLength);
+			OnUshrtChange(key, 0, PasswordManagementConstants.PasswordKeySelected);
 		}
 
 		/// <summary>
@@ -87,10 +111,18 @@ namespace PepperDash.Core.PasswordManagement
 			if (string.IsNullOrEmpty(password))
 				return;
 
-			if (string.Equals(Password, password))
-				OnBoolChange(true, 0, PasswordManagementConstants.PasswordValidationChange);
+			if (string.Equals(Client.password, password))
+			{
+				OnBoolChange(true, 0, PasswordManagementConstants.PasswordIsValid);
+			}
 			else
-				OnBoolChange(false, 0, PasswordManagementConstants.PasswordValidationChange);
+			{
+				OnBoolChange(true, 0, PasswordManagementConstants.PasswordIsInvalid);
+			}
+
+
+			OnBoolChange(false, 0, PasswordManagementConstants.PasswordIsValid);
+			OnBoolChange(false, 0, PasswordManagementConstants.PasswordIsInvalid);
 
 			ClearPassword();
 		}
@@ -103,9 +135,9 @@ namespace PepperDash.Core.PasswordManagement
 		public void BuildPassword(string data)
 		{
 			PasswordToValidate = String.Concat(PasswordToValidate, data);
-			OnBoolChange(true, (ushort)PasswordToValidate.Length, PasswordManagementConstants.PasswordLedFeedbackChange);
+			OnBoolChange(true, (ushort)PasswordToValidate.Length, PasswordManagementConstants.PasswordLedChange);
 
-			if (PasswordToValidate.Length == Password.Length)
+			if (PasswordToValidate.Length == Client.password.Length)
 				ValidatePassword(PasswordToValidate);
 		}
 
@@ -115,7 +147,10 @@ namespace PepperDash.Core.PasswordManagement
 		public void ClearPassword()
 		{
 			PasswordToValidate = "";
-			OnBoolChange(false, (ushort)PasswordToValidate.Length, PasswordManagementConstants.PasswordLedFeedbackChange);
+			OnBoolChange(true, (ushort)PasswordToValidate.Length, PasswordManagementConstants.PasswordLedChange);
+
+			for(var i = 1; i <= Client.password.Length; i++)
+				OnBoolChange(false, (ushort)i, PasswordManagementConstants.PasswordLedChange);
 		}
 
 		/// <summary>
@@ -166,22 +201,6 @@ namespace PepperDash.Core.PasswordManagement
 				var args = new StringChangeEventArgs(value, type);
 				args.Index = index;
 				StringChange(this, args);
-			}
-		}
-
-		/// <summary>
-		/// If password changes while selected change event will be notifed and update the client
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="args"></param>
-		protected void PasswordManager_PasswordChange(object sender, StringChangeEventArgs args)
-		{
-			//throw new NotImplementedException();
-			if (Key == args.Index)
-			{
-				//PasswordSelectedKey = args.Index;
-				//PasswordSelected = args.StringValue;
-				GetPasswordByIndex(args.Index);
 			}
 		}
 	}
