@@ -370,7 +370,7 @@ namespace PepperDash.Core
         public void Connect()
         {
             ConnectionCount++;
-            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Attempting connect Count:{0}", ConnectionCount);
+            Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Attempting connect Count:{0}", ConnectionCount);
 
 
             if (IsConnected)
@@ -440,10 +440,10 @@ namespace PepperDash.Core
                     }
                 }, 30000);
 
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Making Connection Count:{0}", ConnectionCount);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Making Connection Count:{0}", ConnectionCount);
                 Client.ConnectToServerAsync(o =>
                 {
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "ConnectToServerAsync Count:{0} Ran!", ConnectionCount);
+                    Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "ConnectToServerAsync Count:{0} Ran!", ConnectionCount);
 
                     if (ConnectFailTimer != null)
                     {
@@ -453,7 +453,7 @@ namespace PepperDash.Core
 
                     if (o.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
                     {
-                        Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Client connected to {0} on port {1}", o.AddressClientConnectedTo, o.LocalPortNumberOfClient);
+                        Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Client connected to {0} on port {1}", o.AddressClientConnectedTo, o.LocalPortNumberOfClient);
                         o.ReceiveDataAsync(Receive);
 
                         if (SharedKeyRequired)
@@ -526,7 +526,7 @@ namespace PepperDash.Core
             if (Client != null)
             {
                 //SecureClient.DisconnectFromServer();
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Disconnecting Client {0}", DisconnectCalledByUser ? ", Called by user" : "");
+                Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Disconnecting Client {0}", DisconnectCalledByUser ? ", Called by user" : "");
                 Client.SocketStatusChange -= Client_SocketStatusChange;
                 Client.Dispose();
                 Client = null;
@@ -548,14 +548,14 @@ namespace PepperDash.Core
         {
             if (Client != null)
             {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Cleaning up remotely closed/failed connection.");
+                Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Cleaning up remotely closed/failed connection.");
                 Cleanup();
             }
             if (!DisconnectCalledByUser && AutoReconnect)
             {
                 var halfInterval = AutoReconnectIntervalMs / 2;
                 var rndTime = new Random().Next(-halfInterval, halfInterval) + AutoReconnectIntervalMs;
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Attempting reconnect in {0} ms, randomized", rndTime);
+                Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Attempting reconnect in {0} ms, randomized", rndTime);
                 if (RetryTimer != null)
                 {
                     RetryTimer.Stop();
@@ -588,7 +588,7 @@ namespace PepperDash.Core
 
                         if (SharedKeyRequired && str == "SharedKey:")
                         {
-                            Debug.Console(1, this, "Server asking for shared key, sending");
+                            Debug.Console(2, this, "Server asking for shared key, sending");
                             SendText(SharedKey + "\n");
                         }
                         else if (SharedKeyRequired && str == "Shared Key Match")
@@ -596,7 +596,7 @@ namespace PepperDash.Core
                             StopWaitForSharedKeyTimer();
 
 
-                            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Shared key confirmed. Ready for communication");
+                            Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Shared key confirmed. Ready for communication");
                             OnClientReadyForcommunications(true); // Successful key exchange
                         }
                         else
@@ -727,7 +727,7 @@ namespace PepperDash.Core
                             {
                                 HeartbeatAckTimer = new CTimer(HeartbeatAckTimerFail, null, (HeartbeatInterval * 2), (HeartbeatInterval * 2));
                             }
-                            Debug.Console(1, this, "Heartbeat Received: {0}, from Server", HeartbeatString);
+                            Debug.Console(2, this, "Heartbeat Received: {0}, from Server", HeartbeatString);
                             return remainingText;
                         }
                     }
@@ -835,7 +835,7 @@ namespace PepperDash.Core
             }
             try
             {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Socket status change: {0} ({1})", client.ClientStatus, (ushort)(client.ClientStatus));
+                Debug.Console(2, this, Debug.ErrorLogLevel.Notice, "Socket status change: {0} ({1})", client.ClientStatus, (ushort)(client.ClientStatus));
 
                 OnConnectionChange();
                 // The client could be null or disposed by this time...
