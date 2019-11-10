@@ -141,14 +141,11 @@ namespace PepperDash.Core.JsonToSimpl
         void ProcessUshortPath(ushort index) {
             string response;
             if (Process(UshortPaths[index], out response)) {
-                ushort returnVal;
-                short val;
-                try { val = Convert.ToInt16(response); }
+                ushort val;
+                try { val = Convert.ToInt32(response) < 0 ? (ushort)(Convert.ToInt16(response) + 65536) : Convert.ToUInt16(response); }
                 catch { val = 0; }
 
-                returnVal = val < 0 ? (ushort)(val + 65536) : (ushort)val;
-
-                OnUShortChange(returnVal, index, JsonToSimplConstants.UshortValueChange);
+                OnUShortChange(val, index, JsonToSimplConstants.UshortValueChange);
             }
             else { }
             // OnUShortChange(0, index, JsonToSimplConstants.UshortValueChange);
