@@ -137,20 +137,22 @@ namespace PepperDash.Core.JsonToSimpl
 			// OnBoolChange(false, index, JsonToSimplConstants.BoolValueChange);
 		}
 
-		// Processes the path to a ushort, converting to ushort if able, firing off UshrtChange event
-		void ProcessUshortPath(ushort index)
-		{
-			string response;
-			if (Process(UshortPaths[index], out response))
-			{
-				ushort val;
-				try { val = Convert.ToUInt16(response); }
-				catch { val = 0; }
-				OnUShortChange(val, index, JsonToSimplConstants.UshortValueChange);
-			}
-			else { }
-			// OnUShortChange(0, index, JsonToSimplConstants.UshortValueChange);
-		}
+		// Processes the path to a ushort, converting to ushort if able, twos complement if necessary, firing off UshrtChange event
+        void ProcessUshortPath(ushort index) {
+            string response;
+            if (Process(UshortPaths[index], out response)) {
+                ushort returnVal;
+                short val;
+                try { val = Convert.ToInt16(response); }
+                catch { val = 0; }
+
+                returnVal = val < 0 ? (ushort)(val + 65536) : (ushort)val;
+
+                OnUShortChange(returnVal, index, JsonToSimplConstants.UshortValueChange);
+            }
+            else { }
+            // OnUShortChange(0, index, JsonToSimplConstants.UshortValueChange);
+        }
 
 		// Processes the path to a string property and fires of a StringChange event.
 		void ProcessStringPath(ushort index)
