@@ -10,12 +10,6 @@ namespace PepperDash.Core.DebugThings
 {
 	public class DebugContextCollection
 	{
-        /// <summary>
-        /// Property to tell the program not to intitialize when it boots, if desired
-        /// </summary>
-        [JsonProperty("doNotStartOnNextBoot")]
-        public bool DoNotStartOnNextBoot { get; set; }
-
 		[JsonProperty("items")]
 		Dictionary<string, DebugContextItem> Items;
 
@@ -58,6 +52,13 @@ namespace PepperDash.Core.DebugThings
         /// </summary>
 		[JsonProperty("level")]
 		public int Level { get; set; }
+
+        /// <summary>
+        /// Property to tell the program not to intitialize when it boots, if desired
+        /// </summary>
+        [JsonProperty("doNotStartOnNextBoot")]
+        public bool DoNotStartOnNextBoot { get; set; }
+
 
 		public DebugContextItem(DebugContextCollection parent)
 		{

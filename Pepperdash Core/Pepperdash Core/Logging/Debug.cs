@@ -28,6 +28,8 @@ namespace PepperDash.Core
 
         public static int Level { get; private set; }
 
+        public static bool DoNotStartOnNextBoot { get; private set; }
+
         static DebugContextCollection Contexts;
 
         static int SaveTimeoutMs = 30000;
@@ -81,7 +83,10 @@ namespace PepperDash.Core
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
             LoadMemory();
-            Level = Contexts.GetOrCreateItem("DEFAULT").Level;
+
+            var context = Contexts.GetOrCreateItem("DEFAULT");
+            Level = context.Level;
+            DoNotStartOnNextBoot = context.DoNotStartOnNextBoot;
 
             try
             {
@@ -243,10 +248,12 @@ namespace PepperDash.Core
         /// <param name="state"></param>
         public static void SetDoNotStartOnNextBoot(bool state)
         {
-            Contexts.DoNotStartOnNextBoot = state;
-            CrestronConsole.PrintLine("[Application {0}], Do Not Start on Next Boot set to {1}",
-                InitialParametersClass.ApplicationNumber, Contexts.DoNotStartOnNextBoot);
+            DoNotStartOnNextBoot = state;
+            Contexts.GetOrCreateItem("DEFAULT").DoNotStartOnNextBoot = state;
             SaveMemoryOnTimeout();
+
+            CrestronConsole.PrintLine("[Application {0}], Do Not Start on Next Boot set to {1}",
+                InitialParametersClass.ApplicationNumber, DoNotStartOnNextBoot);
         }
 
         /// <summary>
