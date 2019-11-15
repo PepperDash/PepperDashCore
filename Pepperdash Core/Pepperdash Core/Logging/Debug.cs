@@ -238,6 +238,18 @@ namespace PepperDash.Core
         }
 
         /// <summary>
+        /// Sets the flag to prevent application starting on next boot
+        /// </summary>
+        /// <param name="state"></param>
+        public static void SetDoNotStartOnNextBoot(bool state)
+        {
+            Contexts.DoNotStartOnNextBoot = state;
+            CrestronConsole.PrintLine("[Application {0}], Do Not Start on Next Boot set to {1}",
+                InitialParametersClass.ApplicationNumber, Contexts.DoNotStartOnNextBoot);
+            SaveMemoryOnTimeout();
+        }
+
+        /// <summary>
         /// 
         /// </summary>
         public static void ShowDebugLog(string s)
