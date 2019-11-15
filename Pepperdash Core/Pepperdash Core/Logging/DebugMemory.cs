@@ -56,8 +56,8 @@ namespace PepperDash.Core.DebugThings
         /// <summary>
         /// Property to tell the program not to intitialize when it boots, if desired
         /// </summary>
-        [JsonProperty("doNotStartOnNextBoot")]
-        public bool DoNotStartOnNextBoot { get; set; }
+        [JsonProperty("doNotLoadOnNextBoot")]
+        public bool DoNotLoadOnNextBoot { get; set; }
 
 
 		public DebugContextItem(DebugContextCollection parent)
