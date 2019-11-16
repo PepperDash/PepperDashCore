@@ -68,7 +68,7 @@ namespace PepperDash.Core
             {
                 // Add command to console
                 CrestronConsole.AddNewConsoleCommand(SetDoNotLoadOnNextBootFromConsole, "donotloadonnextboot", 
-                    "donotloadonnextboot:P [true/false]: Sets whether the application should load config on next boot", ConsoleAccessLevelEnum.AccessOperator);
+                    "donotloadonnextboot:P [true/false]: Should the application load on next boot", ConsoleAccessLevelEnum.AccessOperator);
 
                 CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
                     "appdebug:P [0-2]: Sets the application's console debug message level",
