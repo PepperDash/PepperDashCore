@@ -246,7 +246,7 @@ namespace PepperDash.Core
         /// Sets the flag to prevent application starting on next boot
         /// </summary>
         /// <param name="state"></param>
-        public static void SetDoNotStartOnNextBoot(bool state)
+        public static void SetDoNotLoadOnNextBoot(bool state)
         {
             DoNotLoadOnNextBoot = state;
             Contexts.GetOrCreateItem("DEFAULT").DoNotLoadOnNextBoot = state;
