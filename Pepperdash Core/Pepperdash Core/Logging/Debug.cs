@@ -67,6 +67,9 @@ namespace PepperDash.Core
             if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
             {
                 // Add command to console
+                CrestronConsole.AddNewConsoleCommand(SetDoNotLoadOnNextBootFromConsole, "donotloadonnextboot", 
+                    "donotloadonnextboot:P [true/false]: Sets whether the application should load config on next boot", ConsoleAccessLevelEnum.AccessOperator);
+
                 CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
                     "appdebug:P [0-2]: Sets the application's console debug message level",
                     ConsoleAccessLevelEnum.AccessOperator);
@@ -145,6 +148,32 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// Callback for console command
+        /// </summary>
+        /// <param name="stateString"></param>
+        public static void SetDoNotLoadOnNextBootFromConsole(string stateString)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(stateString.Trim()))
+                {
+                    CrestronConsole.PrintLine("DoNotLoadOnNextBoot = {0}", DoNotLoadOnNextBoot);
+                    return;
+                }
+
+                SetDoNotLoadOnNextBoot(Boolean.Parse(stateString));
+            }
+            catch
+            {
+                CrestronConsole.PrintLine("Usage: donotloadonnextboot:P [true/false]");
+            }
+        }
+
+        /// <summary>
+        /// Callback for console command
+        /// </summary>
+        /// <param name="items"></param>
 		public static void SetDebugFilterFromConsole(string items)
 		{
 			var str = items.Trim();
