@@ -317,11 +317,16 @@ namespace PepperDash.Core
         /// </summary>
 		void WaitAndTryReconnect()
 		{
+            if (Client != null)
+            {
+                Debug.Console(1, "Attempting reconnect, status={0}", Client.ClientStatus);
+            }
+
             DisconnectClient();
 
-			Debug.Console(1, "Attempting reconnect, status={0}", Client.ClientStatus);
-            if(!DisconnectCalledByUser)
+            if (!DisconnectCalledByUser)
                 RetryTimer = new CTimer(o => { Client.ConnectToServerAsync(ConnectToServerCallback); }, AutoReconnectIntervalMs);
+
 		}
 
         /// <summary>
