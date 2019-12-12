@@ -336,20 +336,24 @@ namespace PepperDash.Core
         /// <param name="numBytes"></param>
 		void Receive(TCPClient client, int numBytes)
 		{
-			if (numBytes > 0)
-			{
-				var bytes = client.IncomingDataBuffer.Take(numBytes).ToArray();
- 				var bytesHandler = BytesReceived;
-				if (bytesHandler != null)
-					bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
-				var textHandler = TextReceived;
-				if (textHandler != null)
-				{
-					var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
-					textHandler(this, new GenericCommMethodReceiveTextArgs(str));
-				}
-			}
-			Client.ReceiveDataAsync(Receive);
+            if (client != null)
+            {
+                if (numBytes > 0)
+                {
+                    var bytes = client.IncomingDataBuffer.Take(numBytes).ToArray();
+                    var bytesHandler = BytesReceived;
+                    if (bytesHandler != null)
+                        bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
+                    var textHandler = TextReceived;
+                    if (textHandler != null)
+                    {
+                        var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+                        textHandler(this, new GenericCommMethodReceiveTextArgs(str));
+                    }
+                }
+
+                client.ReceiveDataAsync(Receive);
+            }
 		}
 
 		/// <summary>
