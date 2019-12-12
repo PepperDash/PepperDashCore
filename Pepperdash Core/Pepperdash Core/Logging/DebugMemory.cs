@@ -47,8 +47,18 @@ namespace PepperDash.Core.DebugThings
 
 	public class DebugContextItem
 	{
+        /// <summary>
+        /// The level of debug messages to print
+        /// </summary>
 		[JsonProperty("level")]
 		public int Level { get; set; }
+
+        /// <summary>
+        /// Property to tell the program not to intitialize when it boots, if desired
+        /// </summary>
+        [JsonProperty("doNotLoadOnNextBoot")]
+        public bool DoNotLoadOnNextBoot { get; set; }
+
 
 		public DebugContextItem(DebugContextCollection parent)
 		{

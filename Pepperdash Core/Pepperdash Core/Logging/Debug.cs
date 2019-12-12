@@ -28,6 +28,8 @@ namespace PepperDash.Core
 
         public static int Level { get; private set; }
 
+        public static bool DoNotLoadOnNextBoot { get; private set; }
+
         static DebugContextCollection Contexts;
 
         static int SaveTimeoutMs = 30000;
@@ -65,6 +67,9 @@ namespace PepperDash.Core
             if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
             {
                 // Add command to console
+                CrestronConsole.AddNewConsoleCommand(SetDoNotLoadOnNextBootFromConsole, "donotloadonnextboot", 
+                    "donotloadonnextboot:P [true/false]: Should the application load on next boot", ConsoleAccessLevelEnum.AccessOperator);
+
                 CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
                     "appdebug:P [0-2]: Sets the application's console debug message level",
                     ConsoleAccessLevelEnum.AccessOperator);
@@ -81,7 +86,12 @@ namespace PepperDash.Core
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 
             LoadMemory();
-            Level = Contexts.GetOrCreateItem("DEFAULT").Level;
+
+            var context = Contexts.GetOrCreateItem("DEFAULT");
+            Level = context.Level;
+            DoNotLoadOnNextBoot = context.DoNotLoadOnNextBoot;
+
+            CrestronConsole.PrintLine(string.Format("Program {0} will not load config after next boot.  Use console command go:{0} to load the config manually", InitialParametersClass.ApplicationNumber));
 
             try
             {
@@ -140,6 +150,32 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// Callback for console command
+        /// </summary>
+        /// <param name="stateString"></param>
+        public static void SetDoNotLoadOnNextBootFromConsole(string stateString)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(stateString.Trim()))
+                {
+                    CrestronConsole.PrintLine("DoNotLoadOnNextBoot = {0}", DoNotLoadOnNextBoot);
+                    return;
+                }
+
+                SetDoNotLoadOnNextBoot(Boolean.Parse(stateString));
+            }
+            catch
+            {
+                CrestronConsole.PrintLine("Usage: donotloadonnextboot:P [true/false]");
+            }
+        }
+
+        /// <summary>
+        /// Callback for console command
+        /// </summary>
+        /// <param name="items"></param>
 		public static void SetDebugFilterFromConsole(string items)
 		{
 			var str = items.Trim();
@@ -235,6 +271,20 @@ namespace PepperDash.Core
                 //if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
                 //    CrestronConsole.PrintLine("Error saving console debug level setting: {0}", err);
             }
+        }
+
+        /// <summary>
+        /// Sets the flag to prevent application starting on next boot
+        /// </summary>
+        /// <param name="state"></param>
+        public static void SetDoNotLoadOnNextBoot(bool state)
+        {
+            DoNotLoadOnNextBoot = state;
+            Contexts.GetOrCreateItem("DEFAULT").DoNotLoadOnNextBoot = state;
+            SaveMemoryOnTimeout();
+
+            CrestronConsole.PrintLine("[Application {0}], Do Not Start on Next Boot set to {1}",
+                InitialParametersClass.ApplicationNumber, DoNotLoadOnNextBoot);
         }
 
         /// <summary>
