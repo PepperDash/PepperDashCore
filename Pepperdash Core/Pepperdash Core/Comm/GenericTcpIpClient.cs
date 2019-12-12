@@ -11,15 +11,18 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// A class to handle basic TCP/IP communications with a server
+    /// </summary>
 	public class GenericTcpIpClient : Device, ISocketStatus, IAutoReconnect
 	{
 		/// <summary>
-		/// 
+		/// Fires when data is received from the server and returns it as a Byte array
 		/// </summary>
 		public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
 
 		/// <summary>
-		/// 
+		/// Fires when data is received from the server and returns it as text
 		/// </summary>
 		public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
 
@@ -72,12 +75,12 @@ namespace PepperDash.Core
         public int BufferSize { get; set; }
 
 		/// <summary>
-		/// 
+		/// The actual client class
 		/// </summary>
 		public TCPClient Client { get; private set; }
 
 		/// <summary>
-		/// 
+		/// True if connected to the server
 		/// </summary>
 		public bool IsConnected 
         { 
@@ -93,7 +96,7 @@ namespace PepperDash.Core
         }
 
 		/// <summary>
-		/// 
+		/// Status of the socket
 		/// </summary>
 		public SocketStatus ClientStatus 
         { 
@@ -115,23 +118,23 @@ namespace PepperDash.Core
         }
 
 		/// <summary>
-		/// 
+        /// Status of the socket
 		/// </summary>
 		public string ClientStatusText { get { return ClientStatus.ToString(); } }
 
         [Obsolete]
 		/// <summary>
-		/// 
+		/// Ushort representation of client status
 		/// </summary>
 		public ushort UClientStatus { get { return (ushort)ClientStatus; } }
 
 		/// <summary>
-		/// 
+		/// Connection failure reason
 		/// </summary>
 		public string ConnectionFailure { get { return ClientStatus.ToString(); } }
 
 		/// <summary>
-		/// 
+		/// If true, enables AutoConnect
 		/// </summary>
 		public bool AutoReconnect { get; set; }
 
@@ -164,7 +167,7 @@ namespace PepperDash.Core
 		CTimer RetryTimer;
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="key"></param>
         /// <param name="address"></param>
@@ -180,26 +183,10 @@ namespace PepperDash.Core
 			AutoReconnectIntervalMs = 5000;
 
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
-
-            //if (string.IsNullOrEmpty(address))
-            //{
-            //    Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': No address set", key);
-            //    return;
-            //}
-            //if (port < 1 || port > 65535)
-            //{
-            //    {
-            //        Debug.Console(1, Debug.ErrorLogLevel.Warning, "GenericTcpIpClient '{0}': Invalid port", key);
-            //        return;
-            //    }
-            //}
-
-            //Client = new TCPClient(address, port, bufferSize);
-            //Client.SocketStatusChange += Client_SocketStatusChange;
 		}
 
         /// <summary>
-        /// 
+        /// Constructor
         /// </summary>
         /// <param name="key"></param>
         public GenericTcpIpClient(string key)
@@ -241,18 +228,23 @@ namespace PepperDash.Core
             }
         }
 
-		//public override bool CustomActivate()
-		//{
-		//    return true;
-		//}
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
 		public override bool Deactivate()
 		{
-            if(Client != null)
-    			Client.SocketStatusChange -= this.Client_SocketStatusChange;
+            if (Client != null)
+            {
+                Client.SocketStatusChange -= this.Client_SocketStatusChange;
+                DisconnectClient();
+            }
 			return true;
 		}
 
+        /// <summary>
+        /// Attempts to connect to the server
+        /// </summary>
 		public void Connect()
 		{
             if (IsConnected)
@@ -274,6 +266,7 @@ namespace PepperDash.Core
             if (Client == null)
             {
                 Client = new TCPClient(Hostname, Port, BufferSize);
+                Client.SocketStatusChange -= Client_SocketStatusChange;
                 Client.SocketStatusChange += Client_SocketStatusChange;
             }
 			DisconnectCalledByUser = false;
@@ -281,23 +274,37 @@ namespace PepperDash.Core
 			Client.ConnectToServerAsync(ConnectToServerCallback); // (null);
 		}
 
+        /// <summary>
+        /// Attempts to disconnect the client
+        /// </summary>
 		public void Disconnect()
 		{
-			DisconnectCalledByUser = true;
-            DisconnectClient();
+            if (Client != null)
+            {
+                DisconnectCalledByUser = true;
+                DisconnectClient();
+                Client = null;
+                Debug.Console(1, this, "Disconnected");
+            }
 		}
 
+        /// <summary>
+        /// Does the actual disconnect business
+        /// </summary>
         public void DisconnectClient()
         {
             if (Client != null)
             {
                 Debug.Console(1, this, "Disconnecting client");
-                //Client.SocketStatusChange -= Client_SocketStatusChange;
                 if(IsConnected)
                     Client.DisconnectFromServer();
             }
         }
 
+        /// <summary>
+        /// Callback method for connection attempt
+        /// </summary>
+        /// <param name="c"></param>
 		void ConnectToServerCallback(TCPClient c)
 		{
 			Debug.Console(1, this, "Server connection result: {0}", c.ClientStatus);
@@ -305,6 +312,9 @@ namespace PepperDash.Core
 				WaitAndTryReconnect();
 		}
 
+        /// <summary>
+        /// Disconnects, waits and attemtps to connect again
+        /// </summary>
 		void WaitAndTryReconnect()
 		{
             DisconnectClient();
@@ -314,6 +324,11 @@ namespace PepperDash.Core
                 RetryTimer = new CTimer(o => { Client.ConnectToServerAsync(ConnectToServerCallback); }, AutoReconnectIntervalMs);
 		}
 
+        /// <summary>
+        /// Recieves incoming data
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="numBytes"></param>
 		void Receive(TCPClient client, int numBytes)
 		{
 			if (numBytes > 0)
@@ -358,6 +373,10 @@ namespace PepperDash.Core
 			SendText(unescapedText);
 		}
 
+        /// <summary>
+        /// Sends Bytes to the server
+        /// </summary>
+        /// <param name="bytes"></param>
 		public void SendBytes(byte[] bytes)
 		{
 			//if (Debug.Level == 2)
@@ -366,7 +385,11 @@ namespace PepperDash.Core
 			    Client.SendData(bytes, bytes.Length);
 		}
 
-
+        /// <summary>
+        /// Socket Status Change Handler
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="clientSocketStatus"></param>
 		void Client_SocketStatusChange(TCPClient client, SocketStatus clientSocketStatus)
 		{
 			Debug.Console(1, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
@@ -393,15 +416,30 @@ namespace PepperDash.Core
 		}
 	}
 
+    /// <summary>
+    /// Configuration properties for TCP/SSH Connections
+    /// </summary>
 	public class TcpSshPropertiesConfig
 	{
+        /// <summary>
+        /// Address to connect to
+        /// </summary>
 		[JsonProperty(Required = Required.Always)]
 		public string Address { get; set; }
 		
+        /// <summary>
+        /// Port to connect to
+        /// </summary>
 		[JsonProperty(Required = Required.Always)]
 		public int Port { get; set; }
 		
+        /// <summary>
+        /// Username credential
+        /// </summary>
 		public string Username { get; set; }
+        /// <summary>
+        /// Passord credential
+        /// </summary>
 		public string Password { get; set; }
 
 		/// <summary>
@@ -429,36 +467,5 @@ namespace PepperDash.Core
 		}
 
 	}
-
-	//public class TcpIpConfig
-	//{
-	//    [JsonProperty(Required = Required.Always)]
-	//    public string Address { get; set; }
-
-	//    [JsonProperty(Required = Required.Always)]
-	//    public int Port { get; set; }
-
-	//    /// <summary>
-	//    /// Defaults to 32768
-	//    /// </summary>
-	//    public int BufferSize { get; set; }
-
-	//    /// <summary>
-	//    /// Defaults to true
-	//    /// </summary>
-	//    public bool AutoReconnect { get; set; }
-
-	//    /// <summary>
-	//    /// Defaults to 5000ms
-	//    /// </summary>
-	//    public int AutoReconnectIntervalMs { get; set; }
-
-	//    public TcpIpConfig()
-	//    {
-	//        BufferSize = 32768;
-	//        AutoReconnect = true;
-	//        AutoReconnectIntervalMs = 5000;
-	//    }
-	//}
 
 }
