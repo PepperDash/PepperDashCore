@@ -693,6 +693,10 @@ namespace PepperDash.Core
                         ClientReadyAfterKeyExchange.Remove(clientIndex);
 					if (WaitingForSharedKey.Contains(clientIndex))
 						WaitingForSharedKey.Remove(clientIndex);
+					if (SecureServer.MaxNumberOfClientSupported > SecureServer.NumberOfClientsConnected && SecureServer.State == ServerState.SERVER_NOT_LISTENING)
+					{
+						Listen();
+					}
                 }
             }
             catch (Exception ex)
