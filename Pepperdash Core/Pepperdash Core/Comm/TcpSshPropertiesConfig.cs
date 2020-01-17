@@ -11,7 +11,7 @@ namespace PepperDash.Core
     /// <summary>
     /// Configuration properties for TCP/SSH Connections
     /// </summary>
-    [JsonProperty("tcpSshProperties")]
+    
     public class TcpSshPropertiesConfig : PropertiesConfigBase
     {
         /// <summary>

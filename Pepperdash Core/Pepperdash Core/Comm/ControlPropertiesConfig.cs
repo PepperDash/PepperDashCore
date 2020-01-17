@@ -185,15 +185,7 @@ namespace PepperDash.Core
     }
   },
   'required': [
-    'method',
-    'controlPortDevKey',
-    'controlPortNumber',
-    'controlPortName',
-    'irFile',
-    'ipid',
-    'endOfLineChar',
-    'endOfLineString',
-    'deviceReadyResponsePattern'
+    'method'
   ]
 }
 ";
