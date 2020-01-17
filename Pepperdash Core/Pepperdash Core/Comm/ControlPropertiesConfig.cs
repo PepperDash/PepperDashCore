@@ -38,7 +38,7 @@ namespace PepperDash.Core
         [JsonProperty("controlPortName", NullValueHandling = NullValueHandling.Ignore)] // In case "null" is present in config on this value
         public string ControlPortName { get; set; }
 
-
+        [JsonProperty("tcpSshProperties")]
         public TcpSshPropertiesConfig TcpSshProperties { get; set; }
 
         /// <summary>
