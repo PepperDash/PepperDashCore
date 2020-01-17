@@ -84,7 +84,9 @@
     <Compile Include="Comm\GenericUdpServer.cs" />
     <Compile Include="Comm\TcpClientConfigObject.cs" />
     <Compile Include="Comm\TcpServerConfigObject.cs" />
+    <Compile Include="Comm\TcpSshPropertiesConfig.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
+    <Compile Include="Config\PropertiesConfigBase.cs" />
     <Compile Include="CoreInterfaces.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="GenericRESTfulCommunications\Constants.cs" />
