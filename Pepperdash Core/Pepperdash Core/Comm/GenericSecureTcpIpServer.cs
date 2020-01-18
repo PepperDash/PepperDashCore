@@ -403,31 +403,26 @@ namespace PepperDash.Core
                     ErrorLog.Warn(string.Format("Server '{0}': No Shared Key set", Key));
                     return;
                 }
-                if (IsListening)
-                    return;
-
-                if (SecureServer == null)
-                {
-                    SecureServer = new SecureTCPServer(Port, MaxClients);
-                    if(HeartbeatRequired)
-                        SecureServer.SocketSendOrReceiveTimeOutInMs = (this.HeartbeatRequiredIntervalMs * 5);
-                    SecureServer.HandshakeTimeout = 30;
-                    SecureServer.SocketStatusChange += new SecureTCPServerSocketStatusChangeEventHandler(SecureServer_SocketStatusChange);
-                }
-                else
-                {
-                    //KillServer();  Remove this to be able to reactivate listener if it stops itself due to max clients without disconnecting connected clients.
-                    SecureServer.PortNumber = Port;
-                }
-                ServerStopped = false;
-                SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
-                OnServerStateChange(SecureServer.State);
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Secure Server Status: {0}, Socket Status: {1}", SecureServer.State, SecureServer.ServerSocketStatus);
-
-                // StartMonitorClient();
 
 
-                ServerCCSection.Leave();
+					if (SecureServer == null)
+					{
+						SecureServer = new SecureTCPServer(Port, MaxClients);
+						if (HeartbeatRequired)
+							SecureServer.SocketSendOrReceiveTimeOutInMs = (this.HeartbeatRequiredIntervalMs * 5);
+						SecureServer.HandshakeTimeout = 30;
+						SecureServer.SocketStatusChange += new SecureTCPServerSocketStatusChangeEventHandler(SecureServer_SocketStatusChange);
+					}
+					else
+					{
+						SecureServer.PortNumber = Port;
+					}
+					ServerStopped = false;
+					SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+					OnServerStateChange(SecureServer.State);
+					Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Secure Server Status: {0}, Socket Status: {1}", SecureServer.State, SecureServer.ServerSocketStatus);
+					ServerCCSection.Leave();
+				
             }
             catch (Exception ex)
             {
@@ -677,10 +672,13 @@ namespace PepperDash.Core
         {
             try
             {
+				
 
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "SecureServerSocketStatusChange Index:{0} status:{1} Port:{2} IP:{3}", clientIndex, serverSocketStatus, this.SecureServer.GetPortNumberServerAcceptedConnectionFromForSpecificClient(clientIndex), this.SecureServer.GetLocalAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
+               // Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "SecureServerSocketStatusChange Index:{0} status:{1} Port:{2} IP:{3}", clientIndex, serverSocketStatus, this.SecureServer.GetPortNumberServerAcceptedConnectionFromForSpecificClient(clientIndex), this.SecureServer.GetLocalAddressServerAcceptedConnectionFromForSpecificClient(clientIndex));
                 if (serverSocketStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
                 {
+					Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "SecureServerSocketStatusChange ConnectedCLients: {0} ServerState: {1} Port: {2}", SecureServer.NumberOfClientsConnected, SecureServer.State, SecureServer.PortNumber);
+                
                     if (ConnectedClientsIndexes.Contains(clientIndex))
                         ConnectedClientsIndexes.Remove(clientIndex);
                     if (HeartbeatRequired && HeartbeatTimerDictionary.ContainsKey(clientIndex))
@@ -693,7 +691,7 @@ namespace PepperDash.Core
                         ClientReadyAfterKeyExchange.Remove(clientIndex);
 					if (WaitingForSharedKey.Contains(clientIndex))
 						WaitingForSharedKey.Remove(clientIndex);
-					if (SecureServer.MaxNumberOfClientSupported > SecureServer.NumberOfClientsConnected && SecureServer.State == ServerState.SERVER_NOT_LISTENING)
+					if (SecureServer.MaxNumberOfClientSupported > SecureServer.NumberOfClientsConnected)
 					{
 						Listen();
 					}
@@ -797,6 +795,7 @@ namespace PepperDash.Core
         {
             if (numberOfBytesReceived > 0)
             {
+				
                 string received = "Nothing";
                 var handler = TextReceivedQueueInvoke;
                 try
