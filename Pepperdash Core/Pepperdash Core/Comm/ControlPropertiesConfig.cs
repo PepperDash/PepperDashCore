@@ -13,7 +13,6 @@ namespace PepperDash.Core
     /// </summary>
     public class ControlPropertiesConfig :PropertiesConfigBase
     {
-
         /// <summary>
         /// The control method for the device
         /// </summary>
@@ -38,6 +37,9 @@ namespace PepperDash.Core
         [JsonProperty("controlPortName", NullValueHandling = NullValueHandling.Ignore)] // In case "null" is present in config on this value
         public string ControlPortName { get; set; }
 
+        /// <summary>
+        /// ConfigurationProperties for IP connections
+        /// </summary>
         [JsonProperty("tcpSshProperties")]
         public TcpSshPropertiesConfig TcpSshProperties { get; set; }
 
@@ -78,119 +80,11 @@ namespace PepperDash.Core
         [JsonProperty("deviceReadyResponsePattern")]
         public string DeviceReadyResponsePattern { get; set; }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public ControlPropertiesConfig()
         {
-            SchemaJson = @"
-{
-  'definitions': {},
-  '$schema': 'http://json-schema.org/draft-07/schema#',
-  '$id': 'http://example.com/root.json',
-  'type': 'object',
-  'title': 'The Root Schema',
-  'properties': {
-    'tcpSshProperties': {
-      '$id': '#/properties/tcpSshProperties',
-      'type': 'object',
-      'title': 'The Tcpsshproperties Schema',
-      'default': null
-    },
-    'method': {
-      '$id': '#/properties/method',
-      'type': 'string',
-      'title': 'The Method Schema',
-      'default': '',
-      'examples': [
-        'ssh'
-      ],
-      'pattern': '^(.*)$'
-    },
-    'controlPortDevKey': {
-      '$id': '#/properties/controlPortDevKey',
-      'type': 'string',
-      'title': 'The Controlportdevkey Schema',
-      'default': '',
-      'examples': [
-        'processor'
-      ],
-      'pattern': '^(.*)$'
-    },
-    'controlPortNumber': {
-      '$id': '#/properties/controlPortNumber',
-      'type': 'integer',
-      'title': 'The Controlportnumber Schema',
-      'default': 0,
-      'examples': [
-        1
-      ]
-    },
-    'controlPortName': {
-      '$id': '#/properties/controlPortName',
-      'type': 'string',
-      'title': 'The Controlportname Schema',
-      'default': '',
-      'examples': [
-        'hdmi1'
-      ],
-      'pattern': '^(.*)$'
-    },
-    'irFile': {
-      '$id': '#/properties/irFile',
-      'type': 'string',
-      'title': 'The Irfile Schema',
-      'default': '',
-      'examples': [
-        'Comcast Motorola DVR.ir'
-      ],
-      'pattern': '^(.*)$'
-    },
-    'ipid': {
-      '$id': '#/properties/ipid',
-      'type': 'string',
-      'title': 'The Ipid Schema',
-      'default': '',
-      'examples': [
-        '13'
-      ],
-      'pattern': '^(.*)$'
-    },
-    'endOfLineChar': {
-      '$id': '#/properties/endOfLineChar',
-      'type': 'string',
-      'title': 'The Endoflinechar Schema',
-      'default': '',
-      'examples': [
-        '\\x0d'
-      ],
-      'pattern': '^(.*)$'
-    },
-    'endOfLineString': {
-      '$id': '#/properties/endOfLineString',
-      'type': 'string',
-      'title': 'The Endoflinestring Schema',
-      'default': '',
-      'examples': [
-        '\n'
-      ],
-      'pattern': '^(.*)$'
-    },
-    'deviceReadyResponsePattern': {
-      '$id': '#/properties/deviceReadyResponsePattern',
-      'type': 'string',
-      'title': 'The Devicereadyresponsepattern Schema',
-      'default': '',
-      'examples': [
-        '.*>'
-      ],
-      'pattern': '^(.*)$'
-    }
-  },
-  'required': [
-    'method'
-  ]
-}
-";
-
-
             EndOfLineString = CrestronEnvironment.NewLine;
         }
     }

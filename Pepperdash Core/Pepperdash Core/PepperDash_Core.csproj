@@ -123,6 +123,12 @@
     <Compile Include="WebApi\Presets\Preset.cs" />
     <Compile Include="WebApi\Presets\User.cs" />
     <Compile Include="WebApi\Presets\WebApiPasscodeClient.cs" />
+    <EmbeddedResource Include="Comm\Schema\ControlPropertiesConfigSchema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Comm\Schema\TcpSshPropertiesConfigSchema.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
     <None Include="Properties\ControlSystem.cfg" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />

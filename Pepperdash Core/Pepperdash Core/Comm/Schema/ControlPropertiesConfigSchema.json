@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "ControlPropertiesConfig",
+  "$ref": "#/definitions/ControlPropertiesConfig",
+  "definitions": {
+    "ControlPropertiesConfig": {
+      "properties": {
+        "method": {
+          "type": "string",
+          "title": "Communication Method",
+          "enum": [
+            "none",
+            "com",
+            "ipid",
+            "ipidtcp",
+            "ir",
+            "ssh",
+            "tcpip",
+            "telnet",
+            "cresnet",
+            "cec",
+            "udp"
+          ]
+        },
+        "tcpSshProperties": {
+          "$ref":"TcpSshPropertiesConfigSchema.json#definitions/TcpSshPropertiesConfig",
+          "title": "Properties for IP based communication",
+          "default": null
+        },
+        "comm": {
+
+        },
+        "controlPortDevKey": {
+          "type": "string",
+          "title": "Key of the device where the control port is found",
+          "examples": [
+            "processor"
+          ]
+        },
+        "controlPortNumber": {
+          "type": "integer",
+          "title": "Control Port Number on the device referenced by controlPortDevKey",
+          "examples": [
+            1
+          ]
+        },
+        "controlPortName": {
+          "type": "string",
+          "title": "Control Port Name on the device referenced by controlPortDevKey",
+          "examples": [
+            "hdmi1"
+          ]
+        },
+        "irFile": {
+          "type": "string",
+          "title": "IR Filename",
+          "default": "",
+          "examples": [
+            "Comcast Motorola DVR.ir"
+          ],
+          "pattern": "^(.*).ir$"
+        },
+        "ipid": {
+          "type": "string",
+          "title": "IPID of the device",
+          "default": "",
+          "examples": [
+            "13",
+            "03",
+            "0A",
+            "F1"
+          ],
+          "pattern": "^(?!00|01|02|FF)[0-9,A-F,a-f][0-9,A-F,a-f]$"
+        },
+        "endOfLineChar": {
+          "type": "string",
+          "title": "End of Line Character",
+          "default": "",
+          "examples": [
+            "\\x0d"
+          ]
+        },
+        "endOfLineString": {
+          "type": "string",
+          "title": "End of Line String",
+          "default": "",
+          "examples": [
+            "\\n"
+          ]
+        },
+        "deviceReadyResponsePattern": {
+          "type": "string",
+          "title": "Response Pattern that indicates the device is ready to communicate",
+          "default": "",
+          "examples": [
+            ".*>"
+          ]
+        }
+      },
+      "required": [
+        "method"
+      ]
+    }
+  }
+}

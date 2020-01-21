@@ -1,0 +1,78 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "title": "ControlPropertiesConfig",
+    "$ref": "#/definitions/TcpSshPropertiesConfig",
+    "definitions": {
+        "TcpSshPropertiesConfig": {
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "title": "Username Credential",
+                    "default":"",
+                    "examples": [
+                        "admin"
+                    ],
+                    "pattern": "^(.*)$"
+                },
+                "port": {
+                    "type": "integer",
+                    "title": "Port Number",
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "examples": [
+                        22,
+                        23,
+                        1515
+                    ]
+                },
+                "address": {
+                    "type": "string",
+                    "title": "IP address or hostname",
+                    "examples": [
+                        "192.168.99.100",
+                        "myDeviceHostname"
+                    ],
+                    "pattern": "^(.*)$"
+                },
+                "password": {
+                    "type": "string",
+                    "title": "Password Credential",
+                    "default":"",
+                    "examples": [
+                        "password"
+                    ],
+                    "pattern": "^(.*)$"
+                },
+                "autoReconnect": {
+                    "type": "boolean",
+                    "title": "Auto Reconnect",
+                    "default": true,
+                    "examples": [
+                        true
+                    ]
+                },
+                "autoReconnectIntervalMs": {
+                    "type": "integer",
+                    "title": "Auto Reconnect Interval in Ms",
+                    "default": 5000,
+                    "examples": [
+                        2000
+                    ]
+                },
+                "bufferSize": {
+                    "type": "integer",
+                    "title": "Receive Buffer Size",
+                    "default": 32768,
+                    "examples": [
+                        32768
+                    ]
+                }
+            },
+            "required": [
+                "port",
+                "address"
+            ]
+        }
+    }
+}
