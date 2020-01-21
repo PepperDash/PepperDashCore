@@ -207,25 +207,24 @@ namespace PepperDash.Core
 				return;
 			}
 
-			// This handles both password and keyboard-interactive (like on OS-X, 'nixes)
-			KeyboardInteractiveAuthenticationMethod kauth = new KeyboardInteractiveAuthenticationMethod(Username);
-			kauth.AuthenticationPrompt += new EventHandler<AuthenticationPromptEventArgs>(kauth_AuthenticationPrompt);
-			PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
-
 			if (Client != null)
 			{
 				Debug.Console(1, this, "Cleaning up disconnected client");
 				Client.ErrorOccurred -= Client_ErrorOccurred;
 				KillStream();
+                Client.Disconnect();
 			}
-
-			Debug.Console(1, this, "Creating new SshClient");
-			ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
-
-			if (Client == null)
+            else
 			{
+                // This handles both password and keyboard-interactive (like on OS-X, 'nixes)
+                KeyboardInteractiveAuthenticationMethod kauth = new KeyboardInteractiveAuthenticationMethod(Username);
+                kauth.AuthenticationPrompt += new EventHandler<AuthenticationPromptEventArgs>(kauth_AuthenticationPrompt);
+                PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
+                Debug.Console(1, this, "Creating new SshClient");
+                ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
 				Client = new SshClient(connectionInfo);
 			}
+
 			Client.ErrorOccurred -= Client_ErrorOccurred;
 			Client.ErrorOccurred += Client_ErrorOccurred;
 
@@ -298,9 +297,13 @@ namespace PepperDash.Core
 		/// </summary>
 		void HandleConnectionFailure()
 		{
-			if (Client != null)
-				Client.Disconnect();
+            if (Client != null)
+            {
+                Client.Disconnect();
+                Client = null;
+            }
 			KillStream();
+            Debug.Console(2, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
 
 			if (AutoReconnect && ConnectEnabled)
 			{
@@ -418,8 +421,11 @@ namespace PepperDash.Core
 		{
 			try
 			{
-				TheStream.Write(text);
-				TheStream.Flush();
+                if (Client != null)
+                {
+                    TheStream.Write(text);
+                    TheStream.Flush();
+                }
 			}
 			catch
 			{
@@ -433,8 +439,11 @@ namespace PepperDash.Core
 		{
 			try
 			{
-				TheStream.Write(bytes, 0, bytes.Length);
-				TheStream.Flush();
+                if (Client != null)
+                {
+                    TheStream.Write(bytes, 0, bytes.Length);
+                    TheStream.Flush();
+                }
 			}
 			catch
 			{
