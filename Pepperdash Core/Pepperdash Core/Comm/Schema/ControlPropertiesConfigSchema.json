@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "title": "ControlPropertiesConfig",
+  "title": "Control Properties",
   "$ref": "#/definitions/ControlPropertiesConfig",
   "definitions": {
     "ControlPropertiesConfig": {
@@ -32,6 +32,7 @@
         "comParams": {
           "title":"Com Port parameters",
           "description": "The parameters to configure the COM port",
+          "type":"object",
           "protocol":{
             "title":"Protocol",
             "type":"string",
@@ -135,6 +136,7 @@
         },
         "controlPortNumber": {
           "type": "integer",
+          "title": "Port Number",
           "description": "Control Port Number on the device referenced by controlPortDevKey",
           "examples": [
             1
@@ -142,6 +144,7 @@
         },
         "controlPortName": {
           "type": "string",
+          "title": "Port Name",
           "description": "Control Port Name on the device referenced by controlPortDevKey",
           "examples": [
             "hdmi1"
@@ -159,7 +162,7 @@
         },
         "ipid": {
           "type": "string",
-          "title": "IPID of the device",
+          "title": "IPID",
           "default": "",
           "examples": [
             "13",
@@ -168,30 +171,6 @@
             "F1"
           ],
           "pattern": "^(?!00|01|02|FF)[0-9,A-F,a-f][0-9,A-F,a-f]$"
-        },
-        "endOfLineChar": {
-          "type": "string",
-          "title": "End of Line Character",
-          "default": "",
-          "examples": [
-            "\\x0d"
-          ]
-        },
-        "endOfLineString": {
-          "type": "string",
-          "title": "End of Line String",
-          "default": "",
-          "examples": [
-            "\\n"
-          ]
-        },
-        "deviceReadyResponsePattern": {
-          "type": "string",
-          "title": "Response Pattern that indicates the device is ready to communicate",
-          "default": "",
-          "examples": [
-            ".*>"
-          ]
         }
       },
       "required": [
