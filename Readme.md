@@ -1,5 +1,30 @@
 # Pepperdash Core
 
+## Overview
+
+PepperDash.Core is a utility library used by PepperDash Essentials Framework and by standalone Simpl+ modules.
+
+## Constituent Elements
+
+-JSON Configuration File reading writing
+-PortalConfigReader
+-Generic config classes
+-Communications 
+    -TCP/IP client and server
+    -Secure TCP/IP clinet and server
+    -UDP server
+    -SSH client
+    -HTTP SSE client
+    -HTTP (RESTful client)
+-Debugging
+-Console debugging
+-Logging both to Crestron error log as well as a custom log file
+-System Info
+-Reports system and Ethernet information to SIMPL via S+
+-Device Class
+-Base level device class that most classes derive from
+-Password Manager
+
 #### Workflow process
 
 - Create a Jira issue for the feature/bugfix.  If you know you're targeting this update to coincide with a new release of Core, specify that release (or create a new one) as the Fix Version for the Jira issue

@@ -25,7 +25,7 @@
           ]
         },
         "tcpSshProperties": {
-          "$ref":"TcpSshPropertiesConfigSchema.json#definitions/TcpSshPropertiesConfig",
+          "$ref":"TcpSshPropertiesConfigSchema.json#/definitions/TcpSshPropertiesConfig",
           "title": "Properties for IP based communication",
           "default": null
         },
@@ -93,19 +93,20 @@
             "type":"string",
             "enum":[
               "None",
-              "RTS",
-              "CTS",
-              "RTSCTS"
+              "XON",
+              "XONT",
+              "XONR"
             ]
           },
           "hardwareHandshake":{
             "title":"Hardware Handshake",
             "type":"string",
+
             "enum":[
               "None",
-              "XON",
-              "XONT",
-              "XONR"
+              "RTS",
+              "CTS",
+              "RTSCTS"
             ]
           },
           "pacing":{
