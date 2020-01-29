@@ -175,7 +175,6 @@ namespace PepperDash.Core
 				{
 					Debug.Console(1, this, "Program stopping. Closing connection");
                     Disconnect();
-                    //Client.Dispose();
 				}
 			}
 		}
@@ -184,88 +183,86 @@ namespace PepperDash.Core
 		/// Connect to the server, using the provided properties.
 		/// </summary>
 		public void Connect()
-		{
-			ConnectEnabled = true;
-			Debug.Console(1, this, "attempting connect");
-			
-			// Cancel reconnect if running.
-			if (ReconnectTimer != null)
-			{
-				ReconnectTimer.Stop();
-				ReconnectTimer = null;
-			}
+        {
+            ConnectEnabled = true;
+            Debug.Console(1, this, "attempting connect");
 
-			// Don't try to connect if already
-			if (IsConnected)
-				return;
-			
-			// Don't go unless everything is here
-			if (string.IsNullOrEmpty(Hostname) || Port < 1 || Port > 65535
-				|| Username == null || Password == null)
-			{
-				Debug.Console(1, this, "Connect failed.  Check hostname, port, username and password are set or not null");
-				return;
-			}
+            // Cancel reconnect if running.
+            if (ReconnectTimer != null)
+            {
+                ReconnectTimer.Stop();
+                ReconnectTimer = null;
+            }
 
-			// This handles both password and keyboard-interactive (like on OS-X, 'nixes)
-			KeyboardInteractiveAuthenticationMethod kauth = new KeyboardInteractiveAuthenticationMethod(Username);
-			kauth.AuthenticationPrompt += new EventHandler<AuthenticationPromptEventArgs>(kauth_AuthenticationPrompt);
-			PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
+            // Don't try to connect if already
+            if (IsConnected)
+                return;
 
-			if (Client != null)
-			{
-				Debug.Console(1, this, "Cleaning up disconnected client");
-				Client.ErrorOccurred -= Client_ErrorOccurred;
-				KillStream();
-			}
+            // Don't go unless everything is here
+            if (string.IsNullOrEmpty(Hostname) || Port < 1 || Port > 65535
+                || Username == null || Password == null)
+            {
+                Debug.Console(1, this, "Connect failed.  Check hostname, port, username and password are set or not null");
+                return;
+            }
 
-			Debug.Console(1, this, "Creating new SshClient");
-			ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
+            // Cleanup the old client if it already exists
+            if (Client != null)
+            {
+                Debug.Console(1, this, "Cleaning up disconnected client");
+                Client.ErrorOccurred -= Client_ErrorOccurred;
+                KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
+            }
 
-			if (Client == null)
-			{
-				Client = new SshClient(connectionInfo);
-			}
-			Client.ErrorOccurred -= Client_ErrorOccurred;
-			Client.ErrorOccurred += Client_ErrorOccurred;
+            // This handles both password and keyboard-interactive (like on OS-X, 'nixes)
+            KeyboardInteractiveAuthenticationMethod kauth = new KeyboardInteractiveAuthenticationMethod(Username);
+            kauth.AuthenticationPrompt += new EventHandler<AuthenticationPromptEventArgs>(kauth_AuthenticationPrompt);
+            PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
 
-			//You can do it!
-			ClientStatus = SocketStatus.SOCKET_STATUS_WAITING;
-			try
-			{
-				Client.Connect();
-				TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
-				TheStream.DataReceived += Stream_DataReceived;
-				//TheStream.ErrorOccurred += TheStream_ErrorOccurred;
-				Debug.Console(1, this, "Connected");
-				ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
-				return; // Success will not pass here
-			}
-			catch (SshConnectionException e)
-			{
-				var ie = e.InnerException; // The details are inside!!
-				if (ie is SocketException)
-					Debug.Console(1, this, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.GetType());
-				else if (ie is System.Net.Sockets.SocketException)
-					Debug.Console(1, this, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
-						Key, Hostname, Port, ie.GetType());
-				else if (ie is SshAuthenticationException)
-				{
-					Debug.Console(1, this, "Authentication failure for username '{0}', ({1})",
-						Username, ie.GetType());
-				}
-				else
-					Debug.Console(1, this, "Error on connect:\r({0})", e);
-			}
-			catch (Exception e)
-			{
-				Debug.Console(1, this, "Unhandled exception on connect:\r({0})", e);
-			}
-			
-			// Sucess will not make it this far
-			ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
-			HandleConnectionFailure();
-		}
+            Debug.Console(1, this, "Creating new SshClient");
+            ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
+            Client = new SshClient(connectionInfo);
+        
+            Client.ErrorOccurred -= Client_ErrorOccurred;
+            Client.ErrorOccurred += Client_ErrorOccurred;
+
+            //Attempt to connect
+            ClientStatus = SocketStatus.SOCKET_STATUS_WAITING;
+            try
+            {
+                Client.Connect();
+                TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
+                TheStream.DataReceived += Stream_DataReceived;
+                //TheStream.ErrorOccurred += TheStream_ErrorOccurred;
+                Debug.Console(1, this, "Connected");
+                ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
+                return; // Success will not pass here
+            }
+            catch (SshConnectionException e)
+            {
+                var ie = e.InnerException; // The details are inside!!
+                if (ie is SocketException)
+                    Debug.Console(1, this, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.GetType());
+                else if (ie is System.Net.Sockets.SocketException)
+                    Debug.Console(1, this, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
+                        Key, Hostname, Port, ie.GetType());
+                else if (ie is SshAuthenticationException)
+                {
+                    Debug.Console(1, this, "Authentication failure for username '{0}', ({1})",
+                        Username, ie.GetType());
+                }
+                else
+                    Debug.Console(1, this, "Error on connect:\r({0})", e);
+            }
+            catch (Exception e)
+            {
+                Debug.Console(1, this, "Unhandled exception on connect:\r({0})", e);
+            }
+
+            // Sucess will not make it this far
+            ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
+            HandleConnectionFailure();
+        }
 
 
 
@@ -282,25 +279,33 @@ namespace PepperDash.Core
 				ReconnectTimer = null;
 			}
 
-			KillStream();
+            KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
+		}
+
+        /// <summary>
+        /// Kills the stream, cleans up the client and sets it to null
+        /// </summary>
+        private void KillClient(SocketStatus status)
+        {
+            KillStream();
 
             if (Client != null)
             {
                 Client.Disconnect();
                 Client = null;
-                ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY;
+                ClientStatus = status;
                 Debug.Console(1, this, "Disconnected");
             }
-		}
+        }
 
 		/// <summary>
 		/// Anything to do with reestablishing connection on failures
 		/// </summary>
 		void HandleConnectionFailure()
 		{
-			if (Client != null)
-				Client.Disconnect();
-			KillStream();
+            KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+
+            Debug.Console(2, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
 
 			if (AutoReconnect && ConnectEnabled)
 			{
@@ -324,23 +329,19 @@ namespace PepperDash.Core
 			}
 		}
 
+        /// <summary>
+        /// Kills the stream
+        /// </summary>
 		void KillStream()
 		{
 			if (TheStream != null)
 			{
 				TheStream.DataReceived -= Stream_DataReceived;
-				//TheStream.ErrorOccurred -= TheStream_ErrorOccurred;
 				TheStream.Close();
 				TheStream.Dispose();
 				TheStream = null;
 			}
 		}
-
-		//bool PropertiesHaveChanged()
-		//{
-		//    return Hostname != PreviousHostname || Port != PreviousPort
-		//        || Username != PreviousUsername || Password != PreviousPassword;
-		//}
 
 		/// <summary>
 		/// Handles the keyboard interactive authentication, should it be required.
@@ -372,17 +373,6 @@ namespace PepperDash.Core
 			}
 		}
 
-		///// <summary>
-		///// Handler for errors on the stream...
-		///// </summary>
-		///// <param name="sender"></param>
-		///// <param name="e"></param>
-		//void TheStream_ErrorOccurred(object sender, ExceptionEventArgs e)
-		//{
-		//    Debug.Console(1, this, "Unhandled SSH STREAM error: {0}", e.Exception);
-		//    ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
-		//    HandleConnectionFailure();
-		//}
 
 		/// <summary>
 		/// Error event handler for client events - disconnect, etc.  Will forward those events via ConnectionChange
@@ -411,15 +401,18 @@ namespace PepperDash.Core
 		#region IBasicCommunication Members
 
 		/// <summary>
-		/// 
+		/// Sends text to the server
 		/// </summary>
 		/// <param name="text"></param>
 		public void SendText(string text)
 		{
 			try
 			{
-				TheStream.Write(text);
-				TheStream.Flush();
+                if (Client != null)
+                {
+                    TheStream.Write(text);
+                    TheStream.Flush();
+                }
 			}
 			catch
 			{
@@ -429,12 +422,19 @@ namespace PepperDash.Core
 			}
 		}
 
+        /// <summary>
+        /// Sends Bytes to the server
+        /// </summary>
+        /// <param name="bytes"></param>
 		public void SendBytes(byte[] bytes)
 		{
 			try
 			{
-				TheStream.Write(bytes, 0, bytes.Length);
-				TheStream.Flush();
+                if (Client != null)
+                {
+                    TheStream.Write(bytes, 0, bytes.Length);
+                    TheStream.Flush();
+                }
 			}
 			catch
 			{
@@ -454,16 +454,36 @@ namespace PepperDash.Core
 	/// </summary>
 	public class SshConnectionChangeEventArgs : EventArgs
 	{
+        /// <summary>
+        /// Connection State
+        /// </summary>
 		public bool IsConnected { get; private set; }
 
+        /// <summary>
+        /// Connection Status represented as a ushort
+        /// </summary>
 		public ushort UIsConnected { get { return (ushort)(Client.IsConnected ? 1 : 0); } }
 
+        /// <summary>
+        /// The client
+        /// </summary>
 		public GenericSshClient Client { get; private set; }
+
+        /// <summary>
+        /// Socket Status as represented by
+        /// </summary>
 		public ushort Status { get { return Client.UStatus; } }
 
-		// S+ Constructor
+		/// <summary>
+        ///  S+ Constructor
+		/// </summary>
 		public SshConnectionChangeEventArgs() { }
 
+        /// <summary>
+        /// EventArgs class
+        /// </summary>
+        /// <param name="isConnected">Connection State</param>
+        /// <param name="client">The Client</param>
 		public SshConnectionChangeEventArgs(bool isConnected, GenericSshClient client)
 		{
 			IsConnected = isConnected;
