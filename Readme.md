@@ -1,19 +1,48 @@
-# Pepperdash Core
+# PepperDash Core (c) 2020
 
-#### Workflow process
+## License
+Provided under MIT license
 
-- Create a Jira issue for the feature/bugfix.  If you know you're targeting this update to coincide with a new release of Core, specify that release (or create a new one) as the Fix Version for the Jira issue
-- Branch from development using the syntax [feature/bugfix]/[pdc-x] (where x is the Jira issue number)
-- Modify code to suit and test.  Make commits to the branch as you work.
-- Log a Pull Request on www.bitbucket.org and tag Heath and Neil as reviewers
+## Overview
+PepperDash Core is an open source Crestron SIMPL# library that can be used in SIMPL# Pro applications such as Essentials or as a standalone library with SIMPL+ wrappers to expose functionality in SIMPL Windows programs.
 
-#### Pull Request process
+## Constituent Elements
 
-- Check out the branch for the PR and review.
-- If necessary, merge the latest Development branch into the PR branch.  Resolve any conflicts.
-- Increment the appropriate Assembly version number to match the next release in Jira
-- Build the project
-- Copy PepperDash_Core.cpz and PepperDash_Core.dll from the bin folder to the CLZ Builds folder in the repo root.  Commit.
-- Merge the PR in Bitbucket
+- JSON Configuration File reading writing
+- PortalConfigReader
+- Generic config classes
+- Communications 
+	 - TCP/IP client and server
+	 - Secure TCP/IP clinet and server
+	 - UDP server
+	 - SSH client
+	 - HTTP SSE client
+	 - HTTP (RESTful client)
+- Debugging
+	 - Console debugging
+	 - Logging both to Crestron error log as well as a custom log file
+- System Info
+- Reports system and Ethernet information to SIMPL via S+
+- Device Class, IKeyed and IKeyName Interfaces
+	 - Base level device class that most classes derive from
+- Password Manager
+
+## Minimum Requirements
+- PepperDash Core runs on any Crestron 3-series processor or Crestron's VC-4 platform.
+- To edit and compile the source, Microsoft Visual Studio 2008 Professional with SP1 is required.
+- Crestron's Simpl# Plugin is also required (must be obtained from Crestron).
+
+## Dependencies
+
+None
+
+## Utilization
+PepperDash Core has two main applications:
+
+ 1. As a utility library for SIMPL# Pro applications like [Essentials]([Essentials](https://github.com/PepperDash/Essentials))
+ 2. As a library referenced by SIMPL+ wrapper modules in a SIMPL Windows application
+
+ ## Documentation
+ For detailed documentation, follow this [LINK](https://github.com/PepperDash/PepperDashCore/wiki) to the Wiki.
 
 
