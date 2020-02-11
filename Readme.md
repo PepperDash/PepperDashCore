@@ -8,12 +8,12 @@ PepperDash Core is an open source Crestron SIMPL# library that can be used in SI
 
 ## Constituent Elements
 
-- JSON Configuration File reading writing
+- JSON Configuration File reading/writing
 - PortalConfigReader
 - Generic config classes
 - Communications 
 	 - TCP/IP client and server
-	 - Secure TCP/IP clinet and server
+	 - Secure TCP/IP client and server
 	 - UDP server
 	 - SSH client
 	 - HTTP SSE client
@@ -22,7 +22,7 @@ PepperDash Core is an open source Crestron SIMPL# library that can be used in SI
 	 - Console debugging
 	 - Logging both to Crestron error log as well as a custom log file
 - System Info
-- Reports system and Ethernet information to SIMPL via S+
+- Reports system and Ethernet information to SIMPL via SIMPL+
 - Device Class, IKeyed and IKeyName Interfaces
 	 - Base level device class that most classes derive from
 - Password Manager
