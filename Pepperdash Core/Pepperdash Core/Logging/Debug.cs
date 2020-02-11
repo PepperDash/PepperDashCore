@@ -91,8 +91,7 @@ namespace PepperDash.Core
             Level = context.Level;
             DoNotLoadOnNextBoot = context.DoNotLoadOnNextBoot;
 
-            if(DoNotLoadOnNextBoot)
-                CrestronConsole.PrintLine(string.Format("Program {0} will not load config after next boot.  Use console command go:{0} to load the config manually", InitialParametersClass.ApplicationNumber));
+            CrestronConsole.PrintLine(string.Format("Program {0} will not load config after next boot.  Use console command go:{0} to load the config manually", InitialParametersClass.ApplicationNumber));
 
             try
             {

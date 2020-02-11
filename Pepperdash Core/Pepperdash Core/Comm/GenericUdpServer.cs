@@ -15,7 +15,7 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
-    public class GenericUdpServer : Device, IBasicCommunication
+    public class GenericUdpServer : Device, IBasicCommunication, ISocketStatus
     {
         /// <summary>
         /// 
@@ -40,11 +40,16 @@ namespace PepperDash.Core
         /// <summary>
         /// 
         /// </summary>
-        //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
         public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public event EventHandler<GenericUdpConnectedEventArgs> UpdateConnectionStatus;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public SocketStatus ClientStatus
         {
             get
@@ -53,6 +58,9 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public ushort UStatus
         {
             get { return (ushort)Server.ServerStatus; }
@@ -120,6 +128,13 @@ namespace PepperDash.Core
             CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
         }
        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="address"></param>
+        /// <param name="port"></param>
+        /// <param name="buffefSize"></param>
         public GenericUdpServer(string key, string address, int port, int buffefSize)
             : base(key)
         {
@@ -134,6 +149,12 @@ namespace PepperDash.Core
             CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
         }
 
+        /// <summary>
+        /// Call from S+ to initialize values
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="address"></param>
+        /// <param name="port"></param>
         public void Initialize(string key, string address, ushort port)
         {
             Key = key;
@@ -141,6 +162,10 @@ namespace PepperDash.Core
             UPort = port;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ethernetEventArgs"></param>
         void CrestronEnvironment_EthernetEventHandler(EthernetEventArgs ethernetEventArgs)
         {
             // Re-enable the server if the link comes back up and the status should be connected
@@ -151,6 +176,10 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="programEventType"></param>
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
             if (programEventType == eProgramStatusEventType.Stopping)
@@ -299,6 +328,10 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bytes"></param>
         public void SendBytes(byte[] bytes)
         {
             //if (Debug.Level == 2)
@@ -309,13 +342,35 @@ namespace PepperDash.Core
 
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
 	public class GenericUdpReceiveTextExtraArgs : EventArgs
 	{
+        /// <summary>
+        /// 
+        /// </summary>
 		public string Text { get; private set; }
+        /// <summary>
+        /// 
+        /// </summary>
 		public string IpAddress { get; private set; }
+        /// <summary>
+        /// 
+        /// </summary>
 		public int	Port { get; private set; }
+        /// <summary>
+        /// 
+        /// </summary>
 		public byte[] Bytes { get; private set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="ipAddress"></param>
+        /// <param name="port"></param>
+        /// <param name="bytes"></param>
 		public GenericUdpReceiveTextExtraArgs(string text, string ipAddress, int port, byte[] bytes)
 		{
 			Text = text;
@@ -330,11 +385,20 @@ namespace PepperDash.Core
 		public GenericUdpReceiveTextExtraArgs() { }
 	}
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class UdpServerPropertiesConfig
     {
+        /// <summary>
+        /// 
+        /// </summary>
         [JsonProperty(Required = Required.Always)]
         public string Address { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [JsonProperty(Required = Required.Always)]
         public int Port { get; set; }
 
@@ -343,6 +407,9 @@ namespace PepperDash.Core
         /// </summary>
         public int BufferSize { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public UdpServerPropertiesConfig()
         {
             BufferSize = 32768;
