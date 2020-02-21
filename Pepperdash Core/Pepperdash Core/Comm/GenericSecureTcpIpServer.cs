@@ -759,28 +759,39 @@ namespace PepperDash.Core
                 else
                 {
                     Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Client attempt faulty.");
-                    if (!ServerStopped)
-                    {
-                        server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
-                        return;
-                    }
+					
+					// JTA 2020-02-20 
+					// There is an issue where on a failed negotiation we need to stop and start the server. This should still leave connected client intact. 
+					server.Stop();
+					Listen();
+                    return;
+                    
                 }
             }
             catch (Exception ex)
             {
                 Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Connect Callback. Error: {0}", ex);
             }
-            //Debug.Console(1, this, Debug.ErrorLogLevel, "((((((Server State bitfield={0}; maxclient={1}; ServerStopped={2}))))))",
-            //    server.State, 
-            //    MaxClients,
-            //    ServerStopped);
-            if ((server.State & ServerState.SERVER_LISTENING) != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
-            {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Waiting for next connection");
-                server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
 
-            }
-        }
+			server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+
+			/*
+			Debug.Console(1, this, Debug.ErrorLogLevel.Error, "((((((Server State ={0} {3}; maxclient={1}; ServerStopped={2}))))))",
+			  server.State, 
+			  MaxClients,
+			  ServerStopped);
+			 
+			// JTA 2020-02-21 Im was not clear on why this condition was here. I think the WaitForCOnnection should always rearm.
+			
+			if ((server.State & ServerState.SERVER_LISTENING) != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
+			{
+				Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Waiting for next connection");
+				server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+
+			}
+			*/
+
+		}
 
         #endregion
 
