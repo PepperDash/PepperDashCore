@@ -418,11 +418,21 @@ namespace PepperDash.Core
 						SecureServer.PortNumber = Port;
 					}
 					ServerStopped = false;
-					SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
-					OnServerStateChange(SecureServer.State);
-					Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Secure Server Status: {0}, Socket Status: {1}", SecureServer.State, SecureServer.ServerSocketStatus);
-					ServerCCSection.Leave();
-				
+
+					// Start the listner
+					SocketErrorCodes status = SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+					if (status != SocketErrorCodes.SOCKET_OPERATION_PENDING)
+					{
+						Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error starting WaitForConnectionAsync {0}", status);
+					}
+				else 
+				{
+					ServerStopped = false;
+				} 
+				OnServerStateChange(SecureServer.State);
+				Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Secure Server Status: {0}, Socket Status: {1}", SecureServer.State, SecureServer.ServerSocketStatus);
+				ServerCCSection.Leave();
+			
             }
             catch (Exception ex)
             {
@@ -758,14 +768,7 @@ namespace PepperDash.Core
                 }
                 else
                 {
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Client attempt faulty.");
-					
-					// JTA 2020-02-20 
-					// There is an issue where on a failed negotiation we need to stop and start the server. This should still leave connected client intact. 
-					server.Stop();
-					Listen();
-                    return;
-                    
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Client attempt faulty.");                    
                 }
             }
             catch (Exception ex)
@@ -773,24 +776,18 @@ namespace PepperDash.Core
                 Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Connect Callback. Error: {0}", ex);
             }
 
-			server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
-
-			/*
-			Debug.Console(1, this, Debug.ErrorLogLevel.Error, "((((((Server State ={0} {3}; maxclient={1}; ServerStopped={2}))))))",
-			  server.State, 
-			  MaxClients,
-			  ServerStopped);
-			 
-			// JTA 2020-02-21 Im was not clear on why this condition was here. I think the WaitForCOnnection should always rearm.
-			
-			if ((server.State & ServerState.SERVER_LISTENING) != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
+			// Rearm the listner 
+			SocketErrorCodes status = server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+			if (status != SocketErrorCodes.SOCKET_OPERATION_PENDING)
 			{
-				Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Waiting for next connection");
-				server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
-
+				Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Socket status connect callback status {0}", status);
+				if (status == SocketErrorCodes.SOCKET_CONNECTION_IN_PROGRESS)
+				{
+					// There is an issue where on a failed negotiation we need to stop and start the server. This should still leave connected clients intact. 
+					server.Stop();
+					Listen();
+				}
 			}
-			*/
-
 		}
 
         #endregion
