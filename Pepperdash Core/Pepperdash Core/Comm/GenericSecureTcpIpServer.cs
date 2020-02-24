@@ -418,11 +418,21 @@ namespace PepperDash.Core
 						SecureServer.PortNumber = Port;
 					}
 					ServerStopped = false;
-					SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
-					OnServerStateChange(SecureServer.State);
-					Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Secure Server Status: {0}, Socket Status: {1}", SecureServer.State, SecureServer.ServerSocketStatus);
-					ServerCCSection.Leave();
-				
+
+					// Start the listner
+					SocketErrorCodes status = SecureServer.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+					if (status != SocketErrorCodes.SOCKET_OPERATION_PENDING)
+					{
+						Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Error starting WaitForConnectionAsync {0}", status);
+					}
+				else 
+				{
+					ServerStopped = false;
+				} 
+				OnServerStateChange(SecureServer.State);
+				Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Secure Server Status: {0}, Socket Status: {1}", SecureServer.State, SecureServer.ServerSocketStatus);
+				ServerCCSection.Leave();
+			
             }
             catch (Exception ex)
             {
@@ -758,29 +768,27 @@ namespace PepperDash.Core
                 }
                 else
                 {
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Client attempt faulty.");
-                    if (!ServerStopped)
-                    {
-                        server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
-                        return;
-                    }
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Client attempt faulty.");                    
                 }
             }
             catch (Exception ex)
             {
                 Debug.Console(2, this, Debug.ErrorLogLevel.Error, "Error in Socket Status Connect Callback. Error: {0}", ex);
             }
-            //Debug.Console(1, this, Debug.ErrorLogLevel, "((((((Server State bitfield={0}; maxclient={1}; ServerStopped={2}))))))",
-            //    server.State, 
-            //    MaxClients,
-            //    ServerStopped);
-            if ((server.State & ServerState.SERVER_LISTENING) != ServerState.SERVER_LISTENING && MaxClients > 1 && !ServerStopped)
-            {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Waiting for next connection");
-                server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
 
-            }
-        }
+			// Rearm the listner 
+			SocketErrorCodes status = server.WaitForConnectionAsync(IPAddress.Any, SecureConnectCallback);
+			if (status != SocketErrorCodes.SOCKET_OPERATION_PENDING)
+			{
+				Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Socket status connect callback status {0}", status);
+				if (status == SocketErrorCodes.SOCKET_CONNECTION_IN_PROGRESS)
+				{
+					// There is an issue where on a failed negotiation we need to stop and start the server. This should still leave connected clients intact. 
+					server.Stop();
+					Listen();
+				}
+			}
+		}
 
         #endregion
 
