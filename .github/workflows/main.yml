@@ -14,7 +14,7 @@ jobs:
       - name: Trigger Jenkins Job
         uses: appleboy/jenkins-action@0.0.1
         with:
-          url: "http://example.com"
-          user: "example"
+          url: "http://localhost:8080"
+          user: "ndorin"
           token: ${{ secrets.TOKEN }}
           job: "PepperDash Core Branch Builds"
