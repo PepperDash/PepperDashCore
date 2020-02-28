@@ -1,20 +1,20 @@
-name: Build Branch
+name: Build Non-Release Branch
+
 
 on:
   push:
     branches:
-    - feature/*
-    - bugfix/*
+      - feature/*
+      - bugfix/*
+      - hotfix/*
+
 
 jobs:
   build:
     name: Build
     runs-on: self-hosted
     steps:
-      - name: Trigger Jenkins Job
-        uses: appleboy/jenkins-action@0.0.1
-        with:
-          url: "http://localhost:8080"
-          user: "ndorin"
+      - run: Invoke-WebRequest -URI "http://localhost:8080/job/PepperDash%20Core%20Branch%20Builds/build?token=$($Env:projectToken)" -Headers @{Authorization = "Basic $([System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("ndorin:$($Env:token)")))"} -Method POST -UseBasicParsing
+        env:
           token: ${{ secrets.TOKEN }}
-          job: "PepperDash Core Branch Builds"
+          projectToken: ${{ secrets.PROJECTTOKEN}}
