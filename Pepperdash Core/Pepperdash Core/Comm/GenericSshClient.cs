@@ -62,6 +62,8 @@ namespace PepperDash.Core
 			get { return ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
 		}
 
+        private bool IsConnecting = false;
+
 		/// <summary>
 		/// S+ helper for IsConnected
 		/// </summary>
@@ -184,6 +186,13 @@ namespace PepperDash.Core
 		/// </summary>
 		public void Connect()
         {
+            if (IsConnecting)
+            {
+                Debug.Console(0, this, "Connection attempt in progress.  Exiting Connect()");
+                return;
+            }
+
+            IsConnecting = true;
             ConnectEnabled = true;
             Debug.Console(1, this, "attempting connect");
 
@@ -236,6 +245,7 @@ namespace PepperDash.Core
                 //TheStream.ErrorOccurred += TheStream_ErrorOccurred;
                 Debug.Console(1, this, "Connected");
                 ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
+                IsConnecting = false;
                 return; // Success will not pass here
             }
             catch (SshConnectionException e)
@@ -291,6 +301,7 @@ namespace PepperDash.Core
 
             if (Client != null)
             {
+                IsConnecting = false;
                 Client.Disconnect();
                 Client = null;
                 ClientStatus = status;
@@ -303,6 +314,7 @@ namespace PepperDash.Core
 		/// </summary>
 		void HandleConnectionFailure()
 		{
+
             KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
 
             Debug.Console(2, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
