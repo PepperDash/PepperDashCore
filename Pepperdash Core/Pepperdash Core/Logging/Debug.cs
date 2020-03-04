@@ -69,11 +69,7 @@ namespace PepperDash.Core
 
             CrestronConsole.PrintLine(msg);
 
-            PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
-
-            msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
-
-            CrestronConsole.PrintLine(msg);
+            PepperDashCoreVersion = fullVersionAtt.InformationalVersion;
 
             LogError(ErrorLogLevel.Notice, msg);
 
