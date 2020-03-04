@@ -26,14 +26,23 @@ namespace PepperDash.Core
         /// </summary>
         public static string FileName = string.Format(@"app{0}Debug.json", InitialParametersClass.ApplicationNumber);
 
+        /// <summary>
+        /// The current debug level
+        /// </summary>
         public static int Level { get; private set; }
 
+        /// <summary>
+        /// Indicates if the configuration file should be read on next boot
+        /// </summary>
         public static bool DoNotLoadOnNextBoot { get; private set; }
 
         static DebugContextCollection Contexts;
 
         static int SaveTimeoutMs = 30000;
 
+        /// <summary>
+        /// Version of the assembly
+        /// </summary>
         public static string PepperDashCoreVersion { get; private set; } 
 
         static CTimer SaveTimer;
@@ -52,10 +61,17 @@ namespace PepperDash.Core
         {
             // Get the assembly version and print it to console and the log
             var version = Assembly.GetExecutingAssembly().GetName().Version;
+            var fullVersion = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
+
+            AssemblyInformationalVersionAttribute fullVersionAtt = fullVersion[0] as AssemblyInformationalVersionAttribute;
+
+            var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, fullVersionAtt.InformationalVersion);
+
+            CrestronConsole.PrintLine(msg);
 
             PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
 
-            var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
+            msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
 
             CrestronConsole.PrintLine(msg);
 
