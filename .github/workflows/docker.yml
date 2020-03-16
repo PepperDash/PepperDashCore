@@ -7,8 +7,8 @@ on:
 
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
-  SOLUTION_PATH: pepperdash-generic-colorlightz6-epi
-  SOLUTION_FILE: pepperdash-generic-colorlightz6-epi.sln
+  SOLUTION_PATH: PepperDash Core
+  SOLUTION_FILE: PepperDash Core.sln
   VERSION: 0.0.0-buildtype-buildnumber
   BUILD_TYPE: Debug
   RELEASE_BRANCH: master
