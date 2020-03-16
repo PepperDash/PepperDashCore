@@ -1,0 +1,75 @@
+name: Branch Build
+
+on:
+  push:
+    branches:
+      - feature/*
+
+env:
+  # solution path doesn't need slashes unless there it is multiple folders deep
+  SOLUTION_PATH: pepperdash-generic-colorlightz6-epi
+  SOLUTION_FILE: pepperdash-generic-colorlightz6-epi.sln
+  VERSION: 0.0.0-buildtype-buildnumber
+  BUILD_TYPE: Debug
+  RELEASE_BRANCH: master
+jobs:
+  build_project:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Checkout submodules
+        shell: bash
+        run: |
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+      - name: Set Build to Relase if triggered from Master
+        run: |
+          if("$($Env:GITHUB_REF)".contains("$($Env:RELEASE_BRANCH)")) {
+            Write-Host "Setting build type to Release"
+            Write-Output "::set-env name=BUILD_TYPE::Release"
+          }
+      - name: Set Version Number
+        shell: powershell
+        run: |
+          $version = ./.github/scripts/GenerateVersionNumber.ps1
+          Write-Output "::set-env name=VERSION::$version"
+      - name: Update AssemblyInfo.cs
+        shell: powershell
+        run: |
+          Write-Output ${{ env.VERSION }}
+          ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
+      - name: Build Solution
+        shell: powershell
+        run: |
+          Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE)"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
+          ./.github/scripts/ZipBuildOutput.ps1
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: Build
+          path: ./output.zip
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ env.VERSION  }}
+          release_name: v${{ env.VERSION }}
+          prerelease: ${{contains('debug', env.BUILD_TYPE)}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload 
+        id: upload_release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./output.zip
+          asset_name: output.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
