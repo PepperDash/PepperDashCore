@@ -36,11 +36,11 @@ jobs:
       #       Write-Host "Setting build type to Release"
       #       Write-Output "::set-env name=BUILD_TYPE::Release"
       #     }
-      # - name: Set Version Number
-      #   shell: powershell
-      #   run: |
-      #     $version = ./.github/scripts/GenerateVersionNumber.ps1
-      #     Write-Output "::set-env name=VERSION::$version"
+      - name: Set Version Number
+        shell: powershell
+        run: |
+          $version = ./.github/scripts/GenerateVersionNumber.ps1
+          Write-Output "::set-env name=VERSION::$version"
       # - name: Update AssemblyInfo.cs
       #   shell: powershell
       #   run: |
