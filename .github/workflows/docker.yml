@@ -70,8 +70,8 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./output.zip
-          asset_name: output.zip
+          asset_path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
+          asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
