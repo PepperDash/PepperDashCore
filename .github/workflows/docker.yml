@@ -31,7 +31,7 @@ jobs:
         shell: powershell
         run: |
           git --version
-          git fetch
+          git fetch --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           git branch
           git tag --merged master          
 
