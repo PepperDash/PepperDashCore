@@ -39,13 +39,13 @@ jobs:
         if: contains('release', env.BUILD_TYPE)
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.BUILD_TOKEN }}
+          token: ${{ secrets.BUILDS_TOKEN }}
           path: ./builds_repo
           repository: PepperDash/PepperDashCore-Builds
       - name: Checkout Builds Repo
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.BUILD_TOKEN }}
+          token: ${{ secrets.BUILDS_TOKEN }}
           path: ./internal_builds_repo
           repository: PepperDash-Engineering/pepperdash-core-builds
       - name: Fetch tags
