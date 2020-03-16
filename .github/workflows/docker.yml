@@ -85,7 +85,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }} 
           asset_path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-          asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}
+          asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
