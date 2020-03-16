@@ -30,8 +30,9 @@ jobs:
       - name: Testing git command
         shell: powershell
         run: |
-          Write-Host $(git --version)
-          Write-Host $(git tag --merged master)
+          git --version
+          git branch
+          git tag --merged master          
 
       # - name: Set Build to Release if triggered from Master
       #   run: |
