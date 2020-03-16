@@ -28,12 +28,12 @@ jobs:
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      # - name: Set Build to Release if triggered from Master
-      #   run: |
-      #     if("$($Env:GITHUB_REF)".contains("$($Env:RELEASE_BRANCH)")) {
-      #       Write-Host "Setting build type to Release"
-      #       Write-Output "::set-env name=BUILD_TYPE::Release"
-      #     }
+      - name: Set Build to Release if triggered from Master
+        run: |
+          if("$($Env:GITHUB_REF)".contains("$($Env:RELEASE_BRANCH)")) {
+            Write-Host "Setting build type to Release"
+            Write-Output "::set-env name=BUILD_TYPE::Release"
+          }
       - name: Fetch tags
         run: git fetch --tags
       - name: Set Version Number
@@ -55,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: Build
-          path: ./output.zip
+          path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
