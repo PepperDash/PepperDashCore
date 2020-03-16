@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/*
+      - hotfix/*
 
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
