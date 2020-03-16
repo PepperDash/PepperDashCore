@@ -18,6 +18,7 @@ Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include @("*.clz", "*.c
     $_;
   }
 } | Copy-Item -Destination ($destination)
-Get-ChildItem "$($Env:GITHUB_WORKSPACE)\output"
-Compress-Archive -Path "$($Env:GITHUB_WORKSPACE)\output\*" -DestinationPath "$($Env:GITHUB_WORKSPACE)\$($Env:SOLUTION_FILE)-$($Env.VERSION).zip"
+Get-ChildItem "$($Env:GITHUB_WORKSPACE)\output"]
+$version = $Env
+Compress-Archive -Path "$($Env:GITHUB_WORKSPACE)\output\*" -DestinationPath "$($Env:GITHUB_WORKSPACE)\$($Env:SOLUTION_FILE)-$($Env:VERSION).zip"
 Get-ChildItem "$($Env:GITHUB_WORKSPACE)\"
