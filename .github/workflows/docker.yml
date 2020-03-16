@@ -40,13 +40,13 @@ jobs:
         with:
           token: ${{ secrets.BUILD_TOKEN }}
           path: ./builds_repo
-          repo: PepperDash/PepperDashCore-Builds
+          repository: PepperDash/PepperDashCore-Builds
       - name: Checkout Builds Repo
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILD_TOKEN }}
           path: ./internal_builds_repo
-          repo: PepperDash-Engineering/pepperdash-core-builds
+          repository: PepperDash-Engineering/pepperdash-core-builds
       - name: Fetch tags
         run: git fetch --tags
       - name: Set Version Number
