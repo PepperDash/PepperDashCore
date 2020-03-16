@@ -15,7 +15,7 @@ Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include @("*.clz", "*.c
     $_;
   }
 } | Copy-Item -Destination ($destination)
-Get-ChildItem "$($Env:GITHUB_WORKSPACE)\output" include @("*.cpz", "*.clz", "*.cplz") | ForEach-Object {  
+Get-ChildItem "$($Env:GITHUB_WORKSPACE)\output" -include @("*.cpz", "*.clz", "*.cplz") | ForEach-Object {  
   $filenames = @($_ -replace "cpz|clz|cplz","dll",$_ -replace "cpz|clz|cplz","xml")
   if($filenames.length > 0) {
     Get-ChildItem -Recurse -Path "$($Env:GITHUB_WORKSPACE)" -include $filenames | Copy-Item -Destination ($destination)
