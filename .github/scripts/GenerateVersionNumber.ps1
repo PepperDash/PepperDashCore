@@ -1,23 +1,18 @@
-$tagCount = $(git rev-list --tags='*.*.*' --count)
-if ($tagCount -eq 0) {
-  $latestVersion = "0.0.0"
-}
-else {
-  $latestVersions = $(git describe --tags $(git tag --merged master) --abbrev=0) 
-  $latestVersion = [version]"0.0.0"
-  Foreach ($version in $latestVersions) {
-    Write-Host $version
-    try {
-      if (([version]$version) -ge $latestVersion) {
-        $latestVersion = $version
-        Write-Host "Setting latest version to: $latestVersion"
-      }
-    } catch {
-      Write-Host "Unable to convert $($version). Skipping"
-      continue;
+$latestVersions = $(git describe --tags $(git tag --merged master) --abbrev=0) 
+$latestVersion = [version]"0.0.0"
+Foreach ($version in $latestVersions) {
+  Write-Host $version
+  try {
+    if (([version]$version) -ge $latestVersion) {
+      $latestVersion = $version
+      Write-Host "Setting latest version to: $latestVersion"
     }
+  } catch {
+    Write-Host "Unable to convert $($version). Skipping"
+    continue;
   }
 }
+
 $newVersion = [version]$latestVersion
 $phase = ""
 $newVersionString = ""
