@@ -7,8 +7,9 @@ on:
 
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
+  # solution name does not include extension. .sln is assumed
   SOLUTION_PATH: PepperDash Core
-  SOLUTION_FILE: PepperDash Core.sln
+  SOLUTION_FILE: PepperDash Core
   VERSION: 0.0.0-buildtype-buildnumber
   BUILD_TYPE: Debug
   RELEASE_BRANCH: master
@@ -45,33 +46,33 @@ jobs:
         run: |
           Write-Output ${{ env.VERSION }}
           ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
-      # - name: Build Solution
-      #   shell: powershell
-      #   run: |
-      #     Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE)"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
-      #     ./.github/scripts/ZipBuildOutput.ps1
-      # - name: Upload Artifact
-      #   uses: actions/upload-artifact@v1
-      #   with:
-      #     name: Build
-      #     path: ./output.zip
-      # - name: Create Release
-      #   id: create_release
-      #   uses: actions/create-release@v1
-      #   with:
-      #     tag_name: v${{ env.VERSION  }}
-      #     release_name: v${{ env.VERSION }}
-      #     prerelease: ${{contains('debug', env.BUILD_TYPE)}}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Upload 
-      #   id: upload_release
-      #   uses: actions/upload-release-asset@v1
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }} 
-      #     asset_path: ./output.zip
-      #     asset_name: output.zip
-      #     asset_content_type: application/zip
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Solution
+        shell: powershell
+        run: |
+          Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
+          ./.github/scripts/ZipBuildOutput.ps1
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: Build
+          path: ./output.zip
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ env.VERSION  }}
+          release_name: v${{ env.VERSION }}
+          prerelease: ${{contains('debug', env.BUILD_TYPE)}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload 
+        id: upload_release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} 
+          asset_path: ./output.zip
+          asset_name: output.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
