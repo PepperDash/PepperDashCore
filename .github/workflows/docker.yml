@@ -27,7 +27,7 @@ jobs:
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      - name: Set Build to Relase if triggered from Master
+      - name: Set Build to Release if triggered from Master
         run: |
           if("$($Env:GITHUB_REF)".contains("$($Env:RELEASE_BRANCH)")) {
             Write-Host "Setting build type to Release"
@@ -38,38 +38,38 @@ jobs:
         run: |
           $version = ./.github/scripts/GenerateVersionNumber.ps1
           Write-Output "::set-env name=VERSION::$version"
-      - name: Update AssemblyInfo.cs
-        shell: powershell
-        run: |
-          Write-Output ${{ env.VERSION }}
-          ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
-      - name: Build Solution
-        shell: powershell
-        run: |
-          Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE)"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
-          ./.github/scripts/ZipBuildOutput.ps1
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v1
-        with:
-          name: Build
-          path: ./output.zip
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: v${{ env.VERSION  }}
-          release_name: v${{ env.VERSION }}
-          prerelease: ${{contains('debug', env.BUILD_TYPE)}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload 
-        id: upload_release
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./output.zip
-          asset_name: output.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Update AssemblyInfo.cs
+      #   shell: powershell
+      #   run: |
+      #     Write-Output ${{ env.VERSION }}
+      #     ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
+      # - name: Build Solution
+      #   shell: powershell
+      #   run: |
+      #     Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE)"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
+      #     ./.github/scripts/ZipBuildOutput.ps1
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v1
+      #   with:
+      #     name: Build
+      #     path: ./output.zip
+      # - name: Create Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   with:
+      #     tag_name: v${{ env.VERSION  }}
+      #     release_name: v${{ env.VERSION }}
+      #     prerelease: ${{contains('debug', env.BUILD_TYPE)}}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Upload 
+      #   id: upload_release
+      #   uses: actions/upload-release-asset@v1
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }} 
+      #     asset_path: ./output.zip
+      #     asset_name: output.zip
+      #     asset_content_type: application/zip
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

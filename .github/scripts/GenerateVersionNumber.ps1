@@ -1,4 +1,4 @@
-$latestVersions = $(git describe --tags $(git tag --merged master) --abbrev=0) 
+$latestVersions = $(git describe --tags $(git tag --merged master)) 
 $latestVersion = [version]"0.0.0"
 Foreach ($version in $latestVersions) {
   Write-Host $version
