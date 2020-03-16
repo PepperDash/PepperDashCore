@@ -33,6 +33,8 @@ jobs:
       #       Write-Host "Setting build type to Release"
       #       Write-Output "::set-env name=BUILD_TYPE::Release"
       #     }
+      - name: Fetch tags
+        run: git fetch --tags
       - name: Set Version Number
         shell: powershell
         run: |
