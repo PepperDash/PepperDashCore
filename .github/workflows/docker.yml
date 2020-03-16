@@ -38,11 +38,11 @@ jobs:
         run: |
           $version = ./.github/scripts/GenerateVersionNumber.ps1
           Write-Output "::set-env name=VERSION::$version"
-      # - name: Update AssemblyInfo.cs
-      #   shell: powershell
-      #   run: |
-      #     Write-Output ${{ env.VERSION }}
-      #     ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
+      - name: Update AssemblyInfo.cs
+        shell: powershell
+        run: |
+          Write-Output ${{ env.VERSION }}
+          ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
       # - name: Build Solution
       #   shell: powershell
       #   run: |
