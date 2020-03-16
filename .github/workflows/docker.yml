@@ -27,17 +27,23 @@ jobs:
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
+      - name: Testing git command
+        shell: powershell
+        run: |
+          Write-Host $(git --version)
+          Write-Host $(git tag --merged master)
+
       # - name: Set Build to Release if triggered from Master
       #   run: |
       #     if("$($Env:GITHUB_REF)".contains("$($Env:RELEASE_BRANCH)")) {
       #       Write-Host "Setting build type to Release"
       #       Write-Output "::set-env name=BUILD_TYPE::Release"
       #     }
-      - name: Set Version Number
-        shell: powershell
-        run: |
-          $version = ./.github/scripts/GenerateVersionNumber.ps1
-          Write-Output "::set-env name=VERSION::$version"
+      # - name: Set Version Number
+      #   shell: powershell
+      #   run: |
+      #     $version = ./.github/scripts/GenerateVersionNumber.ps1
+      #     Write-Output "::set-env name=VERSION::$version"
       # - name: Update AssemblyInfo.cs
       #   shell: powershell
       #   run: |
