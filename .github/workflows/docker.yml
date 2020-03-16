@@ -27,12 +27,12 @@ jobs:
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      - name: Set Build to Release if triggered from Master
-        run: |
-          if("$($Env:GITHUB_REF)".contains("$($Env:RELEASE_BRANCH)")) {
-            Write-Host "Setting build type to Release"
-            Write-Output "::set-env name=BUILD_TYPE::Release"
-          }
+      # - name: Set Build to Release if triggered from Master
+      #   run: |
+      #     if("$($Env:GITHUB_REF)".contains("$($Env:RELEASE_BRANCH)")) {
+      #       Write-Host "Setting build type to Release"
+      #       Write-Output "::set-env name=BUILD_TYPE::Release"
+      #     }
       - name: Set Version Number
         shell: powershell
         run: |
