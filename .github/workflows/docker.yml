@@ -28,7 +28,7 @@ jobs:
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
       - name: Check for tags
-        run: git tag --merged origin/master
+        run: git tag --merged
 
       # - name: Set Build to Release if triggered from Master
       #   run: |
