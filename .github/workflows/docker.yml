@@ -109,7 +109,6 @@ jobs:
         shell: powershell
         run: |
          Get-ChildItem "./"
-         Expand-Archive -Path version.zip -DestinationPath ./
          $version = Get-Content -Path ./version.txt
          Write-Output "::set-env name=VERSION::$version"
          Remove-Item -Path ./version.zip
