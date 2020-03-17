@@ -98,11 +98,10 @@ jobs:
         with:
           name: Build
           path: ./build.zip
-      - name: Download Version info
+      - name: Download Version Info
         uses: actions/download-artifact@v1
         with:
           name: Version
-          path: ./
       - name: Check Directory
         run: Get-ChildItem "./"
       - name: Set Version Number
