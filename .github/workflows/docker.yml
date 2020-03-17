@@ -112,7 +112,7 @@ jobs:
          Write-Host "Version: $version"
          Write-Output "::set-env name=VERSION::$version"
          Remove-Item -Path ./Version/version.txt
-         Remove-Item -Path /Version
+         Remove-Item -Path ./Version
       - name: Check Directory
         run: |
           Get-ChildItem "./"
