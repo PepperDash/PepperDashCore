@@ -103,6 +103,8 @@ jobs:
         with:
           name: Version
           path: ./version.zip
+      - name: Check Directory
+        run: Get-ChildItem "./"
       - name: Set Version Number
         shell: powershell
         run: |
@@ -113,7 +115,7 @@ jobs:
           Remove-Item -Path ./version.txt
       - name: Check Directory
         run: |
-          Get-ChildItem ./
+          Get-ChildItem "./"
   # public_push_output:
   #   needs: build_project
   #   runs-on: windows-latest
