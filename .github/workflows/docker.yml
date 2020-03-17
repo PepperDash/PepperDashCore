@@ -79,6 +79,7 @@ jobs:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   push_output:
     needs: build_project
+    runs-on: windows-latest
     steps:
       - name: Checkout Public Builds Repo
         if: contains('master', env.GITHUB_REF) || contains('release', env.GITHUB_REF)
