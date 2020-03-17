@@ -102,13 +102,14 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: Version
-          path: ./version.txt
+          path: ./
       - name: Check Directory
         run: Get-ChildItem "./"
       - name: Set Version Number
         shell: powershell
         run: |
          Get-ChildItem "./"
+         Expand-Archive -Path version.zip -DestinationPath ./
          $version = Get-Content -Path ./version.txt
          Write-Output "::set-env name=VERSION::$version"
          Remove-Item -Path ./version.zip
@@ -132,4 +133,3 @@ jobs:
   #         name: Build
   #     - name: Check Directory
   #       run: Get-ChildItem ${{env.GITHUB_WORKSPACE}}
-      #    Expand-Archive -Path version.zip -DestinationPath ./
