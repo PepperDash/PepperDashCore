@@ -35,19 +35,7 @@ jobs:
             Write-Host "Setting build type to Release"
             Write-Output "::set-env name=BUILD_TYPE::Release"
           }
-      - name: Checkout Builds Repo
-        if: contains('release', env.BUILD_TYPE)
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.BUILDS_TOKEN }}
-          path: ./builds_repo
-          repository: PepperDash/PepperDashCore-Builds
-      - name: Checkout Builds Repo
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.BUILDS_TOKEN }}
-          path: ./internal_builds_repo
-          repository: PepperDash-Engineering/pepperdash-core-builds
+      
       - name: Fetch tags
         run: git fetch --tags
       - name: Set Version Number
@@ -70,23 +58,45 @@ jobs:
         with:
           name: Build
           path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      # - name: Create Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   with:
+      #     tag_name: v${{ env.VERSION  }}
+      #     release_name: v${{ env.VERSION }}
+      #     prerelease: ${{contains('debug', env.BUILD_TYPE)}}
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Upload 
+      #   id: upload_release
+      #   uses: actions/upload-release-asset@v1
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }} 
+      #     asset_path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
+      #     asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
+      #     asset_content_type: application/zip
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  push_output:
+    needs: build_project
+    steps:
+      - name: Checkout Public Builds Repo
+        if: contains('master', env.GITHUB_REF) || contains('release', env.GITHUB_REF)
+        uses: actions/checkout@v2
         with:
-          tag_name: v${{ env.VERSION  }}
-          release_name: v${{ env.VERSION }}
-          prerelease: ${{contains('debug', env.BUILD_TYPE)}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload 
-        id: upload_release
-        uses: actions/upload-release-asset@v1
+          token: ${{ secrets.BUILDS_TOKEN }}
+          path: ./builds_repo
+          repository: PepperDash/PepperDashCore-Builds
+      - name: Checkout Internal Builds Repo
+        uses: actions/checkout@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} 
-          asset_path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-          asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.BUILDS_TOKEN }}
+          path: ./internal_builds_repo
+          repository: PepperDash-Engineering/pepperdash-core-builds
+      - name: Download Artifact
+        uses: action/download-artifact@v1
+        with:
+          name: Build
+      - name: Check Directory
+        run: Get-ChildItem ${{env.GITHUB_WORKSPACE}}
 
