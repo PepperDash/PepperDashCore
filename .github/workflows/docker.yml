@@ -107,10 +107,10 @@ jobs:
       - name: Set Version Number
         shell: powershell
         run: |
-         Get-ChildItem "./"
-         $version = Get-Content -Path ./version.txt
+         Get-ChildItem "./Version"
+         $version = Get-Content -Path ./Version/version.txt
          Write-Output "::set-env name=VERSION::$version"
-         Remove-Item -Path ./version.txt
+         Remove-Item -Path ./Version/version.txt
       - name: Check Directory
         run: |
           Get-ChildItem "./"
@@ -124,9 +124,24 @@ jobs:
   #         token: ${{ secrets.BUILDS_TOKEN }}
   #         path: ./internal_builds_repo
   #         repository: PepperDash-Engineering/pepperdash-core-builds
-  #     - name: Download Artifact
-  #       uses: actions/download-artifact@v1
-  #       with:
-  #         name: Build
-  #     - name: Check Directory
-  #       run: Get-ChildItem ${{env.GITHUB_WORKSPACE}}
+  #     - name: Download Build output
+      #   uses: actions/download-artifact@v1
+      #   with:
+      #     name: Build
+      #     path: ./build.zip
+      # - name: Download Version Info
+      #   uses: actions/download-artifact@v1
+      #   with:
+      #     name: Version
+      # - name: Check Directory
+      #   run: Get-ChildItem "./"
+      # - name: Set Version Number
+      #   shell: powershell
+      #   run: |
+      #    Get-ChildItem "./"
+      #    $version = Get-Content -Path ./version.txt
+      #    Write-Output "::set-env name=VERSION::$version"
+      #    Remove-Item -Path ./version.txt
+      # - name: Check Directory
+      #   run: |
+      #     Get-ChildItem "./"
