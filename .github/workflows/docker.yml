@@ -35,7 +35,7 @@ jobs:
             Write-Host "Setting build type to Release"
             Write-Output "::set-env name=BUILD_TYPE::Release"
           }
-      
+
       - name: Fetch tags
         run: git fetch --tags
       - name: Set Version Number
@@ -53,11 +53,18 @@ jobs:
         run: |
           Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
           ./.github/scripts/ZipBuildOutput.ps1
-      - name: Upload Artifact
+      - name: Write Version
+        run: Write-Output $($Env:VERSION) | Out-File -FilePath ".\output\version.txt"
+      - name: Upload Build Output
         uses: actions/upload-artifact@v1
         with:
           name: Build
           path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
+      - name: Upload Version.txt
+        uses: actions/upload-artifact@v1
+        with:
+          name: Version
+          path: ./output/version.txt
       # - name: Create Release
       #   id: create_release
       #   uses: actions/create-release@v1
@@ -67,37 +74,48 @@ jobs:
       #     prerelease: ${{contains('debug', env.BUILD_TYPE)}}
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Upload 
+      # - name: Upload
       #   id: upload_release
       #   uses: actions/upload-release-asset@v1
       #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }} 
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
       #     asset_path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
       #     asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
       #     asset_content_type: application/zip
       #   env:
       #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  push_output:
+  internal_push_output:
     needs: build_project
     runs-on: windows-latest
     steps:
-      - name: Checkout Public Builds Repo
-        if: contains('master', env.GITHUB_REF) || contains('release', env.GITHUB_REF)
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.BUILDS_TOKEN }}
-          path: ./builds_repo
-          repository: PepperDash/PepperDashCore-Builds
       - name: Checkout Internal Builds Repo
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
-          path: ./internal_builds_repo
           repository: PepperDash-Engineering/pepperdash-core-builds
-      - name: Download Artifact
+      - name: Download Build output
         uses: actions/download-artifact@v1
         with:
           name: Build
+      - name: Download Version info
+        uses: actions/download-artifact@v1
+        with:
+          name: Version
       - name: Check Directory
         run: Get-ChildItem ${{env.GITHUB_WORKSPACE}}
-
+  # public_push_output:
+  #   needs: build_project
+  #   runs-on: windows-latest
+  #   steps:
+  #     - name: Checkout public Builds Repo
+  #       uses: actions/checkout@v2
+  #       with:
+  #         token: ${{ secrets.BUILDS_TOKEN }}
+  #         path: ./internal_builds_repo
+  #         repository: PepperDash-Engineering/pepperdash-core-builds
+  #     - name: Download Artifact
+  #       uses: actions/download-artifact@v1
+  #       with:
+  #         name: Build
+  #     - name: Check Directory
+  #       run: Get-ChildItem ${{env.GITHUB_WORKSPACE}}
