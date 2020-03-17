@@ -104,6 +104,7 @@ jobs:
           name: Version
           path: ./version.zip
       - name: Set Version Number
+        shell: powershell
         run: |
           Expand-Archive -Path ./version.zip -DestinationPath ./
           $version = Get-Content -Path ./version.txt
