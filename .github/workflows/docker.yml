@@ -108,7 +108,7 @@ jobs:
       - name: Set Version Number
         shell: powershell
         run: |
-            Get-ChildItem "./"
+         Get-ChildItem "./"
          $version = Get-Content -Path ./version.txt
          Write-Output "::set-env name=VERSION::$version"
          Remove-Item -Path ./version.zip
