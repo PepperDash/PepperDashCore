@@ -110,7 +110,6 @@ jobs:
          Get-ChildItem "./"
          $version = Get-Content -Path ./version.txt
          Write-Output "::set-env name=VERSION::$version"
-         Remove-Item -Path ./version.zip
          Remove-Item -Path ./version.txt
       - name: Check Directory
         run: |
