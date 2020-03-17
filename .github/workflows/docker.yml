@@ -95,7 +95,7 @@ jobs:
           path: ./internal_builds_repo
           repository: PepperDash-Engineering/pepperdash-core-builds
       - name: Download Artifact
-        uses: action/download-artifact@v1
+        uses: actions/download-artifact@v1
         with:
           name: Build
       - name: Check Directory
