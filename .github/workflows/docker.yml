@@ -97,12 +97,22 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: Build
+          path: ./build.zip
       - name: Download Version info
         uses: actions/download-artifact@v1
         with:
           name: Version
+          path: ./version.zip
+      - name: Set Version Number
+        run: |
+          Expand-Archive -Path ./version.zip -DestinationPath ./
+          $version = Get-Content -Path ./version.txt
+          Write-Output "::set-env name=VERSION::$version"
+          Remove-Item -Path ./version.zip
+          Remove-Item -Path ./version.txt
       - name: Check Directory
-        run: Get-ChildItem ${{env.GITHUB_WORKSPACE}}
+        run: |
+          Get-ChildItem ./
   # public_push_output:
   #   needs: build_project
   #   runs-on: windows-latest
