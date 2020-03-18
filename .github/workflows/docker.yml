@@ -128,7 +128,7 @@ jobs:
           $commit = "Build $(Env:GITHUB_RUN_NUMBER) from commit: https://github.com/$(Env:GITHUB_REPOSITORY)/commit/$(Env:GITHUB_SHA)"
           Write-Host $commit
           git commit -m $commit
-          git tag ${{ env:VERSION }}
+          git tag $($Env:VERSION)
           git push --set-upstream origin $($Env:GITHUB_REF -Replace "refs/heads/") --force
           git push --tags origin
       - name: Check Directory
