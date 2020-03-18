@@ -5,6 +5,9 @@ on:
     branches:
       - feature/*
       - hotfix/*
+      - release/*
+      - master
+      - development
 
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
@@ -54,7 +57,8 @@ jobs:
           Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
           ./.github/scripts/ZipBuildOutput.ps1
       - name: Write Version
-        run: Write-Output $($Env:VERSION) | Out-File -FilePath ".\output\version.txt"
+        run: 
+          Write-Output "VERSION = $($Env:VERSION), BRANCH = $($Env:GITHUB_REF)" | Out-File -FilePath ".\properties.txt"
       - name: Upload Build Output
         uses: actions/upload-artifact@v1
         with:
@@ -63,8 +67,8 @@ jobs:
       - name: Upload Version.txt
         uses: actions/upload-artifact@v1
         with:
-          name: Version
-          path: ./output/version.txt
+          name: Properties
+          path: ./output/properties.txt
       # - name: Create Release
       #   id: create_release
       #   uses: actions/create-release@v1
@@ -88,34 +92,51 @@ jobs:
     needs: build_project
     runs-on: windows-latest
     steps:
-      - name: Checkout Internal Builds Repo
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.BUILDS_TOKEN }}
-          repository: PepperDash-Engineering/pepperdash-core-builds
-      - name: Download Build output
+       - name: Download Build Propeties 
         uses: actions/download-artifact@v1
         with:
-          name: Build
-          path: ./build.zip
-      - name: Download Version Info
-        uses: actions/download-artifact@v1
-        with:
-          name: Version
+          name: Properties
       - name: Check Directory
         run: Get-ChildItem "./"
       - name: Set Version Number
         shell: powershell
         run: |
-         Get-ChildItem "./Version"
-         $version = Get-Content -Path ./Version/version.txt
+         Get-ChildItem "./Properties"
+         Write-Host "Workflow Commit: ${{ env.GITHUB_SHA}}"
+         Write-Host "Workflow Branch: ${{ env.GITHUB_REF}}"
+         $properties = Get-Content -Path ./properties.txt
+         Write-Host $properties
+         $properties -match "VERSION = (?<version>.*),.*BRANCH = (?<build>.*)"
+         $version = $matches['version']
+         $branch = $matches['build']
          Write-Host "Version: $version"
+         Write-Host "Branch: $branch"
          Write-Output "::set-env name=VERSION::$version"
-         Remove-Item -Path ./Version/version.txt
-         Remove-Item -Path ./Version
+         Write-Output "::set-env name=BRANCH::$branch"
+         Remove-Item -Path ./Properties/Properties.txt
+         Remove-Item -Path ./Properties
       - name: Check Directory
         run: |
           Get-ChildItem "./"
+      - name: Checkout Internal Builds Repo
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.BUILDS_TOKEN }}
+          repository: PepperDash-Engineering/pepperdash-core-builds
+          ref: ${{ env.BRANCH }}
+      - name: Download Build output
+        uses: actions/download-artifact@v1
+        with:
+          name: Build
+          path: ./build.zip
+      - name: 
+        shell: powershell
+        run: |
+          git add .
+          git commit -m "Build # ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/PepperDash/PepperDashCore/commit/${{ env.GITHUB_SHA }}"
+          git tag ${{ env.VERSION }} --dry-run
+          git push --set-upstream origin +${{ env.GITHUB_REF#*/}} --force --dry-run
+          git push tags origin --dry-run
   # public_push_output:
   #   needs: build_project
   #   runs-on: windows-latest
