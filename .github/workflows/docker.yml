@@ -58,17 +58,17 @@ jobs:
           ./.github/scripts/ZipBuildOutput.ps1
       - name: Write Version
         run: 
-          Write-Output "VERSION = $($Env:VERSION)" | Out-File -FilePath ".\output\properties.txt"
+          Write-Output "$($Env:VERSION)" | Out-File -FilePath ".\output\version.txt"
       - name: Upload Build Output
         uses: actions/upload-artifact@v1
         with:
           name: Build
           path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-      - name: Upload properties.txt
+      - name: Upload version.txt
         uses: actions/upload-artifact@v1
         with:
           name: Version
-          path: ./output/properties.txt
+          path: ./output/version.txt
       # - name: Create Release
       #   id: create_release
       #   uses: actions/create-release@v1
@@ -97,21 +97,22 @@ jobs:
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
           repository: PepperDash-Engineering/pepperdash-core-builds
+          ref: $(Env:GITHUB_REF)
       - name: Download Build Property Info
         uses: actions/download-artifact@v1
         with:
-          name: Properties
+          name: Version
       - name: Check Directory
         run: Get-ChildItem "./"
       - name: Set Version Number
         shell: powershell
         run: |
           Get-ChildItem "./Properties"
-          $version = Get-Content -Path ./Version/properties.txt
+          $version = Get-Content -Path ./Version/version.txt
           Write-Host "Version: $version"
           Write-Output "::set-env name=VERSION::$version"
-          Remove-Item -Path ./Properties/properties.txt
-          Remove-Item -Path ./Properties
+          Remove-Item -Path ./Version/version.txt
+          Remove-Item -Path ./Version
       - name: Create new branch
         run: git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
       - name: Download Build output
@@ -124,23 +125,21 @@ jobs:
           git config user.email "actions@pepperdash.com"
           git config user.name "GitHub Actions"
           git add .
-          $commit = "Build ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/${{ env.GITHUB_REPOSITORY }}/commit/${{ env.GITHUB_SHA }}"
+          $commit = "Build $(Env:GITHUB_RUN_NUMBER) from commit: https://github.com/$(Env:GITHUB_REPOSITORY)/commit/$(Env:GITHUB_SHA)"
           Write-Host $commit
           git commit -m $commit
-          git tag ${{ env.VERSION }}
+          git tag ${{ env:VERSION }}
           git push --set-upstream origin $($Env:GITHUB_REF -Replace "refs/heads/") --force
           git push --tags origin
-
-        #  "Build #${SOURCE_BUILD_NUMBER} from commit: https://github.com/PepperDash/PepperDashCore/commit/${COMMIT}"
       - name: Check Directory
         run: |
           Get-ChildItem "./"
-      - name: Checkout Internal Builds Repo
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.BUILDS_TOKEN }}
-          repository: PepperDash-Engineering/pepperdash-core-builds
-          ref: ${{ env.BRANCH }}
+      # - name: Checkout Internal Builds Repo
+      #   uses: actions/checkout@v2
+      #   with:
+      #     token: ${{ secrets.BUILDS_TOKEN }}
+      #     repository: PepperDash-Engineering/pepperdash-core-builds
+      #     ref: $(Env:GITHUB_REF)
       # - name: Download Build output
       #   uses: actions/download-artifact@v1
       #   with:
