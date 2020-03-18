@@ -121,6 +121,8 @@ jobs:
           path: ./
       - name: Copy build output and push
         run: |
+          git config user.email "actions@pepperdash.com"
+          git config user.name "GitHub Actions"
           git add .
           git commit -m "Build ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/${{ env.GITHUB_REPOSITORY }}/commit/${{ env.GITHUB_SHA }}"
           git tag ${{ env.VERSION }}
