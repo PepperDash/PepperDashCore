@@ -120,7 +120,7 @@ jobs:
           git add .
           git commit -m "Build ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/${{ env.GITHUB_REPOSITORY }}/commit/${{ env.GITHUB_SHA }}"
           git tag ${{ env.VERSION }}
-          git push --set-upstream origin +$branch --force
+          git push --set-upstream origin $($Env:GITHUB_REF -Replace "refs/heads/") --force
           git push --tags origin
 
         #  "Build #${SOURCE_BUILD_NUMBER} from commit: https://github.com/PepperDash/PepperDashCore/commit/${COMMIT}"
