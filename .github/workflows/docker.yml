@@ -98,7 +98,7 @@ jobs:
           token: ${{ secrets.BUILDS_TOKEN }}
           repository: PepperDash-Engineering/pepperdash-core-builds
           ref: ${{ Env.GITHUB_REF }}
-      - name: Download Build Property Info
+      - name: Download Build Version Info
         uses: actions/download-artifact@v1
         with:
           name: Version
@@ -121,6 +121,7 @@ jobs:
           name: Build
           path: ./
       - name: Copy build output and push
+        shell: powershell
         run: |
           git config user.email "actions@pepperdash.com"
           git config user.name "GitHub Actions"
