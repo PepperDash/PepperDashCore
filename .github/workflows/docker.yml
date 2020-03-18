@@ -138,9 +138,13 @@ jobs:
           Write-Host "Commit: $commit"
           git commit -m $commit
           git tag $($Env:VERSION)
+
+      - name: Push to Builds Repo
+        shell: powershell
+        run: |
           $branch = $($Env:GITHUB_REF) -replace "refs/heads/"
           Write-Host "Branch: $branch"
-          git push -u origin $branch --force
+          git push -u origin $($branch) --force
           git push --tags origin
       - name: Check Directory
         run: |
