@@ -57,8 +57,7 @@ jobs:
           Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
           ./.github/scripts/ZipBuildOutput.ps1
       - name: Write Version
-        run: 
-          Write-Output "$($Env:VERSION)" | Out-File -FilePath ".\output\version.txt"
+        run: Write-Output "$($Env:VERSION)" | Out-File -FilePath ".\output\version.txt"
       - name: Upload Build Output
         uses: actions/upload-artifact@v1
         with:
@@ -132,7 +131,7 @@ jobs:
           git tag $($Env:VERSION)
           $branch = $($Env:GITHUB_REF) -Replace "refs/heads/"
           Write-Host $branch
-          git push --set-upstream origin $branch --force
+          git push --set-upstream origin $($branch) --force
           git push --tags origin
       - name: Check Directory
         run: |
@@ -148,7 +147,7 @@ jobs:
       #   with:
       #     name: Build
       #     path: ./build.zip
-      # - name: 
+      # - name:
       #   shell: powershell
       #   run: |
       #     git add .
