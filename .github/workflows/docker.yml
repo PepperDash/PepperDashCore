@@ -130,7 +130,7 @@ jobs:
       - name: Copy build output and push
         shell: powershell
         run: |
-          git checkout -B $($Env:GITHUB_REF -replace "refs/heads/")
+          git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
           git config user.email "actions@pepperdash.com"
           git config user.name "GitHub Actions"
           git add .
@@ -138,7 +138,7 @@ jobs:
           Write-Host $commit
           git commit -m $commit
           git tag $($Env:VERSION)
-          git push -u origin --force
+          git push -u origin $($Env:GITHUB_REF -replace "refs/heads/") --force
           git push --tags origin
       - name: Check Directory
         run: |
