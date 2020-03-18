@@ -138,7 +138,7 @@ jobs:
           Write-Host $commit
           git commit -m $commit
           git tag $($Env:VERSION)
-          git push --set-upstream origin $($Env:GITHUB_REF -Replace "refs/heads/") --force
+          git push -u origin --force
           git push --tags origin
       - name: Check Directory
         run: |
