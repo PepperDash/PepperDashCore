@@ -97,7 +97,7 @@ jobs:
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
           repository: PepperDash-Engineering/pepperdash-core-builds
-          ref: $(Env:GITHUB_REF)
+          ref: ${{ Env:GITHUB_REF }}
       - name: Download Build Property Info
         uses: actions/download-artifact@v1
         with:
