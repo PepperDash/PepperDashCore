@@ -139,19 +139,19 @@ jobs:
           token: ${{ secrets.BUILDS_TOKEN }}
           repository: PepperDash-Engineering/pepperdash-core-builds
           ref: ${{ env.BRANCH }}
-      - name: Download Build output
-        uses: actions/download-artifact@v1
-        with:
-          name: Build
-          path: ./build.zip
-      - name: 
-        shell: powershell
-        run: |
-          git add .
-          git commit -m "Build # ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/PepperDash/PepperDashCore/commit/${{ env.GITHUB_SHA }}"
-          git tag ${{ env.VERSION }} --dry-run
-          git push --set-upstream origin +${{ env.GITHUB_REF#*/}} --force --dry-run
-          git push tags origin --dry-run
+      # - name: Download Build output
+      #   uses: actions/download-artifact@v1
+      #   with:
+      #     name: Build
+      #     path: ./build.zip
+      # - name: 
+      #   shell: powershell
+      #   run: |
+      #     git add .
+      #     git commit -m "Build # ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/PepperDash/PepperDashCore/commit/${{ env.GITHUB_SHA }}"
+      #     git tag ${{ env.VERSION }} --dry-run
+      #     git push --set-upstream origin +${{ env.GITHUB_REF#*/}} --force --dry-run
+      #     git push tags origin --dry-run
   # public_push_output:
   #   needs: build_project
   #   runs-on: windows-latest
