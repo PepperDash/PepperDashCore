@@ -119,6 +119,12 @@ jobs:
         with:
           name: Build
           path: ./
+      - name: Unzip Build file
+        run: |
+          Get-ChildItem ./
+          Get-ChildItem -Path ./ -include @("*.zip") | Expand-Archive -DestinationPath ./
+          Remove-Item -Path ./ -include @("*.zip")
+          Get-ChildItem ./
       - name: Copy build output and push
         shell: powershell
         run: |
@@ -130,9 +136,9 @@ jobs:
           git commit -m $commit
           git tag $($Env:VERSION)
           $branch = $($Env:GITHUB_REF) -Replace "refs/heads/"
-          Write-Host $branch
-          git push --set-upstream origin $($branch) --force
-          git push --tags origin
+          Write-Output $branch
+        #  git push --set-upstream origin $($branch) --force
+        #  git push --tags origin
       - name: Check Directory
         run: |
           Get-ChildItem "./"
