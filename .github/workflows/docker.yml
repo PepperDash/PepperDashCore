@@ -58,7 +58,7 @@ jobs:
           ./.github/scripts/ZipBuildOutput.ps1
       - name: Write Version
         run: 
-          Write-Output "VERSION = $($Env:VERSION), BRANCH = $($Env:GITHUB_REF)" | Out-File -FilePath ".\properties.txt"
+          Write-Output "VERSION = $($Env:VERSION), BRANCH = $($Env:GITHUB_REF)" | Out-File -FilePath ".\version.txt"
       - name: Upload Build Output
         uses: actions/upload-artifact@v1
         with:
@@ -67,8 +67,8 @@ jobs:
       - name: Upload Version.txt
         uses: actions/upload-artifact@v1
         with:
-          name: Properties
-          path: ./output/properties.txt
+          name: Version
+          path: ./output/version.txt
       # - name: Create Release
       #   id: create_release
       #   uses: actions/create-release@v1
@@ -92,29 +92,42 @@ jobs:
     needs: build_project
     runs-on: windows-latest
     steps:
-       - name: Download Build Propeties 
+      - name: Checkout Internal Builds Repo
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.BUILDS_TOKEN }}
+          repository: PepperDash-Engineering/pepperdash-core-builds
+      - name: Download Version Info
         uses: actions/download-artifact@v1
         with:
-          name: Properties
+          name: Version
       - name: Check Directory
         run: Get-ChildItem "./"
       - name: Set Version Number
         shell: powershell
         run: |
-         Get-ChildItem "./Properties"
-         Write-Host "Workflow Commit: ${{ env.GITHUB_SHA}}"
-         Write-Host "Workflow Branch: ${{ env.GITHUB_REF}}"
-         $properties = Get-Content -Path ./properties.txt
-         Write-Host $properties
-         $properties -match "VERSION = (?<version>.*),.*BRANCH = (?<build>.*)"
-         $version = $matches['version']
-         $branch = $matches['build']
-         Write-Host "Version: $version"
-         Write-Host "Branch: $branch"
-         Write-Output "::set-env name=VERSION::$version"
-         Write-Output "::set-env name=BRANCH::$branch"
-         Remove-Item -Path ./Properties/Properties.txt
-         Remove-Item -Path ./Properties
+          Get-ChildItem "./Version"
+          $version = Get-Content -Path ./Version/version.txt
+          Write-Host "Version: $version"
+          Write-Output "::set-env name=VERSION::$version"
+          Remove-Item -Path ./Version/version.txt
+          Remove-Item -Path ./Version
+      - name: Create new branch
+        run: git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
+      - name: Download Build output
+        uses: actions/download-artifact@v1
+        with:
+          name: Build
+          path: ./
+      - name: Copy build output and push
+        run: |
+          git add .
+          git commit -m "Build ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/${{ env.GITHUB_REPOSITORY }}/commit/${{ env.GITHUB_SHA }}"
+          git tag ${{ env.VERSION }}
+          git push --set-upstream origin $($Env:GITHUB_REF -Replace "refs/heads/") --force
+          git push --tags origin
+
+        #  "Build #${SOURCE_BUILD_NUMBER} from commit: https://github.com/PepperDash/PepperDashCore/commit/${COMMIT}"
       - name: Check Directory
         run: |
           Get-ChildItem "./"
@@ -148,23 +161,23 @@ jobs:
   #         path: ./internal_builds_repo
   #         repository: PepperDash-Engineering/pepperdash-core-builds
   #     - name: Download Build output
-      #   uses: actions/download-artifact@v1
-      #   with:
-      #     name: Build
-      #     path: ./build.zip
-      # - name: Download Version Info
-      #   uses: actions/download-artifact@v1
-      #   with:
-      #     name: Version
-      # - name: Check Directory
-      #   run: Get-ChildItem "./"
-      # - name: Set Version Number
-      #   shell: powershell
-      #   run: |
-      #    Get-ChildItem "./"
-      #    $version = Get-Content -Path ./version.txt
-      #    Write-Output "::set-env name=VERSION::$version"
-      #    Remove-Item -Path ./version.txt
-      # - name: Check Directory
-      #   run: |
-      #     Get-ChildItem "./"
+  #   uses: actions/download-artifact@v1
+  #   with:
+  #     name: Build
+  #     path: ./build.zip
+  # - name: Download Version Info
+  #   uses: actions/download-artifact@v1
+  #   with:
+  #     name: Version
+  # - name: Check Directory
+  #   run: Get-ChildItem "./"
+  # - name: Set Version Number
+  #   shell: powershell
+  #   run: |
+  #    Get-ChildItem "./"
+  #    $version = Get-Content -Path ./version.txt
+  #    Write-Output "::set-env name=VERSION::$version"
+  #    Remove-Item -Path ./version.txt
+  # - name: Check Directory
+  #   run: |
+  #     Get-ChildItem "./"
