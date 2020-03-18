@@ -115,7 +115,7 @@ jobs:
       - name: Copy build output and push
         run: |
           $branch = $(${{ env.GITHUB_REF }}) -Replace "refs/heads/";
-          git checkout -b $branch
+          git checkout -b $($branch)
           Get-ChildItem -Path "./Build" | Copy-Item -Path ./
           Remove-Item -Path ./Build -Recurse
           git add .
