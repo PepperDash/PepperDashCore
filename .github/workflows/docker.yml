@@ -58,17 +58,17 @@ jobs:
           ./.github/scripts/ZipBuildOutput.ps1
       - name: Write Version
         run: 
-          Write-Output "VERSION = $($Env:VERSION)" | Out-File -FilePath ".\output\version.txt"
+          Write-Output "VERSION = $($Env:VERSION)" | Out-File -FilePath ".\output\properties.txt"
       - name: Upload Build Output
         uses: actions/upload-artifact@v1
         with:
           name: Build
           path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-      - name: Upload Version.txt
+      - name: Upload properties.txt
         uses: actions/upload-artifact@v1
         with:
           name: Version
-          path: ./output/version.txt
+          path: ./output/properties.txt
       # - name: Create Release
       #   id: create_release
       #   uses: actions/create-release@v1
@@ -97,21 +97,21 @@ jobs:
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
           repository: PepperDash-Engineering/pepperdash-core-builds
-      - name: Download Version Info
+      - name: Download Build Property Info
         uses: actions/download-artifact@v1
         with:
-          name: Version
+          name: Properties
       - name: Check Directory
         run: Get-ChildItem "./"
       - name: Set Version Number
         shell: powershell
         run: |
-          Get-ChildItem "./Version"
-          $version = Get-Content -Path ./Version/version.txt
+          Get-ChildItem "./Properties"
+          $version = Get-Content -Path ./Version/properties.txt
           Write-Host "Version: $version"
           Write-Output "::set-env name=VERSION::$version"
-          Remove-Item -Path ./Version/version.txt
-          Remove-Item -Path ./Version
+          Remove-Item -Path ./Properties/properties.txt
+          Remove-Item -Path ./Properties
       - name: Create new branch
         run: git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
       - name: Download Build output
@@ -177,9 +177,9 @@ jobs:
   #   shell: powershell
   #   run: |
   #    Get-ChildItem "./"
-  #    $version = Get-Content -Path ./version.txt
+  #    $version = Get-Content -Path ./properties.txt
   #    Write-Output "::set-env name=VERSION::$version"
-  #    Remove-Item -Path ./version.txt
+  #    Remove-Item -Path ./properties.txt
   # - name: Check Directory
   #   run: |
   #     Get-ChildItem "./"
