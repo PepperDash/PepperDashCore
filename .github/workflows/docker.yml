@@ -38,7 +38,6 @@ jobs:
             Write-Host "Setting build type to Release"
             Write-Output "::set-env name=BUILD_TYPE::Release"
           }
-
       - name: Fetch tags
         run: git fetch --tags
       - name: Set Version Number
@@ -144,7 +143,7 @@ jobs:
           $branch = $($Env:GITHUB_REF) -replace "refs/heads/"
           Write-Host "Branch: $branch"
           git push -u origin $($branch) --force
-          #git push --tags origin
+          git push --tags origin
       - name: Check Directory
         run: |
           Get-ChildItem "./"
