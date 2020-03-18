@@ -124,7 +124,9 @@ jobs:
           git config user.email "actions@pepperdash.com"
           git config user.name "GitHub Actions"
           git add .
-          git commit -m "Build ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/${{ env.GITHUB_REPOSITORY }}/commit/${{ env.GITHUB_SHA }}"
+          $commit = "Build ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/${{ env.GITHUB_REPOSITORY }}/commit/${{ env.GITHUB_SHA }}"
+          Write-Host $commit
+          git commit -m $commit
           git tag ${{ env.VERSION }}
           git push --set-upstream origin $($Env:GITHUB_REF -Replace "refs/heads/") --force
           git push --tags origin
