@@ -58,7 +58,7 @@ jobs:
           ./.github/scripts/ZipBuildOutput.ps1
       - name: Write Version
         run: 
-          Write-Output "VERSION = $($Env:VERSION), BRANCH = $($Env:GITHUB_REF)" | Out-File -FilePath ".\version.txt"
+          Write-Output "VERSION = $($Env:VERSION)" | Out-File -FilePath ".\output\version.txt"
       - name: Upload Build Output
         uses: actions/upload-artifact@v1
         with:
