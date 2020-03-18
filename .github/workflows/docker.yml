@@ -126,7 +126,7 @@ jobs:
           git config user.email "actions@pepperdash.com"
           git config user.name "GitHub Actions"
           git add .
-          $commit = "Build $(Env:GITHUB_RUN_NUMBER) from commit: https://github.com/$(Env:GITHUB_REPOSITORY)/commit/$(Env:GITHUB_SHA)"
+          $commit = "Build $($Env:GITHUB_RUN_NUMBER) from commit: https://github.com/$($Env:GITHUB_REPOSITORY)/commit/$($Env:GITHUB_SHA)"
           Write-Host $commit
           git commit -m $commit
           git tag $($Env:VERSION)
