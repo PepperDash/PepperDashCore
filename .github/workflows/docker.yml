@@ -135,10 +135,12 @@ jobs:
           git config user.name "GitHub Actions"
           git add .
           $commit = "Build $($Env:GITHUB_RUN_NUMBER) from commit: https://github.com/$($Env:GITHUB_REPOSITORY)/commit/$($Env:GITHUB_SHA)"
-          Write-Host $commit
+          Write-Host "Commit: $commit"
           git commit -m $commit
           git tag $($Env:VERSION)
-          git push -u origin $($Env:GITHUB_REF -replace "refs/heads/") --force
+          $branch = $($Env:GITHUB_REF) -replace "refs/heads/"
+          Write-Host "Branch: $branch"
+          git push -u origin $branch --force
           git push --tags origin
       - name: Check Directory
         run: |
