@@ -14,6 +14,7 @@ env:
   # solution name does not include extension. .sln is assumed
   SOLUTION_PATH: PepperDash Core
   SOLUTION_FILE: PepperDash Core
+  ASSEMBLY_FILE: PepperDash_Core.dll
   VERSION: 0.0.0-buildtype-buildnumber
   BUILD_TYPE: Debug
   RELEASE_BRANCH: master
@@ -53,8 +54,10 @@ jobs:
       - name: Build Solution
         shell: powershell
         run: |
-          Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
-          ./.github/scripts/ZipBuildOutput.ps1
+          Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"    
+      - name: Zip Build Output
+        shell: powershell
+        run: ./.github/scripts/ZipBuildOutput.ps1
       - name: Write Version
         run: Write-Output "$($Env:VERSION)" | Out-File -FilePath ".\output\version.txt"
       - name: Upload Build Output
