@@ -83,6 +83,7 @@ jobs:
         with:
           name: Version
           path: ./output/version.txt
+      # Create the release on the source repo
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -92,7 +93,8 @@ jobs:
           prerelease: ${{contains('debug', env.BUILD_TYPE)}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Upload
+      # Upload the build package to the release
+      - name: Upload Release Package
         id: upload_release
         uses: actions/upload-release-asset@v1
         with:
@@ -102,22 +104,26 @@ jobs:
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # This step always runs and pushes the build to the internal build rep
   Internal_Push_Output:
     needs: Build_Project
     runs-on: windows-latest
     steps:
+      # Checkout the repo
       - name: Checkout Public Builds Repo
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
           repository: PepperDash-Engineering/pepperdash-core-builds
           ref: ${{ Env.GITHUB_REF }}
+      # Download the version artifact from the build job
       - name: Download Build Version Info
         uses: actions/download-artifact@v1
         with:
           name: Version
       - name: Check Directory
         run: Get-ChildItem "./"
+      # Set the version number environment variable from the file we just downloaded
       - name: Set Version Number
         shell: powershell
         run: |
@@ -127,8 +133,10 @@ jobs:
           Write-Output "::set-env name=VERSION::$version"
           Remove-Item -Path ./Version/version.txt
           Remove-Item -Path ./Version
+      # Checkout/Create the branch
       - name: Create new branch
         run: git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
+      # Download the build output into the repo
       - name: Download Build output
         uses: actions/download-artifact@v1
         with:
@@ -136,16 +144,17 @@ jobs:
           path: ./
       - name: Check directory
         run: Get-ChildItem ./
+      # Unzip the build package file
       - name: Unzip Build file
         run: |
           Get-ChildItem .\*.zip | Expand-Archive -DestinationPath .\
           Remove-Item -Path .\*.zip
       - name: Check directory again
         run: Get-ChildItem ./
-      - name: Copy build output and push
+      # Commits the build output to the branch and tags it with the version
+      - name: Commit build output and tag the commit
         shell: powershell
         run: |
-          git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
           git config user.email "actions@pepperdash.com"
           git config user.name "GitHub Actions"
           git add .
@@ -153,33 +162,39 @@ jobs:
           Write-Host "Commit: $commit"
           git commit -m $commit
           git tag $($Env:VERSION)
+      # Push the commit
       - name: Push to Builds Repo
         shell: powershell
         run: |
           $branch = $($Env:GITHUB_REF) -replace "refs/heads/"
           Write-Host "Branch: $branch"
           git push -u origin $($branch) --force
+      # Push the tags
       - name: Push tags
         run: git push --tags origin
       - name: Check Directory
         run: Get-ChildItem ./
+  # This step only runs if the branch is master or release/ runs and pushes the build to the public build repo
   Public_Push_Output:
     needs: Build_Project
     runs-on: windows-latest
     if: contains(github.ref, 'master') || contains(github.ref, 'release')
     steps:
+      # Checkout the repo
       - name: Checkout Internal Builds Repo
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
-          repository: PepperDash-Engineering/pepperdash-core-builds
+          repository: PepperDash/PepperDashCore-Builds
           ref: ${{ Env.GITHUB_REF }}
+      # Download the version artifact from the build job
       - name: Download Build Version Info
         uses: actions/download-artifact@v1
         with:
           name: Version
       - name: Check Directory
         run: Get-ChildItem "./"
+      # Set the version number environment variable from the file we just downloaded
       - name: Set Version Number
         shell: powershell
         run: |
@@ -189,8 +204,10 @@ jobs:
           Write-Output "::set-env name=VERSION::$version"
           Remove-Item -Path ./Version/version.txt
           Remove-Item -Path ./Version
+      # Checkout/Create the branch
       - name: Create new branch
         run: git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
+      # Download the build output into the repo
       - name: Download Build output
         uses: actions/download-artifact@v1
         with:
@@ -198,16 +215,17 @@ jobs:
           path: ./
       - name: Check directory
         run: Get-ChildItem ./
+      # Unzip the build package file
       - name: Unzip Build file
         run: |
           Get-ChildItem .\*.zip | Expand-Archive -DestinationPath .\
           Remove-Item -Path .\*.zip
       - name: Check directory again
         run: Get-ChildItem ./
-      - name: Copy build output and push
+      # Commits the build output to the branch and tags it with the version
+      - name: Commit build output and tag the commit
         shell: powershell
         run: |
-          git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
           git config user.email "actions@pepperdash.com"
           git config user.name "GitHub Actions"
           git add .
@@ -215,12 +233,14 @@ jobs:
           Write-Host "Commit: $commit"
           git commit -m $commit
           git tag $($Env:VERSION)
+      # Push the commit
       - name: Push to Builds Repo
         shell: powershell
         run: |
           $branch = $($Env:GITHUB_REF) -replace "refs/heads/"
           Write-Host "Branch: $branch"
           git push -u origin $($branch) --force
+      # Push the tags
       - name: Push tags
         run: git push --tags origin
       - name: Check Directory
