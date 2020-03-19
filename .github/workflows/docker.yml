@@ -110,7 +110,7 @@ jobs:
     runs-on: windows-latest
     steps:
       # Checkout the repo
-      - name: Checkout Public Builds Repo
+      - name: Checkout Builds Repo
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
@@ -181,7 +181,7 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'release')
     steps:
       # Checkout the repo
-      - name: Checkout Internal Builds Repo
+      - name: Checkout Builds Repo
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
