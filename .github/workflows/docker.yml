@@ -18,7 +18,7 @@ env:
   BUILD_TYPE: Debug
   RELEASE_BRANCH: master
 jobs:
-  build_project:
+  Build_Project:
     runs-on: windows-latest
     steps:
       - name: Checkout repo
@@ -87,9 +87,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   Internal_Push_Output:
-    needs: build_project
+    needs: Build_Project
     runs-on: windows-latest
-    if: contains(github.ref, 'master') || contains(github.ref, 'release')
     steps:
       - name: Checkout Public Builds Repo
         uses: actions/checkout@v2
@@ -149,8 +148,9 @@ jobs:
       - name: Check Directory
         run: Get-ChildItem ./
   Public_Push_Output:
-    needs: build_project
+    needs: Build_Project
     runs-on: windows-latest
+    if: contains(github.ref, 'master') || contains(github.ref, 'release')
     steps:
       - name: Checkout Internal Builds Repo
         uses: actions/checkout@v2
