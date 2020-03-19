@@ -39,4 +39,3 @@ Get-ChildItem -Path $destination | Where-Object {($_.Extension -eq ".clz") -or (
 Compress-Archive -Path "$($Env:GITHUB_WORKSPACE)\output\*" -DestinationPath "$($Env:GITHUB_WORKSPACE)\$($Env:SOLUTION_FILE)-$($Env:VERSION).zip" -Force
 Write-Host "Output Contents post Zip"
 Get-ChildItem -Path $destination
-Remove-Item $destination -Recurse
