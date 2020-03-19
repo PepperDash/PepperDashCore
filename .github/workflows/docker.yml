@@ -143,7 +143,8 @@ jobs:
           $branch = $($Env:GITHUB_REF) -replace "refs/heads/"
           Write-Host "Branch: $branch"
           git push -u origin $($branch) --force
-          git push --tags origin
+      - name: Push tags
+        run: git push --tags origin
       - name: Check Directory
         run: |
           Get-ChildItem "./"
