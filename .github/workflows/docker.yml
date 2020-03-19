@@ -147,8 +147,8 @@ jobs:
       - name: Push tags
         run: git push --tags origin
       - name: Check Directory
-        run: |
-          Get-ChildItem "./"
+        run: Get-ChildItem ./
+          
    Public_Push_Output:
     needs: build_project
     runs-on: windows-latest
@@ -209,5 +209,5 @@ jobs:
       - name: Push tags
         run: git push --tags origin
       - name: Check Directory
-        run: |
-          Get-ChildItem "./"
+        run: Get-ChildItem ./
+          
