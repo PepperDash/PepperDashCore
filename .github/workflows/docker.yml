@@ -14,10 +14,11 @@ env:
   # solution name does not include extension. .sln is assumed
   SOLUTION_PATH: PepperDash Core
   SOLUTION_FILE: PepperDash Core
-  # ASSEMBLY_FILE
-  ASSEMBLY_FILE: PepperDash_Core.dll
+  # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
+  # Defaults to debug for build type
   BUILD_TYPE: Debug
+  # Defaults to master as the release branch.  Change as necessary
   RELEASE_BRANCH: master
 jobs:
   Build_Project:
@@ -109,7 +110,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
-          repository: PepperDash/PepperDashCore-Builds
+          repository: PepperDash-Engineering/pepperdash-core-builds
           ref: ${{ Env.GITHUB_REF }}
       - name: Download Build Version Info
         uses: actions/download-artifact@v1
