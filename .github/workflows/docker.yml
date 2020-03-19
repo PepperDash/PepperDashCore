@@ -67,26 +67,89 @@ jobs:
         with:
           name: Version
           path: ./output/version.txt
-      # - name: Create Release
-      #   id: create_release
-      #   uses: actions/create-release@v1
-      #   with:
-      #     tag_name: v${{ env.VERSION  }}
-      #     release_name: v${{ env.VERSION }}
-      #     prerelease: ${{contains('debug', env.BUILD_TYPE)}}
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Upload
-      #   id: upload_release
-      #   uses: actions/upload-release-asset@v1
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-      #     asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-      #     asset_content_type: application/zip
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  internal_push_output:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ env.VERSION  }}
+          release_name: v${{ env.VERSION }}
+          prerelease: ${{contains('debug', env.BUILD_TYPE)}}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload
+        id: upload_release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
+          asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  Internal_Push_Output:
+    needs: build_project
+    runs-on: windows-latest
+    if: contains(github.ref, 'master') || contains(github.ref, 'release')
+    steps:
+      - name: Checkout Public Builds Repo
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.BUILDS_TOKEN }}
+          repository: PepperDash/PepperDashCore-Builds
+          ref: ${{ Env.GITHUB_REF }}
+      - name: Download Build Version Info
+        uses: actions/download-artifact@v1
+        with:
+          name: Version
+      - name: Check Directory
+        run: Get-ChildItem "./"
+      - name: Set Version Number
+        shell: powershell
+        run: |
+          Get-ChildItem "./Version"
+          $version = Get-Content -Path ./Version/version.txt
+          Write-Host "Version: $version"
+          Write-Output "::set-env name=VERSION::$version"
+          Remove-Item -Path ./Version/version.txt
+          Remove-Item -Path ./Version
+      - name: Create new branch
+        run: git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
+      - name: Download Build output
+        uses: actions/download-artifact@v1
+        with:
+          name: Build
+          path: ./
+      - name: Check directory
+        run: Get-ChildItem ./
+      - name: Unzip Build file
+        run: |
+          Get-ChildItem .\*.zip | Expand-Archive -DestinationPath .\
+          Remove-Item -Path .\*.zip
+      - name: Check directory again
+        run: Get-ChildItem ./
+      - name: Copy build output and push
+        shell: powershell
+        run: |
+          git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
+          git config user.email "actions@pepperdash.com"
+          git config user.name "GitHub Actions"
+          git add .
+          $commit = "Build $($Env:GITHUB_RUN_NUMBER) from commit: https://github.com/$($Env:GITHUB_REPOSITORY)/commit/$($Env:GITHUB_SHA)"
+          Write-Host "Commit: $commit"
+          git commit -m $commit
+          git tag $($Env:VERSION)
+      - name: Push to Builds Repo
+        shell: powershell
+        run: |
+          $branch = $($Env:GITHUB_REF) -replace "refs/heads/"
+          Write-Host "Branch: $branch"
+          git push -u origin $($branch) --force
+      - name: Push tags
+        run: git push --tags origin
+      - name: Check Directory
+        run: |
+          Get-ChildItem "./"
+   Public_Push_Output:
     needs: build_project
     runs-on: windows-latest
     steps:
@@ -148,53 +211,3 @@ jobs:
       - name: Check Directory
         run: |
           Get-ChildItem "./"
-      # - name: Checkout Internal Builds Repo
-      #   uses: actions/checkout@v2
-      #   with:
-      #     token: ${{ secrets.BUILDS_TOKEN }}
-      #     repository: PepperDash-Engineering/pepperdash-core-builds
-      #     ref: $(Env:GITHUB_REF)
-      # - name: Download Build output
-      #   uses: actions/download-artifact@v1
-      #   with:
-      #     name: Build
-      #     path: ./build.zip
-      # - name:
-      #   shell: powershell
-      #   run: |
-      #     git add .
-      #     git commit -m "Build # ${{ env.GITHUB_RUN_NUMBER }} from commit: https://github.com/PepperDash/PepperDashCore/commit/${{ env.GITHUB_SHA }}"
-      #     git tag ${{ env.VERSION }} --dry-run
-      #     git push --set-upstream origin +${{ env.GITHUB_REF#*/}} --force --dry-run
-      #     git push tags origin --dry-run
-  # public_push_output:
-  #   needs: build_project
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Checkout public Builds Repo
-  #       uses: actions/checkout@v2
-  #       with:
-  #         token: ${{ secrets.BUILDS_TOKEN }}
-  #         path: ./internal_builds_repo
-  #         repository: PepperDash-Engineering/pepperdash-core-builds
-  #     - name: Download Build output
-  #   uses: actions/download-artifact@v1
-  #   with:
-  #     name: Build
-  #     path: ./build.zip
-  # - name: Download Version Info
-  #   uses: actions/download-artifact@v1
-  #   with:
-  #     name: Version
-  # - name: Check Directory
-  #   run: Get-ChildItem "./"
-  # - name: Set Version Number
-  #   shell: powershell
-  #   run: |
-  #    Get-ChildItem "./"
-  #    $version = Get-Content -Path ./properties.txt
-  #    Write-Output "::set-env name=VERSION::$version"
-  #    Remove-Item -Path ./properties.txt
-  # - name: Check Directory
-  #   run: |
-  #     Get-ChildItem "./"
