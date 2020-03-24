@@ -47,7 +47,7 @@ jobs:
       # Fetch all tags
       - name: Fetch tags
         run: git fetch --tags
-      # Generate the appropriate version number  
+      # Generate the appropriate version number
       - name: Set Version Number
         shell: powershell
         run: |
@@ -63,7 +63,7 @@ jobs:
       - name: Build Solution
         shell: powershell
         run: |
-          Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"    
+          Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
       # Zip up the output files as needed
       - name: Zip Build Output
         shell: powershell
@@ -88,8 +88,8 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: v${{ env.VERSION  }}
-          release_name: v${{ env.VERSION }}
+          tag_name: ${{ env.VERSION  }}
+          release_name: ${{ env.VERSION }}
           prerelease: ${{contains('debug', env.BUILD_TYPE)}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -245,4 +245,3 @@ jobs:
         run: git push --tags origin
       - name: Check Directory
         run: Get-ChildItem ./
-          
