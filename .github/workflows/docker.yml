@@ -6,13 +6,12 @@ on:
       - feature/*
       - hotfix/*
       - release/*
-      - master
       - development
 
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
   # solution name does not include extension. .sln is assumed
-  SOLUTION_PATH: PepperDash Core
+  SOLUTION_PATH: Pepperdash Core
   SOLUTION_FILE: PepperDash Core
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
@@ -37,14 +36,7 @@ jobs:
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      # Set the BUILD_TYPE environment variable
-      - name: Set Build to Release if triggered from Master
-        run: |
-          if("$($Env:GITHUB_REF)".contains("$($Env:RELEASE_BRANCH)")) {
-            Write-Host "Setting build type to Release"
-            Write-Output "::set-env name=BUILD_TYPE::Release"
-          }
-      # Fetch all tags
+        # Fetch all tags
       - name: Fetch tags
         run: git fetch --tags
       # Generate the appropriate version number
@@ -70,7 +62,7 @@ jobs:
         run: ./.github/scripts/ZipBuildOutput.ps1
       # Write the version to a file to be consumed by the push jobs
       - name: Write Version
-        run: Write-Output "$($Env:VERSION)" | Out-File -FilePath ".\output\version.txt"
+        run: Write-Output "$($Env:VERSION)" | Out-File -FilePath "$($Env:GITHUB_HOME)\output\version.txt"
       # Upload the build output as an artifact
       - name: Upload Build Output
         uses: actions/upload-artifact@v1
@@ -82,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: Version
-          path: ./output/version.txt
+          path: ${{env.GITHUB_HOME}}\output\version.txt
       # Create the release on the source repo
       - name: Create Release
         id: create_release
@@ -110,11 +102,11 @@ jobs:
     runs-on: windows-latest
     steps:
       # Checkout the repo
-      - name: Checkout Public Builds Repo
+      - name: Checkout Builds Repo
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
-          repository: PepperDash-Engineering/pepperdash-core-builds
+          repository: PepperDash-Engineering/essentials-builds
           ref: ${{ Env.GITHUB_REF }}
       # Download the version artifact from the build job
       - name: Download Build Version Info
@@ -181,11 +173,11 @@ jobs:
     if: contains(github.ref, 'master') || contains(github.ref, 'release')
     steps:
       # Checkout the repo
-      - name: Checkout Internal Builds Repo
+      - name: Checkout Builds Repo
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
-          repository: PepperDash/PepperDashCore-Builds
+          repository: PepperDash/Essentials-Builds
           ref: ${{ Env.GITHUB_REF }}
       # Download the version artifact from the build job
       - name: Download Build Version Info
