@@ -106,7 +106,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
-          repository: PepperDash-Engineering/essentials-builds
+          repository: PepperDash-Engineering/pepperdash-core-builds
           ref: ${{ Env.GITHUB_REF }}
       # Download the version artifact from the build job
       - name: Download Build Version Info
@@ -183,7 +183,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.BUILDS_TOKEN }}
-          repository: PepperDash/Essentials-Builds
+          repository: PepperDash/PepperDashCore-Builds
           ref: ${{ Env.GITHUB_REF }}
       # Download the version artifact from the build job
       - name: Download Build Version Info
