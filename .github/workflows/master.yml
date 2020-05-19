@@ -32,9 +32,6 @@ jobs:
           auth_header="$(git config --local --get http.https://github.com/.extraheader)"
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-      # Fetch all tags
-      - name: Fetch tags
-        run: git fetch --tags
       # Generate the appropriate version number
       - name: Set Version Number
         shell: powershell
@@ -47,6 +44,12 @@ jobs:
         run: |
           Write-Output ${{ env.VERSION }}
           ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
+      # Login to Docker
+      - name: Login to Docker
+        uses: azure/docker-login@v1
+        with:
+          username: ${{ secrets.dockerhub_user }}
+          password: ${{ secrets.dockerhub_password }}
       # Build the solutions in the docker image
       - name: Build Solution
         shell: powershell
