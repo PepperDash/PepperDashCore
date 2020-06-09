@@ -15,8 +15,9 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
-    public class GenericUdpServer : Device, IBasicCommunication, ISocketStatus
+    public class GenericUdpServer : Device, ISocketStatusWithStreamDebugging
     {
+        public CommunicationStreamDebugging StreamDebugging { get; private set; }
         /// <summary>
         /// 
         /// </summary>
@@ -138,6 +139,7 @@ namespace PepperDash.Core
         public GenericUdpServer(string key, string address, int port, int buffefSize)
             : base(key)
         {
+            StreamDebugging = new CommunicationStreamDebugging(key); 
             Hostname = address;
             Port = port;
             BufferSize = buffefSize;
@@ -268,8 +270,9 @@ namespace PepperDash.Core
                 var textHandler = TextReceived;
                 if (textHandler != null)
                 {
-                   
-                    Debug.Console(2, this, "RX: {0}", str);
+                    if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                        Debug.Console(0, this, "Recevied: '{0}'", str);
+                    
                     textHandler(this, new GenericCommMethodReceiveTextArgs(str));
                 }
                 else
@@ -323,7 +326,9 @@ namespace PepperDash.Core
 
             if (IsConnected && Server != null)
             {
-                Debug.Console(2, this, "TX: {0}", text);
+                if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                    Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, text);
+
                 Server.SendData(bytes, bytes.Length);
             }
         }
@@ -334,8 +339,9 @@ namespace PepperDash.Core
         /// <param name="bytes"></param>
         public void SendBytes(byte[] bytes)
         {
-            //if (Debug.Level == 2)
-            //    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+            if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+
             if (IsConnected && Server != null)
                 Server.SendData(bytes, bytes.Length);
         }

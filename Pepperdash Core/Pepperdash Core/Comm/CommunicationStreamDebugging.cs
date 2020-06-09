@@ -1,0 +1,127 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Crestron.SimplSharp;
+using PepperDash.Core;
+
+namespace PepperDash.Core
+{
+    /// <summary>
+    /// Controls the ability to disable/enable debugging of TX/RX data sent to/from a device with a built in timer to disable
+    /// </summary>
+    public class CommunicationStreamDebugging
+    {
+        public string ParentDeviceKey { get; private set; }
+
+        /// <summary>
+        /// Timer to disable automatically if not manually disabled
+        /// </summary>
+        private CTimer DebugExpiryPeriod;
+
+        public eStreamDebuggingSetting DebugSetting { get; private set; }
+
+        private uint _DebugTimeoutMin;
+        private const uint _DefaultDebugTimeoutMin = 30;
+
+        /// <summary>
+        /// Timeout in Minutes
+        /// </summary>
+        public uint DebugTimeoutMinutes
+        {
+            get
+            {
+                return _DebugTimeoutMin;
+            }
+        }
+
+
+        private long _DebugTimeoutInMs
+        {
+            get
+            {
+                return DebugTimeoutMinutes * 60000;
+            }
+        }
+
+        public bool RxStreamDebuggingIsEnabled{ get; private set; }
+
+        public bool TxStreamDebuggingIsEnabled { get; private set; }
+
+
+        public CommunicationStreamDebugging(string parentDeviceKey)
+        {
+            ParentDeviceKey = parentDeviceKey;
+        }
+
+
+        /// <summary>
+        /// Sets the debugging setting and if not setting to off, assumes the default of 30 mintues
+        /// </summary>
+        /// <param name="setting"></param>
+        public void SetDebuggingWithDefaultTimeout(eStreamDebuggingSetting setting)
+        {
+            if (setting == eStreamDebuggingSetting.Off)
+            {
+                DisableDebugging();
+            }
+            else
+            {
+                SetDebuggingWithSpecificTimeout(setting, _DefaultDebugTimeoutMin);
+            }    
+        }
+
+        /// <summary>
+        /// Sets the debugging setting for the specified number of minutes
+        /// </summary>
+        /// <param name="setting"></param>
+        /// <param name="minutes"></param>
+        public void SetDebuggingWithSpecificTimeout(eStreamDebuggingSetting setting, uint minutes)
+        {
+            _DebugTimeoutMin = minutes;
+
+            if (DebugExpiryPeriod != null)
+            {
+                DisableDebugging();
+            }
+
+            DebugExpiryPeriod = new CTimer((o) => DisableDebugging(), _DebugTimeoutInMs);
+
+            if ((setting & eStreamDebuggingSetting.Rx) == eStreamDebuggingSetting.Rx)
+                RxStreamDebuggingIsEnabled = true;
+
+            if ((setting & eStreamDebuggingSetting.Tx) == eStreamDebuggingSetting.Tx)
+                TxStreamDebuggingIsEnabled = true;
+
+            Debug.SetDeviceDebugSettings(ParentDeviceKey, setting);
+        
+        }
+
+        /// <summary>
+        /// Disabled debugging
+        /// </summary>
+        public void DisableDebugging()
+        {
+            DebugExpiryPeriod.Stop();
+            DebugExpiryPeriod.Dispose();
+            DebugExpiryPeriod = null;
+
+            RxStreamDebuggingIsEnabled = false;
+            TxStreamDebuggingIsEnabled = false;
+
+            Debug.SetDeviceDebugSettings(ParentDeviceKey, eStreamDebuggingSetting.Off);
+        }
+    }
+
+    /// <summary>
+    /// The available settings for stream debugging
+    /// </summary>
+    [Flags]
+    public enum eStreamDebuggingSetting
+    {
+        Off = 0,
+        Rx = 1, 
+        Tx = 2,
+        Both = Rx | Tx
+    }
+}
