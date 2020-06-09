@@ -71,7 +71,7 @@ namespace PepperDash.Core
         /// <param name="minutes"></param>
         public void SetDebuggingWithSpecificTimeout(eStreamDebuggingSetting setting, uint minutes)
         {
-            if ((setting & eStreamDebuggingSetting.Off) == eStreamDebuggingSetting.Off)
+            if (setting == eStreamDebuggingSetting.Off)
             {
                 DisableDebugging();
                 return;
