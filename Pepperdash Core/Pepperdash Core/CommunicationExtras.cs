@@ -32,6 +32,22 @@ namespace PepperDash.Core
 		void SendBytes(byte[] bytes);
 	}
 
+    /// <summary>
+    /// Represents a device that implements IBasicCommunication and IStreamDebugging
+    /// </summary>
+    public interface IBasicCommunicationWithStreamDebugging : IBasicCommunication, IStreamDebugging
+    {
+
+    }
+
+    /// <summary>
+    /// Represents a device with stream debugging capablities
+    /// </summary>
+    public interface IStreamDebugging
+    {
+        CommunicationStreamDebugging StreamDebugging { get; }
+    }
+
 	/// <summary>
 	/// For IBasicCommunication classes that have SocketStatus. GenericSshClient,
 	/// GenericTcpIpClient
@@ -42,6 +58,13 @@ namespace PepperDash.Core
 		SocketStatus ClientStatus { get; }
 	}
 
+    /// <summary>
+    /// Represents a device that implements ISocketStatus and IStreamDebugging
+    /// </summary>
+    public interface ISocketStatusWithStreamDebugging : ISocketStatus, IStreamDebugging
+    {
+
+    }
 
 	public interface IAutoReconnect
 	{

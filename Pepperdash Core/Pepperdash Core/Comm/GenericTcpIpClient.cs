@@ -14,8 +14,10 @@ namespace PepperDash.Core
     /// <summary>
     /// A class to handle basic TCP/IP communications with a server
     /// </summary>
-	public class GenericTcpIpClient : Device, ISocketStatus, IAutoReconnect
+	public class GenericTcpIpClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
 	{
+        public CommunicationStreamDebugging StreamDebugging { get; private set; }
+
 		/// <summary>
 		/// Fires when data is received from the server and returns it as a Byte array
 		/// </summary>
@@ -176,7 +178,7 @@ namespace PepperDash.Core
 		public GenericTcpIpClient(string key, string address, int port, int bufferSize)
 			: base(key)
 		{
-
+            StreamDebugging = new CommunicationStreamDebugging(key);
             Hostname = address;
             Port = port;
             BufferSize = bufferSize;
@@ -192,6 +194,7 @@ namespace PepperDash.Core
         public GenericTcpIpClient(string key)
             : base(key)
         {
+            StreamDebugging = new CommunicationStreamDebugging(key);
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
             AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
@@ -348,8 +351,15 @@ namespace PepperDash.Core
                     if (textHandler != null)
                     {
                         var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+
+                        if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                            Debug.Console(0, this, "Recevied: '{0}'", str);
+
                         textHandler(this, new GenericCommMethodReceiveTextArgs(str));
+
                     }
+
+                    
                 }
 
                 client.ReceiveDataAsync(Receive);
@@ -363,10 +373,12 @@ namespace PepperDash.Core
 		{
 			var bytes = Encoding.GetEncoding(28591).GetBytes(text);
 			// Check debug level before processing byte array
-			//if (Debug.Level == 2)
-			//    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+            if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
             if(Client != null)
 			    Client.SendData(bytes, bytes.Length);
+
+
 		}
 
 		/// <summary>
@@ -388,8 +400,8 @@ namespace PepperDash.Core
         /// <param name="bytes"></param>
 		public void SendBytes(byte[] bytes)
 		{
-			//if (Debug.Level == 2)
-			//    Debug.Console(2, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+            if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
             if(Client != null)
 			    Client.SendData(bytes, bytes.Length);
 		}
