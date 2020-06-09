@@ -12,6 +12,9 @@ namespace PepperDash.Core
     /// </summary>
     public class CommunicationStreamDebugging
     {
+        /// <summary>
+        /// Device Key that this instance configures
+        /// </summary>
         public string ParentDeviceKey { get; private set; }
 
         /// <summary>
@@ -21,7 +24,7 @@ namespace PepperDash.Core
 
         public eStreamDebuggingSetting DebugSetting { get; private set; }
 
-        private uint _DebugTimeoutMin;
+        private uint _DebugTimeoutInMs;
         private const uint _DefaultDebugTimeoutMin = 30;
 
         /// <summary>
@@ -31,16 +34,7 @@ namespace PepperDash.Core
         {
             get
             {
-                return _DebugTimeoutMin;
-            }
-        }
-
-
-        private long _DebugTimeoutInMs
-        {
-            get
-            {
-                return DebugTimeoutMinutes * 60000;
+                return _DebugTimeoutInMs/60000;
             }
         }
 
@@ -78,7 +72,7 @@ namespace PepperDash.Core
         /// <param name="minutes"></param>
         public void SetDebuggingWithSpecificTimeout(eStreamDebuggingSetting setting, uint minutes)
         {
-            _DebugTimeoutMin = minutes;
+            _DebugTimeoutInMs = minutes * 60000;
 
             if (DebugExpiryPeriod != null)
             {
