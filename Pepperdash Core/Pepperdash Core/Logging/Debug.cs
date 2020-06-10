@@ -275,6 +275,28 @@ namespace PepperDash.Core
         }
 
         /// <summary>
+        /// sets the settings for a device or creates a new entry
+        /// </summary>
+        /// <param name="deviceKey"></param>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        public static void SetDeviceDebugSettings(string deviceKey, object settings)
+        {
+            Contexts.SetDebugSettingsForKey(deviceKey, settings);
+            SaveMemoryOnTimeout();
+        }
+
+        /// <summary>
+        /// Gets the device settings for a device by key or returns null
+        /// </summary>
+        /// <param name="deviceKey"></param>
+        /// <returns></returns>
+        public static object GetDeviceDebugSettingsForKey(string deviceKey)
+        {
+            return Contexts.GetDebugSettingsForKey(deviceKey);
+        }  
+
+        /// <summary>
         /// Sets the flag to prevent application starting on next boot
         /// </summary>
         /// <param name="state"></param>

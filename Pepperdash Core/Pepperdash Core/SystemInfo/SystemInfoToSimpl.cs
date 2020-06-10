@@ -432,6 +432,7 @@ namespace PepperDash.Core.SystemInfo
 		protected void OnProgramChange(ProgramInfo program, ushort index, ushort type)
 		{
 			var handler = ProgramChange;
+
 			if (handler != null)
 			{
 				var args = new ProgramChangeEventArgs(program, type);

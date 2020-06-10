@@ -11,8 +11,10 @@ namespace PepperDash.Core
 	/// <summary>
 	/// 
 	/// </summary>
-	public class GenericSshClient : Device, ISocketStatus, IAutoReconnect
+    public class GenericSshClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
 	{
+        public CommunicationStreamDebugging StreamDebugging { get; private set; }
+
 		/// <summary>
 		/// Event that fires when data is received.  Delivers args with byte array
 		/// </summary>
@@ -139,6 +141,7 @@ namespace PepperDash.Core
 		public GenericSshClient(string key, string hostname, int port, string username, string password) :
 			base(key)
 		{
+            StreamDebugging = new CommunicationStreamDebugging(key);
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			Key = key;
 			Hostname = hostname;
@@ -240,7 +243,7 @@ namespace PepperDash.Core
             try
             {
                 Client.Connect();
-                TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
+                TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 100000);
                 TheStream.DataReceived += Stream_DataReceived;
                 //TheStream.ErrorOccurred += TheStream_ErrorOccurred;
                 Debug.Console(1, this, "Connected");
@@ -381,6 +384,10 @@ namespace PepperDash.Core
 				{
 					var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
 					textHandler(this, new GenericCommMethodReceiveTextArgs(str));
+
+                    if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                        Debug.Console(0, this, "Recevied: '{0}'", str);
+
 				}
 			}
 		}
@@ -422,8 +429,12 @@ namespace PepperDash.Core
 			{
                 if (Client != null)
                 {
+                    if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                        Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, text);
+
                     TheStream.Write(text);
                     TheStream.Flush();
+
                 }
 			}
 			catch
@@ -444,6 +455,9 @@ namespace PepperDash.Core
 			{
                 if (Client != null)
                 {
+                    if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                        Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+
                     TheStream.Write(bytes, 0, bytes.Length);
                     TheStream.Flush();
                 }
