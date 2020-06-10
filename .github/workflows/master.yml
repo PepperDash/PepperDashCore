@@ -114,7 +114,7 @@ jobs:
           Remove-Item -Path ./Version
       # Checkout/Create the branch
       - name: Create new branch
-        run: git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
+        run: git checkout master
       # Download the build output into the repo
       - name: Download Build output
         uses: actions/download-artifact@v1
@@ -150,10 +150,7 @@ jobs:
       # Push the commit
       - name: Push to Builds Repo
         shell: powershell
-        run: |
-          $branch = $($Env:GITHUB_REF) -replace "refs/heads/"
-          Write-Host "Branch: $branch"
-          git push -u origin $($branch) --force
+        run: git push -u origin master --force
       # Push the tags
       - name: Push tags
         run: git push --tags origin
@@ -191,7 +188,7 @@ jobs:
           Remove-Item -Path ./Version
       # Checkout/Create the branch
       - name: Create new branch
-        run: git checkout -b $($Env:GITHUB_REF -replace "refs/heads/")
+        run: git checkout master
       # Download the build output into the repo
       - name: Download Build output
         uses: actions/download-artifact@v1
@@ -227,10 +224,7 @@ jobs:
       # Push the commit
       - name: Push to Builds Repo
         shell: powershell
-        run: |
-          $branch = $($Env:GITHUB_REF) -replace "refs/heads/"
-          Write-Host "Branch: $branch"
-          git push -u origin $($branch) --force
+        run: git push -u origin master --force
       # Push the tags
       - name: Push tags
         run: git push --tags origin
