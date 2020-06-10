@@ -58,11 +58,10 @@ namespace PepperDash.Core
             if (setting == eStreamDebuggingSetting.Off)
             {
                 DisableDebugging();
+                return;
             }
-            else
-            {
-                SetDebuggingWithSpecificTimeout(setting, _DefaultDebugTimeoutMin);
-            }    
+
+            SetDebuggingWithSpecificTimeout(setting, _DefaultDebugTimeoutMin);
         }
 
         /// <summary>
@@ -72,6 +71,12 @@ namespace PepperDash.Core
         /// <param name="minutes"></param>
         public void SetDebuggingWithSpecificTimeout(eStreamDebuggingSetting setting, uint minutes)
         {
+            if (setting == eStreamDebuggingSetting.Off)
+            {
+                DisableDebugging();
+                return;
+            }
+
             _DebugTimeoutInMs = minutes * 60000;
 
             if (DebugExpiryPeriod != null)
@@ -94,7 +99,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Disabled debugging
         /// </summary>
-        public void DisableDebugging()
+        private void DisableDebugging()
         {
             DebugExpiryPeriod.Stop();
             DebugExpiryPeriod.Dispose();
