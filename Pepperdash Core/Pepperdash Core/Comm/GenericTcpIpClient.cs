@@ -227,7 +227,7 @@ namespace PepperDash.Core
             if (programEventType == eProgramStatusEventType.Stopping)
             {
                 Debug.Console(1, this, "Program stopping. Closing connection");
-                DisconnectClient();
+				Disconnect();
             }
         }
 
