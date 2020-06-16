@@ -65,7 +65,7 @@ jobs:
       - name: Add nuget.exe
         uses: nuget/setup-nuget@v1
       - name: Create nuget package
-        run: nuget pack "./Pepperdash Core/Pepperdash Core/PepperDash_Core.nuspec -version ${{ env.VERSION }}
+        run: nuget pack "./Pepperdash Core/Pepperdash Core/PepperDash_Core.nuspec" -version ${{ env.VERSION }}
       # Zip up the output files as needed
       - name: Zip Build Output
         shell: powershell
