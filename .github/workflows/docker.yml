@@ -67,6 +67,8 @@ jobs:
       - name: Create nuget package
         run: nuget pack "./Pepperdash Core/Pepperdash Core/PepperDash_Core.nuspec" -version ${{ env.VERSION }}
       # Zip up the output files as needed
+      - name: Publish nuget package to Github registry
+        run: nuget push **/*.nupkg -source "https://nuget.pkg.github.com/pepperdash/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}
       - name: Zip Build Output
         shell: powershell
         run: ./.github/scripts/ZipBuildOutput.ps1
