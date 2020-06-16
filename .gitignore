@@ -21,3 +21,5 @@ obj/
 _ReSharper*/
 SIMPLSharpLogs/
 *.projectinfo
+*.nupkg
+lib/
