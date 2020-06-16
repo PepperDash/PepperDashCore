@@ -62,6 +62,10 @@ jobs:
         shell: powershell
         run: |
           Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
+      - name: Add nuget.exe
+        uses: nuget/setup-nuget@v1
+      - name: Create nuget package
+        run: nuget pack "./Pepperdash Core/Pepperdash Core/PepperDash_Core.nuspec -version ${{ env.VERSION }}
       # Zip up the output files as needed
       - name: Zip Build Output
         shell: powershell
