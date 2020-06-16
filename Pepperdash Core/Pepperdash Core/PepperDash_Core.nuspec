@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>PepperDashCore</id>
+    <version>1.0.37</version>
+    <title>PepperDash Core</title>
+    <authors>PepperDash Technologies</authors>
+    <owners>pepperdash</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/PepperDash/PepperDashCore</projectUrl>
+    <copyright>Copyright 2020</copyright>
+    <description>Some text here</description>
+    <tags>crestron 3series 4series</tags>
+    <repository type="git" url="https://github.com/PepperDash/PepperDashCore"/>
+  </metadata>
+    <files>
+      <file src="bin\**" target="lib\net35"/>
+    </files>
+</package>
