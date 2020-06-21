@@ -16,5 +16,6 @@
   </metadata>
     <files>
       <file src="**" target="lib\net35"/>
+      <file src="**" target-"lib\net47"/>
     </files>
 </package>
