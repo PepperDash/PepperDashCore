@@ -243,7 +243,7 @@ namespace PepperDash.Core
             try
             {
                 Client.Connect();
-                TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 100000);
+                TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
                 TheStream.DataReceived += Stream_DataReceived;
                 //TheStream.ErrorOccurred += TheStream_ErrorOccurred;
                 Debug.Console(1, this, "Connected");
