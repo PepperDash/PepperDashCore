@@ -93,6 +93,12 @@ namespace PepperDash.Core.Config
 			else
 				merged.Add("sourceLists", Merge(template["sourceLists"], system["sourceLists"], "sourceLists"));
 
+		    if (system["destinationLists"] == null)
+		        merged.Add("destinationLists", template["destinationLists"]);
+		    else
+		        merged.Add("destinationLists",
+		            Merge(template["destinationLists"], system["destinationLists"], "destinationLists"));
+
 			// Template tie lines take precedence.  Config tool doesn't do them at system
 			// level anyway...
 			if (template["tieLines"] != null)
