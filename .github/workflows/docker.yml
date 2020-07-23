@@ -145,7 +145,7 @@ jobs:
       - name: Add Github Packages source
         run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
       - name: Add nuget.org source
-        run: nuget sources add -name nuget -source https://api.nuget.org/v3/index.json -key ${{ secrets.NUGET_API_KEY }}
+        run: nuget sources add -name nuget -source https://api.nuget.org/v3/index.json -username andrew-welker -password ${{ secrets.NUGET_API_KEY }}
       - name: Create nuget package
         run: nuget pack "./PepperDash_Core.nuspec" -version ${{ env.VERSION }}
       - name: Publish nuget package to Github registry
