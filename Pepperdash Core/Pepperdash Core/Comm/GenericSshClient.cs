@@ -13,6 +13,7 @@ namespace PepperDash.Core
 	/// </summary>
     public class GenericSshClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
 	{
+	    private const string SPlusKey = "Uninitialized SshClient";
         public CommunicationStreamDebugging StreamDebugging { get; private set; }
 
 		/// <summary>
@@ -155,8 +156,9 @@ namespace PepperDash.Core
 		/// S+ Constructor - Must set all properties before calling Connect
 		/// </summary>
 		public GenericSshClient()
-			: base("Uninitialized SshClient")
+			: base(SPlusKey)
 		{
+            StreamDebugging = new CommunicationStreamDebugging(SPlusKey);
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			AutoReconnectIntervalMs = 5000;
 		}
@@ -437,8 +439,11 @@ namespace PepperDash.Core
 
                 }
 			}
-			catch
+			catch (Exception ex)
 			{
+			    Debug.Console(0, "Exception: {0}", ex.Message);
+			    Debug.Console(0, "Stack Trace: {0}", ex.StackTrace);
+
 				Debug.Console(1, this, "Stream write failed. Disconnected, closing");
 				ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
 				HandleConnectionFailure();
