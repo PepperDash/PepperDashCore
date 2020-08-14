@@ -1,5 +1,7 @@
 # PepperDash Core (c) 2020
 
+## [Latest Release](https://github.com/PepperDash/PepperDashCore/releases/latest)
+
 ## License
 Provided under MIT license
 
