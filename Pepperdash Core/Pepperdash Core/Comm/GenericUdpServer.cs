@@ -17,6 +17,7 @@ namespace PepperDash.Core
 {
     public class GenericUdpServer : Device, ISocketStatusWithStreamDebugging
     {
+        private const string SplusKey = "Uninitialized Udp Server";
         public CommunicationStreamDebugging StreamDebugging { get; private set; }
         /// <summary>
         /// 
@@ -119,8 +120,9 @@ namespace PepperDash.Core
         /// Constructor for S+. Make sure to set key, address, port, and buffersize using init method
         /// </summary>
         public GenericUdpServer()
-            : base("Uninitialized Udp Server")
+            : base(SplusKey)
         {
+            StreamDebugging = new CommunicationStreamDebugging(SplusKey);
             BufferSize = 5000;
             DequeueLock = new CCriticalSection();
             MessageQueue = new CrestronQueue<GenericUdpReceiveTextExtraArgs>();
