@@ -15,7 +15,8 @@ namespace PepperDash.Core
     /// A class to handle basic TCP/IP communications with a server
     /// </summary>
 	public class GenericTcpIpClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
-	{
+    {
+        private const string SplusKey = "Uninitialized TcpIpClient";
         public CommunicationStreamDebugging StreamDebugging { get; private set; }
 
 		/// <summary>
@@ -204,8 +205,9 @@ namespace PepperDash.Core
         /// Default constructor for S+
         /// </summary>
         public GenericTcpIpClient()
-			: base("Uninitialized TcpIpClient")
+			: base(SplusKey)
 		{
+            StreamDebugging = new CommunicationStreamDebugging(SplusKey);
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
