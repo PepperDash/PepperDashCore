@@ -19,7 +19,9 @@ namespace PepperDash.Core
         /// Describes the folder location where a given program stores it's debug level memory. By default, the
         /// file written will be named appNdebug where N is 1-10.
         /// </summary>
-        public static string FilePathPrefix = @"\nvram\debug\";
+        public static string oldFilePathPrefix = @"\nvram\debug\";
+
+        public static string newFilePathPrefix = @"\user\debug\";
 
         /// <summary>
         /// The name of the file containing the current debug settings.
@@ -51,9 +53,25 @@ namespace PepperDash.Core
         static Debug()
         {
             // Get the assembly version and print it to console and the log
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            var assembly = Assembly.GetExecutingAssembly();
+            var ver =
+                assembly
+                    .GetCustomAttributes(typeof (AssemblyInformationalVersionAttribute), false);
 
-            PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
+            if (ver != null && ver.Length > 0)
+            {
+                var verAttribute = ver[0] as AssemblyInformationalVersionAttribute;
+
+                if (verAttribute != null)
+                {
+                    PepperDashCoreVersion = verAttribute.InformationalVersion;
+                }
+            }
+            else
+            {
+                var version = assembly.GetName().Version;
+                PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
+            }
 
             var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
 
