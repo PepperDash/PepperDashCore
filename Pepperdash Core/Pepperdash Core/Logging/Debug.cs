@@ -325,6 +325,11 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// Sets the debug level (Default timeout is 30 minutes)
+        /// </summary>
+        /// <param name="level"> Valid values 0 (no debug), 1 (critical), 2 (all messages)</param>
+        /// <param name="timeoutMs">Timeout value in milliseconds </param>
         public static void SetDebugLevel(int level, long timeoutMs)
         {
             if (level <= 2 && level > 0)

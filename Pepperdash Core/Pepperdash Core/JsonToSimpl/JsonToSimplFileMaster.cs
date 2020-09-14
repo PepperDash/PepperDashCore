@@ -17,6 +17,9 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public string Filepath { get; private set; }
 
+        /// <summary>
+        /// Fully qualified file path
+        /// </summary>
 		public string ActualFilePath { get; private set; }
 
 		// TODO: pdc-20: added to return filename back to SIMPL
@@ -102,11 +105,19 @@ namespace PepperDash.Core.JsonToSimpl
 				return;
 			}
 		}
+
+        /// <summary>
+        /// Sets the debug level
+        /// </summary>
+        /// <param name="level"></param>
 		public void setDebugLevel(int level)
 		{
 			Debug.SetDebugLevel(level, Debug.DebugTimoutMs);
 		}
 
+        /// <summary>
+        /// Saves the settings to a file
+        /// </summary>
 		public override void Save()
 		{
 			// this code is duplicated in the other masters!!!!!!!!!!!!!
