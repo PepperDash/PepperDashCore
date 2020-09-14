@@ -26,8 +26,14 @@ namespace PepperDash.Core
         /// </summary>
         public static string FileName = string.Format(@"app{0}Debug.json", InitialParametersClass.ApplicationNumber);
 
+        /// <summary>
+        /// Current debgu level
+        /// </summary>
         public static int Level { get; private set; }
 
+        /// <summary>
+        /// Indicates if config should be loaded on next boot
+        /// </summary>
         public static bool DoNotLoadOnNextBoot { get; private set; }
 
         static DebugContextCollection Contexts;
@@ -37,8 +43,11 @@ namespace PepperDash.Core
         /// <summary>
         /// Default debug timeout (30 min)
         /// </summary>
-        static long DebugTimoutMs = 1800000;
+        public static long DebugTimoutMs = 1800000;
 
+        /// <summary>
+        /// Current version string
+        /// </summary>
         public static string PepperDashCoreVersion { get; private set; } 
 
         static CTimer SaveTimer;

@@ -104,7 +104,7 @@ namespace PepperDash.Core.JsonToSimpl
 		}
 		public void setDebugLevel(int level)
 		{
-			Debug.SetDebugLevel(level);
+			Debug.SetDebugLevel(level, Debug.DebugTimoutMs);
 		}
 
 		public override void Save()

@@ -128,7 +128,7 @@ namespace PepperDash.Core.JsonToSimpl
 		/// <param name="level"></param>
 		public void setDebugLevel(int level)
 		{
-			Debug.SetDebugLevel(level);
+			Debug.SetDebugLevel(level, Debug.DebugTimoutMs);
 		}
 
 		/// <summary>
