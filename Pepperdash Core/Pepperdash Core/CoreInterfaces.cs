@@ -18,7 +18,8 @@ namespace PepperDash.Core
 	}
 
     /// <summary>
-    /// Named Keyed device interface. Forces the devie to have a Unique Key and a name. 
+    /// Named Keyed device interface. 
+    /// Forces the device to have a Unique Key and a name. 
     /// </summary>
 	public interface IKeyName : IKeyed
 	{

@@ -6,7 +6,8 @@ namespace PepperDash.Core
 {
 	//*********************************************************************************************************
 	/// <summary>
-	/// The core event and status-bearing class that most if not all device and connectors can derive from.
+	/// The core event and status-bearing class that most if not all device 
+    /// and connectors can derive from.
 	/// </summary>
 	public class Device : IKeyName
 	{

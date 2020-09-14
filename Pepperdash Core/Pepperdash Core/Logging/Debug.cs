@@ -34,9 +34,19 @@ namespace PepperDash.Core
 
         static int SaveTimeoutMs = 30000;
 
+        /// <summary>
+        /// Default debug timeout (30 min)
+        /// </summary>
+        static long DebugTimoutMs = 1800000;
+
         public static string PepperDashCoreVersion { get; private set; } 
 
         static CTimer SaveTimer;
+
+        /// <summary>
+        /// Resets the debug level to 0 when the timer expires
+        /// </summary>
+        static CTimer DebugTimer;
 
 		/// <summary>
 		/// When true, the IncludedExcludedKeys dict will contain keys to include. 
@@ -71,7 +81,7 @@ namespace PepperDash.Core
                     "donotloadonnextboot:P [true/false]: Should the application load on next boot", ConsoleAccessLevelEnum.AccessOperator);
 
                 CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
-                    "appdebug:P [0-2]: Sets the application's console debug message level",
+                    "appdebug:P [level 0-2] [(min)]: Set the console debug message level",
                     ConsoleAccessLevelEnum.AccessOperator);
                 CrestronConsole.AddNewConsoleCommand(ShowDebugLog, "appdebuglog",
                     "appdebuglog:P [all] Use \"all\" for full log.", 
@@ -130,24 +140,49 @@ namespace PepperDash.Core
         }
 
         /// <summary>
-        /// Callback for console command
+        /// Callback for console command.  Starts the debug Timer
         /// </summary>
         /// <param name="levelString"></param>
         public static void SetDebugFromConsole(string levelString)
         {
             try
             {
+                var args = levelString.Split(' ');
+
+                var level = Convert.ToInt32(args[0]);
+                var timeoutMs = DebugTimoutMs;
+
+                if(args.Length > 1)
+                {
+                    timeoutMs = Convert.ToInt32(args[1]) * 60000;
+                }
+
+
+                // Only start the timer if setting to level 1 or 2
+                if (level > 0 && level <= 2)
+                {
+                    if (DebugTimer != null)
+                    {
+                        DebugTimer = new CTimer((o) => SetDebugLevel(0), timeoutMs);
+                    }
+                    else
+                    {
+                        DebugTimer.Reset(timeoutMs);
+                    }
+                }
+
+
                 if (string.IsNullOrEmpty(levelString.Trim()))
                 {
                     CrestronConsole.PrintLine("AppDebug level = {0}", Level);
                     return;
                 }
 
-                SetDebugLevel(Convert.ToInt32(levelString));
+                SetDebugLevel(level, timeoutMs);
             }
             catch
             {
-                CrestronConsole.PrintLine("Usage: appdebug:P [0-2]");
+                CrestronConsole.PrintLine("Usage: appdebug:P [level: 0-2] [(timeout in minutes: 0-480)]");
             }
         }
 
@@ -261,6 +296,13 @@ namespace PepperDash.Core
         {
             if (level <= 2)
             {
+                if (level == 0)
+                {
+                    DebugTimer.Stop();
+                    DebugTimer.Dispose();
+                    DebugTimer = null;
+                }
+
                 Level = level;
                 Contexts.GetOrCreateItem("DEFAULT").Level = level;
                 SaveMemoryOnTimeout();
@@ -272,6 +314,17 @@ namespace PepperDash.Core
                 //if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
                 //    CrestronConsole.PrintLine("Error saving console debug level setting: {0}", err);
             }
+        }
+
+        public static void SetDebugLevel(int level, long timeoutMs)
+        {
+            if (level <= 2 && level > 0)
+            {
+                CrestronConsole.PrintLine("[Application {0}], Debug timer will expire in {1} minutes",
+                    InitialParametersClass.ApplicationNumber, timeoutMs / 60000);
+            }
+
+            SetDebugLevel(level);
         }
 
         /// <summary>
