@@ -122,6 +122,16 @@
     <Compile Include="WebApi\Presets\Preset.cs" />
     <Compile Include="WebApi\Presets\User.cs" />
     <Compile Include="WebApi\Presets\WebApiPasscodeClient.cs" />
+    <Compile Include="XSigUtility\Serialization\IXSigSerialization.cs" />
+    <Compile Include="XSigUtility\Serialization\XSigSerializationException.cs" />
+    <Compile Include="XSigUtility\Tokens\XSigAnalogToken.cs" />
+    <Compile Include="XSigUtility\Tokens\XSigDigitalToken.cs" />
+    <Compile Include="XSigUtility\Tokens\XSigSerialToken.cs" />
+    <Compile Include="XSigUtility\Tokens\XSigToken.cs" />
+    <Compile Include="XSigUtility\Tokens\XSigTokenType.cs" />
+    <Compile Include="XSigUtility\XSigHelpers.cs" />
+    <Compile Include="XSigUtility\XSigTokenStreamReader.cs" />
+    <Compile Include="XSigUtility\XSigTokenStreamWriter.cs" />
     <None Include="Properties\ControlSystem.cfg" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
