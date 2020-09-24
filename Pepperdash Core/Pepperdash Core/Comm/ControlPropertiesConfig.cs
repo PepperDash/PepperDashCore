@@ -26,6 +26,8 @@ namespace PepperDash.Core
 
         public string IrFile { get; set; }
 
+        public string RoomId { get; set; } //used for VC-4
+
         //public ComPortConfig ComParams { get; set; }
 
         //[JsonConverter(typeof(ComSpecJsonConverter))]
