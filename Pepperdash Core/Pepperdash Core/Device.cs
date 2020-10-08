@@ -9,8 +9,10 @@ namespace PepperDash.Core
 	/// The core event and status-bearing class that most if not all device 
     /// and connectors can derive from.
 	/// </summary>
-	public class Device : IKeyName
+	public class Device : IDebuggable
 	{
+        public DeviceDebug Debug { get; private set; }
+
         /// <summary>
         /// Unique Key
         /// </summary>
@@ -46,12 +48,18 @@ namespace PepperDash.Core
 		/// <param name="key"></param>
 		public Device(string key)
 		{
+            Debug = new DeviceDebug(this);
 			Key = key;
 			if (key.Contains('.')) Debug.Console(0, this, "WARNING: Device name's should not include '.'");
 			Name = "";
 
 		}
 
+        /// <summary>
+        /// Optional constructor for all Devices with Name
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="name"></param>
 		public Device(string key, string name) : this(key)
 		{
 			Name = name;
@@ -64,12 +72,21 @@ namespace PepperDash.Core
         //    Config = config;
         //}
 
+        /// <summary>
+        /// Adds an action to be executed in the pre-activation phase
+        /// </summary>
+        /// <param name="act">Action to execute</param>
 		public void AddPreActivationAction(Action act)
 		{
 			if (_PreActivationActions == null)
 				_PreActivationActions = new List<Action>();
 			_PreActivationActions.Add(act);
 		}
+
+        /// <summary>
+        /// Adds an action to be executed in the post-activation phase
+        /// </summary>
+        /// <param name="act">Action to execute</param>
 
 		public void AddPostActivationAction(Action act)
 		{
@@ -78,6 +95,9 @@ namespace PepperDash.Core
 			_PostActivationActions.Add(act);
 		}
 
+        /// <summary>
+        /// Exectues the pre-activation actions
+        /// </summary>
         public void PreActivate()
         {
             if (_PreActivationActions != null)
@@ -99,6 +119,9 @@ namespace PepperDash.Core
 			return result; 	
 		}
 
+        /// <summary>
+        /// Executes the post-activation actions
+        /// </summary>
         public void PostActivate()
         {
             if (_PostActivationActions != null)

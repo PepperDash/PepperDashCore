@@ -110,6 +110,7 @@
     <Compile Include="JsonToSimpl\REMOVE JsonToSimplFixedPathObject.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplGenericMaster.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplMaster.cs" />
+    <Compile Include="Logging\IDebuggable.cs" />
     <Compile Include="Network\DiscoveryThings.cs" />
     <Compile Include="PasswordManagement\Config.cs" />
     <Compile Include="PasswordManagement\Constants.cs" />

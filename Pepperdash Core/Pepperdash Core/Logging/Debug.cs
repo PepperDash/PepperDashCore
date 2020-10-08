@@ -13,7 +13,7 @@ using PepperDash.Core.DebugThings;
 
 namespace PepperDash.Core
 {
-    public static class Debug
+    internal static class Debug
     {
         /// <summary>
         /// Describes the folder location where a given program stores it's debug level memory. By default, the
@@ -70,9 +70,12 @@ namespace PepperDash.Core
         static Debug()
         {
             // Get the assembly version and print it to console and the log
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
 
-            PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
+            var fullVersion = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
+
+            AssemblyInformationalVersionAttribute fullVersionAtt = fullVersion[0] as AssemblyInformationalVersionAttribute;
+
+            PepperDashCoreVersion = fullVersionAtt.InformationalVersion;
 
             var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
 
@@ -553,9 +556,11 @@ namespace PepperDash.Core
             return string.Format(@"\NVRAM\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
         }
 
-        public enum ErrorLogLevel
-        {
-            Error, Warning, Notice, None
-        }
     }
+
+    public enum ErrorLogLevel
+    {
+        Error, Warning, Notice, None
+    }
+
 }

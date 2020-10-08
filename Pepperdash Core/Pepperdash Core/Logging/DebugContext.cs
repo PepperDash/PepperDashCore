@@ -149,7 +149,7 @@ namespace PepperDash.Core
                 Console(level, "[{0}] {1}", dev.Key, string.Format(format, items));
         }
 
-        public void Console(uint level, IKeyed dev, Debug.ErrorLogLevel errorLogLevel,
+        public void Console(uint level, IKeyed dev, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
             if (SaveData.Level >= level)
@@ -160,7 +160,7 @@ namespace PepperDash.Core
             }
         }
 
-        public void Console(uint level, Debug.ErrorLogLevel errorLogLevel,
+        public void Console(uint level, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
             if (SaveData.Level >= level)
@@ -171,18 +171,18 @@ namespace PepperDash.Core
             }
         }
 
-        public void LogError(Debug.ErrorLogLevel errorLogLevel, string str)
+        public void LogError(ErrorLogLevel errorLogLevel, string str)
         {
             string msg = string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
             switch (errorLogLevel)
             {
-                case Debug.ErrorLogLevel.Error:
+                case ErrorLogLevel.Error:
                     ErrorLog.Error(msg);
                     break;
-                case Debug.ErrorLogLevel.Warning:
+                case ErrorLogLevel.Warning:
                     ErrorLog.Warn(msg);
                     break;
-                case Debug.ErrorLogLevel.Notice:
+                case ErrorLogLevel.Notice:
                     ErrorLog.Notice(msg);
                     break;
             }
