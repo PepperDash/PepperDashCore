@@ -97,7 +97,7 @@ namespace PepperDash.Core
             if ((setting & eStreamDebuggingSetting.Tx) == eStreamDebuggingSetting.Tx)
                 TxStreamDebuggingIsEnabled = true;
 
-            Debug.SetDeviceDebugSettings(ParentDeviceKey, setting.ToString());
+            Debug.SetDeviceDebugSettings(ParentDeviceKey, setting);
         
         }
 
@@ -116,7 +116,7 @@ namespace PepperDash.Core
             RxStreamDebuggingIsEnabled = false;
             TxStreamDebuggingIsEnabled = false;
 
-            Debug.SetDeviceDebugSettings(ParentDeviceKey, eStreamDebuggingSetting.Off.ToString());
+            Debug.SetDeviceDebugSettings(ParentDeviceKey, eStreamDebuggingSetting.Off);
         }
     }
 
