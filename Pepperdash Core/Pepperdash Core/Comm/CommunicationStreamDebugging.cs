@@ -81,8 +81,13 @@ namespace PepperDash.Core
 
             if (DebugExpiryPeriod != null)
             {
-                DisableDebugging();
+                DebugExpiryPeriod.Stop();
+                DebugExpiryPeriod.Dispose();
+                DebugExpiryPeriod = null;
             }
+
+            RxStreamDebuggingIsEnabled = false;
+            TxStreamDebuggingIsEnabled = false;
 
             DebugExpiryPeriod = new CTimer((o) => DisableDebugging(), _DebugTimeoutInMs);
 
@@ -92,7 +97,7 @@ namespace PepperDash.Core
             if ((setting & eStreamDebuggingSetting.Tx) == eStreamDebuggingSetting.Tx)
                 TxStreamDebuggingIsEnabled = true;
 
-            Debug.SetDeviceDebugSettings(ParentDeviceKey, setting);
+            Debug.SetDeviceDebugSettings(ParentDeviceKey, setting.ToString());
         
         }
 
@@ -101,14 +106,17 @@ namespace PepperDash.Core
         /// </summary>
         private void DisableDebugging()
         {
-            DebugExpiryPeriod.Stop();
-            DebugExpiryPeriod.Dispose();
-            DebugExpiryPeriod = null;
+            if (DebugExpiryPeriod != null)
+            {
+                DebugExpiryPeriod.Stop();
+                DebugExpiryPeriod.Dispose();
+                DebugExpiryPeriod = null;
+            }
 
             RxStreamDebuggingIsEnabled = false;
             TxStreamDebuggingIsEnabled = false;
 
-            Debug.SetDeviceDebugSettings(ParentDeviceKey, eStreamDebuggingSetting.Off);
+            Debug.SetDeviceDebugSettings(ParentDeviceKey, eStreamDebuggingSetting.Off.ToString());
         }
     }
 
