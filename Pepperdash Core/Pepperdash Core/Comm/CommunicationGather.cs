@@ -13,7 +13,7 @@ namespace PepperDash.Core
 	/// <summary>
 	/// Defines the string event handler for line events on the gather
 	/// </summary>
-	/// <param name="text"></param>
+	/// <param name="text">A string</param>
 	public delegate void LineReceivedHandler(string text);
 
 	/// <summary>
@@ -44,17 +44,20 @@ namespace PepperDash.Core
 		StringBuilder ReceiveBuffer = new StringBuilder();
 
 		/// <summary>
-		/// Delimiter, like it says!
+		/// Delimiter character
 		/// </summary>
 		char Delimiter;
-
+		
+		/// <summary>
+		/// Delimiter string
+		/// </summary>
 		string StringDelimiter;
 
 		/// <summary>
-		/// Fires up a gather, given a IBasicCommunicaion port and char for de
+		/// Fires up a gather, given a IBasicCommunicaion port and char for delimiter
 		/// </summary>
-		/// <param name="port"></param>
-		/// <param name="delimiter"></param>
+		/// <param name="port"><seealso cref="PepperDash.Core.ICommunicationReceiver"/>ICommunicationReceiver port</param>
+		/// <param name="delimiter">Delimiter character</param>
 		public CommunicationGather(ICommunicationReceiver port, char delimiter)
 		{
 			Port = port;
@@ -63,10 +66,10 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// 
+		/// Fires up a gather, given a IBasicCommunicaion port and string for delimiter
 		/// </summary>
-		/// <param name="port"></param>
-		/// <param name="delimiter"></param>
+		/// <param name="port"><seealso cref="PepperDash.Core.ICommunicationReceiver"/>ICommunicationReceiver port</param>
+		/// <param name="delimiter">Delimiter string</param>
         public CommunicationGather(ICommunicationReceiver port, string delimiter)
 		{
 			Port = port;
@@ -119,10 +122,10 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// 
+		/// Handler for delimited data coming from port
 		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="args"></param>
+		/// <param name="sender">An object</param>
+		/// <param name="args">A GenericCommMethodReceiveTextArgs</param>
 		void Port_TextReceivedStringDelimiter(object sender, GenericCommMethodReceiveTextArgs args)
 		{
 			var handler = LineReceived;

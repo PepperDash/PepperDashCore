@@ -208,12 +208,9 @@ namespace PepperDash.Core.GenericRESTfulCommunications
 		protected void OnBoolChange(bool state, ushort index, ushort type)
 		{
 			var handler = BoolChange;
-			if (handler != null)
-			{
-				var args = new BoolChangeEventArgs(state, type);
-				args.Index = index;
-				BoolChange(this, args);
-			}
+			if (handler == null) return;
+			var args = new BoolChangeEventArgs(state, type) {Index = index};
+			BoolChange(this, args);
 		}
 
 		/// <summary>
@@ -225,12 +222,9 @@ namespace PepperDash.Core.GenericRESTfulCommunications
 		protected void OnUshrtChange(ushort value, ushort index, ushort type)
 		{
 			var handler = UshrtChange;
-			if (handler != null)
-			{
-				var args = new UshrtChangeEventArgs(value, type);
-				args.Index = index;
-				UshrtChange(this, args);
-			}
+			if (handler == null) return;
+			var args = new UshrtChangeEventArgs(value, type) {Index = index};
+			UshrtChange(this, args);
 		}
 
 		/// <summary>

@@ -7,8 +7,11 @@ using Crestron.SimplSharp;
 namespace PepperDash.Core.SystemInfo
 {
 	/// <summary>
-	/// Processor info class
+	/// Processor Info
 	/// </summary>
+	/// <remarks>
+	/// Stores processor information 
+	/// </remarks>
 	public class ProcessorInfo
 	{
 		public string Model { get; set; }

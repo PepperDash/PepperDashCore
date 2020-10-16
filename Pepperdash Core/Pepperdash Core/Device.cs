@@ -33,7 +33,14 @@ namespace PepperDash.Core
         ///// </summary>
         //public bool HasConfig { get { return Config != null; } }
 
+		/// <summary>
+		/// 
+		/// </summary>
 		List<Action> _PreActivationActions;
+		
+		/// <summary>
+		/// 
+		/// </summary>
 		List<Action> _PostActivationActions;
 
 		public static Device DefaultDevice { get { return _DefaultDevice; } }
@@ -51,6 +58,11 @@ namespace PepperDash.Core
 
 		}
 
+		/// <summary>
+		/// Constructor overload
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="name"></param>
 		public Device(string key, string name) : this(key)
 		{
 			Name = name;

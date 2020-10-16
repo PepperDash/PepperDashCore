@@ -11,7 +11,7 @@ namespace PepperDash.Core
 	public class EthernetHelper
 	{
 		/// <summary>
-		/// 
+		/// Lan Helper property
 		/// </summary>
 		public static EthernetHelper LanHelper
 		{
@@ -26,7 +26,7 @@ namespace PepperDash.Core
 		// ADD OTHER HELPERS HERE
 
 		/// <summary>
-		/// 
+		/// Port Number property
 		/// </summary>
 		public int PortNumber { get; private set; }
 
@@ -36,8 +36,11 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// 
+		/// Link Active property
 		/// </summary>
+		/// <returns>
+		/// Current link status
+		/// </returns>
 		[JsonProperty("linkActive")]
 		public bool LinkActive
 		{
@@ -51,8 +54,11 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// 
+		/// DHCP Active property
 		/// </summary>
+		/// <returns>
+		/// Current DHCP state
+		/// </returns>
 		[JsonProperty("dchpActive")]
 		public bool DhcpActive
 		{
@@ -64,8 +70,11 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// 
+		/// Hostname property
 		/// </summary>
+		/// <returns>
+		/// Current hostname
+		/// </returns>
 		[JsonProperty("hostname")]
 		public string Hostname
 		{
@@ -77,8 +86,11 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// 
+		/// IP Address property
 		/// </summary>
+		/// <returns>
+		/// Current IP address
+		/// </returns>
 		[JsonProperty("ipAddress")]
 		public string IPAddress
 		{
@@ -90,8 +102,11 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// 
+		/// Subnet Mask property
 		/// </summary>
+		/// <returns>
+		/// Current subnet mask
+		/// </returns>
 		[JsonProperty("subnetMask")]
 		public string SubnetMask
 		{
@@ -103,8 +118,11 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// 
+		/// Default Gateway property
 		/// </summary>
+		/// <returns>
+		/// Current router
+		/// </returns>
 		[JsonProperty("defaultGateway")]
 		public string DefaultGateway
 		{

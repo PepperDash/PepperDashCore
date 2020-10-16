@@ -18,33 +18,80 @@ using Crestron.SimplSharp.CrestronSockets;
 
 namespace PepperDash.Core
 {
+	/// <summary>
+	/// Socket Status Delegate
+	/// </summary>
+	/// <param name="client"><seealso cref="PepperDash.Core.ISocketStatus"/>A ISocketStatus client</param>
     public delegate void GenericSocketStatusChangeEventDelegate(ISocketStatus client);
+	
+	/// <summary>
+	/// Generic socket status change event args class
+	/// </summary>
 	public class GenericSocketStatusChageEventArgs : EventArgs
 	{
+		/// <summary>
+		/// Client property implementing ISocketStatus
+		/// </summary>
+		/// <seealso cref="PepperDash.Core.ISocketStatus"/>		
+		/// <inheritdoc/>
 		public ISocketStatus Client { get; private set; }
 
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <remarks>
+		/// Initializes a new instance of the GenericSocketStatusChangeEventArgs class
+		/// </remarks>
+		/// <param name="client">A client implementing ISocketStatus</param>
 		public GenericSocketStatusChageEventArgs(ISocketStatus client)
 		{
 			Client = client;
 		}
+
 		/// <summary>
-		/// Stupid S+ Constructor
+		/// Constructor
 		/// </summary>
+		/// <remarks>
+		/// S+ requires an empty constructor, if not implemented the class will not be avialble in S+
+		/// </remarks>
 		public GenericSocketStatusChageEventArgs() { }
     }
 
+	/// <summary>
+	/// Generic TCP Server state change event delegate
+	/// </summary>
+	/// <param name="state"><seealso cref="Crestron.SimplSharp.CrestronSockets.ServerState"/>Server state enum</param>
     public delegate void GenericTcpServerStateChangedEventDelegate(ServerState state);
+
+	/// <summary>
+	/// Generic TCP Server statte change event args class
+	/// </summary>
     public class GenericTcpServerStateChangedEventArgs : EventArgs
     {
+		/// <summary>
+		/// State property
+		/// </summary>
+		/// <remarks>
+		/// Implements Crestron sockets server state		
+		/// </remarks>
+		/// <seealso cref="Crestron.SimplSharp.CrestronSockets.ServerState"/>
         public ServerState State { get; private set; }
 
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="state">A server implementing ServerState</param>
         public GenericTcpServerStateChangedEventArgs(ServerState state)
         {
             State = state;
         }
+
 		/// <summary>
-		/// Stupid S+ Constructor
+		/// Constructor
 		/// </summary>
+		/// <remarks>
+		/// S+ requires an empty constructor, if not implemented the class will not be avialble in S+
+		/// </remarks>
 		public GenericTcpServerStateChangedEventArgs() { }
     }
 

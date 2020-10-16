@@ -1,14 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
+using PepperDash.Core.DebugThings;
 
 namespace PepperDash.Core.SystemInfo
 {
 	/// <summary>
-	/// System Info class
+	/// System Info to Simpl
 	/// </summary>
+	/// <remarks>
+	/// Contains methods that can be called from S+ to get information about the system.
+	/// </remarks>
 	public class SystemInfoToSimpl
 	{
 		public event EventHandler<BoolChangeEventArgs> BoolChange;
@@ -36,7 +41,7 @@ namespace PepperDash.Core.SystemInfo
 
 			try
 			{
-				var processor = new ProcessorInfo();
+				var processor = new ProcessorInfo();				
 				processor.Model = InitialParametersClass.ControllerPromptName;
 				processor.SerialNumber = CrestronEnvironment.SystemInfo.SerialNumber;
 				processor.ModuleDirectory = InitialParametersClass.ProgramDirectory.ToString();
@@ -281,6 +286,7 @@ namespace PepperDash.Core.SystemInfo
 			catch (Exception e)
 			{
 				var msg = string.Format("RefreshProgramUptimebyIndex({0}) failed:\r{1}", index, e.Message);
+				Debug.Console(0,"");
 				CrestronConsole.PrintLine(msg);
 				//ErrorLog.Error(msg);
 			}
@@ -295,25 +301,31 @@ namespace PepperDash.Core.SystemInfo
 			if (string.IsNullOrEmpty(cmd))
 				return;
 
-			string response = "";
-			CrestronConsole.SendControlSystemCommand(cmd, ref response);
-			if (!string.IsNullOrEmpty(response))
+			try
 			{
-				if (response.EndsWith("\x0D\\x0A"))
-					response.Trim('\n');
-
-				OnStringChange(response, 0, SystemInfoConstants.ConsoleResponseChange);
+				string response = "";
+				CrestronConsole.SendControlSystemCommand(cmd, ref response);
+				if (string.IsNullOrEmpty(response)) return;
+				if (response.Contains('\n'))
+				{
+					var lines = response.Split('\n');
+					if (lines == null) return;
+					foreach (var line in lines.Where(line => !string.IsNullOrEmpty(line)))
+					{
+						OnStringChange(line, 0, SystemInfoConstants.ConsoleResponseChange);
+					}
+				}
+				else
+				{					
+					OnStringChange(response, 0, SystemInfoConstants.ConsoleResponseChange);	
+				}				
 			}
+			catch (Exception ex)
+			{
+				Debug.Console(0,"Console Command Exception: {0}", ex);
+			}			
 		}
-
-		/// <summary>
-		/// private method to parse console messages
-		/// </summary>
-		/// <param name="response"></param>
-		/// <param name="line"></param>
-		/// <param name="start"></param>
-		/// <param name="end"></param>
-		/// <returns></returns>
+		
 		private string ParseConsoleResponse(string data, string line, string dataStart, string dataEnd)
 		{
 			var response = "";
@@ -337,13 +349,7 @@ namespace PepperDash.Core.SystemInfo
 
 			return response;
 		}
-
-		/// <summary>
-		/// Protected boolean change event handler
-		/// </summary>
-		/// <param name="state"></param>
-		/// <param name="index"></param>
-		/// <param name="type"></param>
+		
 		protected void OnBoolChange(bool state, ushort index, ushort type)
 		{
 			var handler = BoolChange;
@@ -354,13 +360,7 @@ namespace PepperDash.Core.SystemInfo
 				BoolChange(this, args);
 			}
 		}
-
-		/// <summary>
-		/// Protected string change event handler
-		/// </summary>
-		/// <param name="value"></param>
-		/// <param name="index"></param>
-		/// <param name="type"></param>
+		
 		protected void OnStringChange(string value, ushort index, ushort type)
 		{
 			var handler = StringChange;
@@ -371,13 +371,7 @@ namespace PepperDash.Core.SystemInfo
 				StringChange(this, args);
 			}
 		}
-
-		/// <summary>
-		/// Protected processor config change event handler
-		/// </summary>
-		/// <param name="processor"></param>
-		/// <param name="index"></param>
-		/// <param name="type"></param>
+		
 		protected void OnProcessorChange(ProcessorInfo processor, ushort index, ushort type)
 		{
 			var handler = ProcessorChange;
@@ -388,13 +382,7 @@ namespace PepperDash.Core.SystemInfo
 				ProcessorChange(this, args);
 			}
 		}
-
-		/// <summary>
-		/// Ethernet change event handler
-		/// </summary>
-		/// <param name="ethernet"></param>
-		/// <param name="index"></param>
-		/// <param name="type"></param>
+		
 		protected void OnEthernetInfoChange(EthernetInfo ethernet, ushort index, ushort type)
 		{
 			var handler = EthernetChange;
@@ -405,13 +393,7 @@ namespace PepperDash.Core.SystemInfo
 				EthernetChange(this, args);
 			}
 		}
-
-		/// <summary>
-		/// Control Subnet change event handler
-		/// </summary>
-		/// <param name="ethernet"></param>
-		/// <param name="index"></param>
-		/// <param name="type"></param>
+		
 		protected void OnControlSubnetInfoChange(ControlSubnetInfo ethernet, ushort index, ushort type)
 		{
 			var handler = ControlSubnetChange;
@@ -422,13 +404,7 @@ namespace PepperDash.Core.SystemInfo
 				ControlSubnetChange(this, args);
 			}
 		}
-
-		/// <summary>
-		/// Program change event handler
-		/// </summary>
-		/// <param name="program"></param>
-		/// <param name="index"></param>
-		/// <param name="type"></param>
+		
 		protected void OnProgramChange(ProgramInfo program, ushort index, ushort type)
 		{
 			var handler = ProgramChange;
