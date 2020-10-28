@@ -44,7 +44,7 @@ jobs:
         shell: powershell
         run: |
           $version = ./.github/scripts/GenerateVersionNumber.ps1
-          Write-Output "::set-env name=VERSION::$version"
+          echo "VERSION=$version" | Out-File -FilePath $env::GITHUB_ENV -Encoding utf8 -Append
       # Use the version number to set the version of the assemblies
       - name: Update AssemblyInfo.cs
         shell: powershell
@@ -123,7 +123,7 @@ jobs:
           Get-ChildItem "./Version"
           $version = Get-Content -Path ./Version/version.txt
           Write-Host "Version: $version"
-          Write-Output "::set-env name=VERSION::$version"
+          echo "VERSION=$version" | Out-File -FilePath $env::GITHUB_ENV -Encoding utf8 -Append
           Remove-Item -Path ./Version/version.txt
           Remove-Item -Path ./Version
       - name: Download Build output
