@@ -68,11 +68,9 @@ namespace PepperDash.Core.DebugThings
         /// <returns></returns>
         public void SetDebugSettingsForKey(string deviceKey, object settings)
         {
-            var existingSettings = DeviceDebugSettings[deviceKey];
-
-            if (existingSettings != null)
+            if(DeviceDebugSettings.ContainsKey(deviceKey))
             {
-                existingSettings = settings;
+                DeviceDebugSettings[deviceKey] = settings;
             }
             else
                 DeviceDebugSettings.Add(deviceKey, settings);
