@@ -67,25 +67,7 @@ namespace PepperDash.Core
         static Debug()
         {
             // Get the assembly version and print it to console and the log
-            var assembly = Assembly.GetExecutingAssembly();
-            var ver =
-                assembly
-                    .GetCustomAttributes(typeof (AssemblyInformationalVersionAttribute), false);
-
-            if (ver != null && ver.Length > 0)
-            {
-                var verAttribute = ver[0] as AssemblyInformationalVersionAttribute;
-
-                if (verAttribute != null)
-                {
-                    PepperDashCoreVersion = verAttribute.InformationalVersion;
-                }
-            }
-            else
-            {
-                var version = assembly.GetName().Version;
-                PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
-            }
+            GetVersion();
 
             var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
 
@@ -140,6 +122,30 @@ namespace PepperDash.Core
             {
 
                 CrestronConsole.PrintLine("Initializing of CrestronLogger failed: {0}", e);
+            }
+        }
+
+        private static void GetVersion()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var ver =
+                assembly
+                    .GetCustomAttributes(typeof (AssemblyInformationalVersionAttribute), false);
+
+            if (ver != null && ver.Length > 0)
+            {
+                var verAttribute = ver[0] as AssemblyInformationalVersionAttribute;
+
+                if (verAttribute != null)
+                {
+                    PepperDashCoreVersion = verAttribute.InformationalVersion;
+                }
+            }
+            else
+            {
+                var version = assembly.GetName().Version;
+                PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build,
+                    version.Revision);
             }
         }
 
@@ -514,45 +520,45 @@ namespace PepperDash.Core
         static string GetMemoryFileName()
         {
             CheckForMigration();
-            return string.Format(@"\USER\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
         }
 
         private static void CheckForMigration()
         {
-            var oldFilePath = string.Format(@"\NVRAM\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
-            var newFilePath = String.Format(@"\USER\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            var oldFilePath = String.Format(@"\nvram\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            var newFilePath = String.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
 
             //check for file at old path
             if (!File.Exists(oldFilePath))
             {
                 Console(0, ErrorLogLevel.Notice,
                     String.Format(
-                        @"Debug settings file not found at \NVRAM\debugSettings\program{0}. Attempting to use file at \USER\debugSettings\program{0}",
+                        @"Debug settings file not found at \nvram\debugSettings\program{0}. Attempting to use file at \user\debugSettings\program{0}",
                         InitialParametersClass.ApplicationNumber));
                 return;
             }
 
             //create the new directory if it doesn't already exist
-            if (!Directory.Exists(@"\USER\debugSettings"))
+            if (!Directory.Exists(@"\user\debugSettings"))
             {
-                Directory.CreateDirectory(@"\USER\debugSettings");
+                Directory.CreateDirectory(@"\user\debugSettings");
             }
 
             Console(0, ErrorLogLevel.Notice,
                 String.Format(
-                    @"File found at \NVRAM\debugSettings\program{0}. Migrating to \USER\debugSettings\program{0}", InitialParametersClass.ApplicationNumber));
+                    @"File found at \nvram\debugSettings\program{0}. Migrating to \user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber));
 
             //Copy file from old path to new path, then delete it. This will overwrite the existing file
             File.Copy(oldFilePath, newFilePath, true);
             File.Delete(oldFilePath);
 
             //Check if the old directory is empty, then delete it if it is
-            if (Directory.GetFiles(@"\NVRAM\debugSettings").Length > 0)
+            if (Directory.GetFiles(@"\nvram\debugSettings").Length > 0)
             {
                 return;
             }
 
-            Directory.Delete(@"\NVRAM\debugSettings");
+            Directory.Delete(@"\nvram\debugSettings");
         }
 
         public enum ErrorLogLevel
