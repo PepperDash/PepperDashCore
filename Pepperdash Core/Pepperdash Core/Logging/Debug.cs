@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.Reflection;
@@ -13,47 +11,63 @@ using PepperDash.Core.DebugThings;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Contains debug commands for use in various situations
+    /// </summary>
     public static class Debug
     {
         /// <summary>
         /// Describes the folder location where a given program stores it's debug level memory. By default, the
         /// file written will be named appNdebug where N is 1-10.
         /// </summary>
-        public static string FilePathPrefix = @"\nvram\debug\";
+        public static string OldFilePathPrefix = @"\nvram\debug\";
+
+        /// <summary>
+        /// Describes the new folder location where a given program stores it's debug level memory. By default, the
+        /// file written will be named appNdebug where N is 1-10.
+        /// </summary>
+        public static string NewFilePathPrefix = @"\user\debug\";
 
         /// <summary>
         /// The name of the file containing the current debug settings.
         /// </summary>
         public static string FileName = string.Format(@"app{0}Debug.json", InitialParametersClass.ApplicationNumber);
 
+        /// <summary>
+        /// Debug level to set for a given program.
+        /// </summary>
         public static int Level { get; private set; }
 
+        /// <summary>
+        /// When this is true, the configuration file will NOT be loaded until triggered by either a console command or a signal
+        /// </summary>
         public static bool DoNotLoadOnNextBoot { get; private set; }
 
-        static DebugContextCollection Contexts;
+        private static DebugContextCollection _contexts;
 
-        static int SaveTimeoutMs = 30000;
+        private const int SaveTimeoutMs = 30000;
 
+        /// <summary>
+        /// Version for the currently loaded PepperDashCore dll
+        /// </summary>
         public static string PepperDashCoreVersion { get; private set; } 
 
-        static CTimer SaveTimer;
+        private static CTimer _saveTimer;
 
 		/// <summary>
 		/// When true, the IncludedExcludedKeys dict will contain keys to include. 
 		/// When false (default), IncludedExcludedKeys will contain keys to exclude.
 		/// </summary>
-		static bool ExcludeAllMode;
+		private static bool _excludeAllMode;
 
 		//static bool ExcludeNoKeyMessages;
 
-		static Dictionary<string, object> IncludedExcludedKeys;
+		private static readonly Dictionary<string, object> IncludedExcludedKeys;
 
         static Debug()
         {
             // Get the assembly version and print it to console and the log
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-
-            PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build, version.Revision);
+            GetVersion();
 
             var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
 
@@ -87,7 +101,7 @@ namespace PepperDash.Core
 
             LoadMemory();
 
-            var context = Contexts.GetOrCreateItem("DEFAULT");
+            var context = _contexts.GetOrCreateItem("DEFAULT");
             Level = context.Level;
             DoNotLoadOnNextBoot = context.DoNotLoadOnNextBoot;
 
@@ -111,6 +125,30 @@ namespace PepperDash.Core
             }
         }
 
+        private static void GetVersion()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var ver =
+                assembly
+                    .GetCustomAttributes(typeof (AssemblyInformationalVersionAttribute), false);
+
+            if (ver != null && ver.Length > 0)
+            {
+                var verAttribute = ver[0] as AssemblyInformationalVersionAttribute;
+
+                if (verAttribute != null)
+                {
+                    PepperDashCoreVersion = verAttribute.InformationalVersion;
+                }
+            }
+            else
+            {
+                var version = assembly.GetName().Version;
+                PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build,
+                    version.Revision);
+            }
+        }
+
         /// <summary>
         /// Used to save memory when shutting down
         /// </summary>
@@ -119,10 +157,10 @@ namespace PepperDash.Core
         {
             if (programEventType == eProgramStatusEventType.Stopping)
             {
-                if (SaveTimer != null)
+                if (_saveTimer != null)
                 {
-                    SaveTimer.Stop();
-                    SaveTimer = null;
+                    _saveTimer.Stop();
+                    _saveTimer = null;
                 }
                 Console(0, "Saving debug settings");
                 SaveMemory();
@@ -199,12 +237,12 @@ namespace PepperDash.Core
 				if (lkey == "+all")
 				{
 					IncludedExcludedKeys.Clear();
-					ExcludeAllMode = false;
+					_excludeAllMode = false;
 				}
 				else if (lkey == "-all")
 				{
 					IncludedExcludedKeys.Clear();
-					ExcludeAllMode = true;
+					_excludeAllMode = true;
 				}
 				//else if (lkey == "+nokey")
 				//{
@@ -216,12 +254,12 @@ namespace PepperDash.Core
 				//}
 				else
 				{
-					string key = null; ;
+					string key;
 					if (lkey.StartsWith("-"))
 					{
 						key = lkey.Substring(1);
 						// if in exclude all mode, we need to remove this from the inclusions
-						if (ExcludeAllMode)
+						if (_excludeAllMode)
 						{
 							if (IncludedExcludedKeys.ContainsKey(key))
 								IncludedExcludedKeys.Remove(key);
@@ -236,7 +274,7 @@ namespace PepperDash.Core
 					{
 						key = lkey.Substring(1);
 						// if in exclude all mode, we need to add this as inclusion
-						if (ExcludeAllMode)
+						if (_excludeAllMode)
 						{
 
 							IncludedExcludedKeys[key] = new object();
@@ -262,7 +300,7 @@ namespace PepperDash.Core
             if (level <= 2)
             {
                 Level = level;
-                Contexts.GetOrCreateItem("DEFAULT").Level = level;
+                _contexts.GetOrCreateItem("DEFAULT").Level = level;
                 SaveMemoryOnTimeout();
 
                 CrestronConsole.PrintLine("[Application {0}], Debug level set to {1}",
@@ -282,7 +320,7 @@ namespace PepperDash.Core
         /// <returns></returns>
         public static void SetDeviceDebugSettings(string deviceKey, object settings)
         {
-            Contexts.SetDebugSettingsForKey(deviceKey, settings);
+            _contexts.SetDebugSettingsForKey(deviceKey, settings);
             SaveMemoryOnTimeout();
         }
 
@@ -293,7 +331,7 @@ namespace PepperDash.Core
         /// <returns></returns>
         public static object GetDeviceDebugSettingsForKey(string deviceKey)
         {
-            return Contexts.GetDebugSettingsForKey(deviceKey);
+            return _contexts.GetDebugSettingsForKey(deviceKey);
         }  
 
         /// <summary>
@@ -303,7 +341,7 @@ namespace PepperDash.Core
         public static void SetDoNotLoadOnNextBoot(bool state)
         {
             DoNotLoadOnNextBoot = state;
-            Contexts.GetOrCreateItem("DEFAULT").DoNotLoadOnNextBoot = state;
+            _contexts.GetOrCreateItem("DEFAULT").DoNotLoadOnNextBoot = state;
             SaveMemoryOnTimeout();
 
             CrestronConsole.PrintLine("[Application {0}], Do Not Start on Next Boot set to {1}",
@@ -343,6 +381,10 @@ namespace PepperDash.Core
                 Console(level, "[{0}] {1}", dev.Key, string.Format(format, items));
         }
 
+        /// <summary>
+        /// Prints message to console if current debug level is equal to or higher than the level of this message. Always sends message to Error Log.
+        /// Uses CrestronConsole.PrintLine.
+        /// </summary>
         public static void Console(uint level, IKeyed dev, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
@@ -373,9 +415,6 @@ namespace PepperDash.Core
         /// or above the level provided, then the output will be written to both console and the log. Otherwise
         /// it will only be written to the log.
         /// </summary>
-        /// <param name="level"></param>
-        /// <param name="format"></param>
-        /// <param name="items"></param>
         public static void ConsoleWithLog(uint level, string format, params object[] items)
         {
             var str = string.Format(format, items);
@@ -389,10 +428,6 @@ namespace PepperDash.Core
         /// or above the level provided, then the output will be written to both console and the log. Otherwise
         /// it will only be written to the log.
         /// </summary>
-        /// <param name="level"></param>
-        /// <param name="dev"></param>
-        /// <param name="format">String.format string</param>
-        /// <param name="items">Parameters for substitution in the format string.</param>
         public static void ConsoleWithLog(uint level, IKeyed dev, string format, params object[] items)
         {
             var str = string.Format(format, items);
@@ -407,7 +442,7 @@ namespace PepperDash.Core
         /// <param name="str"></param>
         public static void LogError(ErrorLogLevel errorLogLevel, string str)
         {
-            string msg = string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
+            var msg = string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
             switch (errorLogLevel)
             {
                 case ErrorLogLevel.Error:
@@ -427,14 +462,15 @@ namespace PepperDash.Core
         /// </summary>
         static void SaveMemoryOnTimeout()
         {
-            if (SaveTimer == null)
-                SaveTimer = new CTimer(o =>
+            Console(0, "Saving debug settings");
+            if (_saveTimer == null)
+                _saveTimer = new CTimer(o =>
                 {
-                    SaveTimer = null;
+                    _saveTimer = null;
                     SaveMemory();
                 }, SaveTimeoutMs);
             else
-                SaveTimer.Reset(SaveTimeoutMs);
+                _saveTimer.Reset(SaveTimeoutMs);
         }
 
         /// <summary>
@@ -446,9 +482,9 @@ namespace PepperDash.Core
             //if (!Directory.Exists(dir))
             //    Directory.Create(dir);
 
-            using (StreamWriter sw = new StreamWriter(GetMemoryFileName()))
+            using (var sw = new StreamWriter(GetMemoryFileName()))
             {
-                var json = JsonConvert.SerializeObject(Contexts);
+                var json = JsonConvert.SerializeObject(_contexts);
                 sw.Write(json);
                 sw.Flush();
             }
@@ -462,20 +498,20 @@ namespace PepperDash.Core
             var file = GetMemoryFileName();
             if (File.Exists(file))
             {
-                using (StreamReader sr = new StreamReader(file))
+                using (var sr = new StreamReader(file))
                 {
                     var json = sr.ReadToEnd();
-                    Contexts = JsonConvert.DeserializeObject<DebugContextCollection>(json);
+                    _contexts = JsonConvert.DeserializeObject<DebugContextCollection>(json);
 
-                    if (Contexts != null)
+                    if (_contexts != null)
                     {
-                        Debug.Console(1, "Debug memory restored from file");
+                        Console(1, "Debug memory restored from file");
                         return;
                     }
                 }
             }
 
-            Contexts = new DebugContextCollection();
+            _contexts = new DebugContextCollection();
         }
 
         /// <summary>
@@ -483,7 +519,46 @@ namespace PepperDash.Core
         /// </summary>
         static string GetMemoryFileName()
         {
-            return string.Format(@"\NVRAM\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            CheckForMigration();
+            return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+        }
+
+        private static void CheckForMigration()
+        {
+            var oldFilePath = String.Format(@"\nvram\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            var newFilePath = String.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+
+            //check for file at old path
+            if (!File.Exists(oldFilePath))
+            {
+                Console(0, ErrorLogLevel.Notice,
+                    String.Format(
+                        @"Debug settings file not found at \nvram\debugSettings\program{0}. Attempting to use file at \user\debugSettings\program{0}",
+                        InitialParametersClass.ApplicationNumber));
+                return;
+            }
+
+            //create the new directory if it doesn't already exist
+            if (!Directory.Exists(@"\user\debugSettings"))
+            {
+                Directory.CreateDirectory(@"\user\debugSettings");
+            }
+
+            Console(0, ErrorLogLevel.Notice,
+                String.Format(
+                    @"File found at \nvram\debugSettings\program{0}. Migrating to \user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber));
+
+            //Copy file from old path to new path, then delete it. This will overwrite the existing file
+            File.Copy(oldFilePath, newFilePath, true);
+            File.Delete(oldFilePath);
+
+            //Check if the old directory is empty, then delete it if it is
+            if (Directory.GetFiles(@"\nvram\debugSettings").Length > 0)
+            {
+                return;
+            }
+
+            Directory.Delete(@"\nvram\debugSettings");
         }
 
         public enum ErrorLogLevel
