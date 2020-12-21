@@ -1,23 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using Crestron.SimplSharp;
 
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core.DebugThings
 {
+    /// <summary>
+    /// Class to persist current Debug settings across program restarts
+    /// </summary>
 	public class DebugContextCollection
 	{
         /// <summary>
         /// To prevent threading issues with the DeviceDebugSettings collection
         /// </summary>
-        private CCriticalSection DeviceDebugSettingsLock;
+        private readonly CCriticalSection _deviceDebugSettingsLock;
 
-		[JsonProperty("items")]
-		Dictionary<string, DebugContextItem> Items;
+		[JsonProperty("items")] private readonly Dictionary<string, DebugContextItem> _items;
 
         /// <summary>
         /// Collection of the debug settings for each device where the dictionary key is the device key
@@ -26,11 +24,14 @@ namespace PepperDash.Core.DebugThings
         private Dictionary<string, object> DeviceDebugSettings { get; set; }
 
 
+		/// <summary>
+		/// Default constructor
+		/// </summary>
 		public DebugContextCollection()
 		{
-            DeviceDebugSettingsLock = new CCriticalSection();
+            _deviceDebugSettingsLock = new CCriticalSection();
             DeviceDebugSettings = new Dictionary<string, object>();
-			Items = new Dictionary<string, DebugContextItem>();
+			_items = new Dictionary<string, DebugContextItem>();
 		}
 
 		/// <summary>
@@ -39,7 +40,7 @@ namespace PepperDash.Core.DebugThings
 		/// </summary>
 		/// <param name="contextKey"></param>
 		/// <param name="level"></param>
-		/// <returns>True if the 0 <= level <= 2 and the conte </returns>
+		/// <returns>True if level is between 0 & 2 and the conte </returns>
 		public void SetLevel(string contextKey, int level)
 		{
 			if (level < 0 || level > 2)
@@ -54,9 +55,9 @@ namespace PepperDash.Core.DebugThings
 		/// <returns></returns>
 		public DebugContextItem GetOrCreateItem(string contextKey)
 		{
-			if (!Items.ContainsKey(contextKey))
-				Items[contextKey] = new DebugContextItem(this) { Level = 0 };
-			return Items[contextKey];
+			if (!_items.ContainsKey(contextKey))
+				_items[contextKey] = new DebugContextItem { Level = 0 };
+			return _items[contextKey];
 		}
 
 
@@ -68,12 +69,21 @@ namespace PepperDash.Core.DebugThings
         /// <returns></returns>
         public void SetDebugSettingsForKey(string deviceKey, object settings)
         {
-            if(DeviceDebugSettings.ContainsKey(deviceKey))
+            try
             {
-                DeviceDebugSettings[deviceKey] = settings;
+                _deviceDebugSettingsLock.Enter();
+
+                if (DeviceDebugSettings.ContainsKey(deviceKey))
+                {
+                    DeviceDebugSettings[deviceKey] = settings;
+                }
+                else
+                    DeviceDebugSettings.Add(deviceKey, settings);
             }
-            else
-                DeviceDebugSettings.Add(deviceKey, settings);
+            finally
+            {
+                _deviceDebugSettingsLock.Leave();
+            }
         }
 
         /// <summary>
@@ -87,6 +97,9 @@ namespace PepperDash.Core.DebugThings
         }
 	}
 
+	/// <summary>
+	/// Contains information about 
+	/// </summary>
 	public class DebugContextItem
 	{
         /// <summary>
@@ -100,10 +113,5 @@ namespace PepperDash.Core.DebugThings
         /// </summary>
         [JsonProperty("doNotLoadOnNextBoot")]
         public bool DoNotLoadOnNextBoot { get; set; }
-
-		public DebugContextItem(DebugContextCollection parent)
-		{
-
-		}
 	}
 }
