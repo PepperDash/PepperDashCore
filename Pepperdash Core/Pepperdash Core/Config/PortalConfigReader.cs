@@ -108,6 +108,11 @@ namespace PepperDash.Core.Config
 			else
 				merged.Add("tieLines", new JArray());
 
+            if (template["joinMaps"] != null)
+                merged.Add("joinMaps", template["joinMaps"]);
+            else
+                merged.Add("joinMaps", new JObject());
+
 			if (system["global"] != null)
 				merged.Add("global", Merge(template["global"], system["global"], "global"));
 			else
