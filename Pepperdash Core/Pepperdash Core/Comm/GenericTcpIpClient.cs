@@ -373,14 +373,14 @@ namespace PepperDash.Core
 		/// </summary>
 		public void SendText(string text)
 		{
+            if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                Debug.Console(0, this, "Sending text: '{0}'", text);
+
 			var bytes = Encoding.GetEncoding(28591).GetBytes(text);
 			// Check debug level before processing byte array
-            if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+            
             if(Client != null)
 			    Client.SendData(bytes, bytes.Length);
-
-
 		}
 
 		/// <summary>
@@ -415,7 +415,7 @@ namespace PepperDash.Core
         /// <param name="clientSocketStatus"></param>
 		void Client_SocketStatusChange(TCPClient client, SocketStatus clientSocketStatus)
 		{
-			Debug.Console(1, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
+			Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
 			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && !DisconnectCalledByUser && AutoReconnect)
 				WaitAndTryReconnect();
 
