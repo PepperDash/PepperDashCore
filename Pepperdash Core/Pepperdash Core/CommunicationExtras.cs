@@ -141,7 +141,7 @@ namespace PepperDash.Core
 
         public static string GetDebugText(string text)
         {
-            return Regex.Replace(text, @"[^\u0000-\u007F]|\p{Cc}", a => string.Format("[{0:X2}]", (byte)a.Value[0]));
+            return Regex.Replace(text, @"[^\u0000-\u007F]|\p{Cc}", a => GetEscapedText(a.Value));
         }
 	}
 }
