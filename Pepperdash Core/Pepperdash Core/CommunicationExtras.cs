@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
-
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -138,5 +138,10 @@ namespace PepperDash.Core
 			var bytes = Encoding.GetEncoding(28591).GetBytes(text);
 			return String.Concat(bytes.Select(b => string.Format(@"[{0:X2}]", (int)b)).ToArray());
 		}
+
+        public static string GetDebugText(string text)
+        {
+            return Regex.Replace(text, @"[^\u0000-\u007F]|\p{Cc}", a => string.Format("[{0:X2}]", (byte)a.Value[0]));
+        }
 	}
 }
