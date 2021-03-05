@@ -432,7 +432,7 @@ namespace PepperDash.Core
                 if (Client != null)
                 {
                     if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, text);
+                        Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
 
                     TheStream.Write(text);
                     TheStream.Flush();

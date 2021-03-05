@@ -376,7 +376,7 @@ namespace PepperDash.Core
 			var bytes = Encoding.GetEncoding(28591).GetBytes(text);
 			// Check debug level before processing byte array
             if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+                Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
             if(Client != null)
 			    Client.SendData(bytes, bytes.Length);
 
