@@ -284,9 +284,17 @@ namespace PepperDash.Core
         /// </summary>
 		public void Disconnect()
 		{
+            DisconnectCalledByUser = true;
+
+            // Stop trying reconnects, if we are
+            if (RetryTimer != null)
+            {
+                RetryTimer.Stop();
+                RetryTimer = null;
+            }
+
             if (Client != null)
             {
-                DisconnectCalledByUser = true;
                 DisconnectClient();
                 Client = null;
                 Debug.Console(1, this, "Disconnected");
@@ -329,7 +337,15 @@ namespace PepperDash.Core
                 Debug.Console(1, this, "Attempting reconnect, status={0}", Client.ClientStatus);
 
                 if (!DisconnectCalledByUser)
-                    RetryTimer = new CTimer(o => { Client.ConnectToServerAsync(ConnectToServerCallback); }, AutoReconnectIntervalMs);
+                    RetryTimer = new CTimer(o => 
+                    {
+                        if (Client == null)
+                        {
+                            return;
+                        }
+                        
+                        Client.ConnectToServerAsync(ConnectToServerCallback); 
+                    }, AutoReconnectIntervalMs);
             }
 
 		}
