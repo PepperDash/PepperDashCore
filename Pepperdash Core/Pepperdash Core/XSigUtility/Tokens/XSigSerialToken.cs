@@ -32,7 +32,7 @@ namespace PepperDash.Core.Intersystem.Tokens
             var serialBytes = String.IsNullOrEmpty(Value) ? new byte[0] : Encoding.GetEncoding(28591).GetBytes(Value);
             
             var xsig = new byte[serialBytes.Length + 3];
-            xsig[0] = (byte)(0xC8 | (Index >> 7));
+            xsig[0] = (byte)(0xC8 | (Index-1 >> 7));
             xsig[1] = (byte)((Index - 1) & 0x7F);
             xsig[xsig.Length - 1] = 0xFF;
 
