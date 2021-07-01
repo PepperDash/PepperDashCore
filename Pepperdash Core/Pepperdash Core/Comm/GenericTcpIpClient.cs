@@ -364,14 +364,20 @@ namespace PepperDash.Core
                     var bytes = client.IncomingDataBuffer.Take(numBytes).ToArray();
                     var bytesHandler = BytesReceived;
                     if (bytesHandler != null)
+                    {
+                        if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                        {
+                            Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
+                        }
                         bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
+                    }
                     var textHandler = TextReceived;
                     if (textHandler != null)
                     {
                         var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
 
                         if (StreamDebugging.RxStreamDebuggingIsEnabled)
-                            Debug.Console(0, this, "Recevied: '{0}'", str);
+                            Debug.Console(0, this, "Received {1} characters of text: '{0}'", ComTextHelper.GetDebugText(str), str.Length);
 
                         textHandler(this, new GenericCommMethodReceiveTextArgs(str));
 
@@ -392,7 +398,7 @@ namespace PepperDash.Core
 			var bytes = Encoding.GetEncoding(28591).GetBytes(text);
 			// Check debug level before processing byte array
             if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+                Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
             if(Client != null)
 			    Client.SendData(bytes, bytes.Length);
 
