@@ -266,19 +266,21 @@ namespace PepperDash.Core
 				Debug.Console(2, this, "Bytes: {0}", bytes.ToString());
                 var bytesHandler = BytesReceived;
                 if (bytesHandler != null)
+                {
+                    if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                    {
+                        Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
+                    }
                     bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
-                else
-                    Debug.Console(2, this, "bytesHandler is null");
+                }
                 var textHandler = TextReceived;
                 if (textHandler != null)
                 {
                     if (StreamDebugging.RxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Recevied: '{0}'", str);
+                        Debug.Console(0, this, "Received {1} characters of text: '{0}'", ComTextHelper.GetDebugText(str), str.Length);
                     
                     textHandler(this, new GenericCommMethodReceiveTextArgs(str));
                 }
-                else
-                    Debug.Console(2, this, "textHandler is null");
             }
             server.ReceiveDataAsync(Receive);
 
