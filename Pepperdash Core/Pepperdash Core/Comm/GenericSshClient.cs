@@ -435,7 +435,7 @@ namespace PepperDash.Core
 		{
 			try
 			{
-                if (Client != null)
+                if (Client != null && TheStream != null && IsConnected)
                 {
                     if (StreamDebugging.TxStreamDebuggingIsEnabled)
                         Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
@@ -443,6 +443,10 @@ namespace PepperDash.Core
                     TheStream.Write(text);
                     TheStream.Flush();
 
+                }
+                else
+                {
+                    Debug.Console(2, this, "Client is null or disconnected.  Cannot Send Text");
                 }
 			}
 			catch (Exception ex)
@@ -464,13 +468,17 @@ namespace PepperDash.Core
 		{
 			try
 			{
-                if (Client != null)
+                if (Client != null && TheStream != null && IsConnected)
                 {
                     if (StreamDebugging.TxStreamDebuggingIsEnabled)
                         Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
 
                     TheStream.Write(bytes, 0, bytes.Length);
                     TheStream.Flush();
+                }
+                else
+                {
+                    Debug.Console(2, this, "Client is null or disconnected.  Cannot Send Bytes");
                 }
 			}
 			catch
