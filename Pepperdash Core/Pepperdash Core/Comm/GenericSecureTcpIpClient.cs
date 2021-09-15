@@ -8,9 +8,12 @@ using Crestron.SimplSharp.CrestronSockets;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// A class to handle secure TCP/IP communications with a server
+    /// </summary>
     public class GenericSecureTcpIpClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
     {
-        private const string SplusKey = "Uninitialized Secure Tcp Client";
+        private const string SplusKey = "Uninitialized Secure Tcp _client";
         /// <summary>
         /// Stream debugging 
         /// </summary>
@@ -26,11 +29,40 @@ namespace PepperDash.Core
         /// </summary>
         public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
 
+        #region GenericSecureTcpIpClient Events & Delegates
+
         /// <summary>
         /// 
         /// </summary>
         //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;		
         public event EventHandler<GenericTcpServerSocketStatusChangeEventArgs> ConnectionChange;
+
+        // TODO [ ] review event handler to determine best implementation for secure class
+        event EventHandler<GenericSocketStatusChageEventArgs> ISocketStatus.ConnectionChange
+        {
+            add { throw new NotImplementedException(); }
+            remove { throw new NotImplementedException(); }
+        } 
+
+        /// <summary>
+        /// Auto reconnect evant handler
+        /// </summary>
+        public event EventHandler AutoReconnectTriggered;
+
+        /// <summary>
+        /// Event for Receiving text. Once subscribed to this event the receive callback will start a thread that dequeues the messages and invokes the event on a new thread. 
+        /// It is not recommended to use both the TextReceived event and the TextReceivedQueueInvoke event. 
+        /// </summary>
+        public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceivedQueueInvoke;
+        
+        /// <summary>
+        /// For a client with a pre shared key, this will fire after the communication is established and the key exchange is complete. If you require
+        /// a key and subscribe to the socket change event and try to send data on a connection the data sent will interfere with the key exchange and disconnect.
+        /// </summary>
+        public event EventHandler<GenericTcpServerClientReadyForcommunicationsEventArgs> ClientReadyForCommunications;
+
+        #endregion
+
 
         #region GenricTcpIpClient properties
 
@@ -45,9 +77,9 @@ namespace PepperDash.Core
             set
             {
                 _hostname = value;
-                if (Client != null)
+                if (_client != null)
                 {
-                    Client.AddressClientConnectedTo = _hostname;
+                    _client.AddressClientConnectedTo = _hostname;
                 }
             }
         }
@@ -74,14 +106,14 @@ namespace PepperDash.Core
         /// <summary>
         /// Internal secure client
         /// </summary>
-        public SecureTCPClient Client { get; private set; }
+        private SecureTCPClient _client;
 
         /// <summary>
         /// Bool showing if socket is connected
         /// </summary>
         public bool IsConnected
         {
-            get { return Client != null && Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
+            get { return _client != null && _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
         }
 
         /// <summary>
@@ -93,13 +125,13 @@ namespace PepperDash.Core
         }
 
         /// <summary>
-        /// Client socket status Read only
+        /// _client socket status Read only
         /// </summary>
         public SocketStatus ClientStatus
         {
             get
             {
-                return Client == null ? SocketStatus.SOCKET_STATUS_NO_CONNECT : Client.ClientStatus;
+                return _client == null ? SocketStatus.SOCKET_STATUS_NO_CONNECT : _client.ClientStatus;
             }
         }
 
@@ -151,7 +183,7 @@ namespace PepperDash.Core
         /// </summary>
         public bool Connected
         {
-            get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
+            get { return _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
         }
 
         // private Timer for auto reconnect
@@ -247,6 +279,23 @@ namespace PepperDash.Core
         private int ConnectionCount;
 
         bool ProgramIsStopping;
+
+        /// <summary>
+        /// Queue lock
+        /// </summary>
+        CCriticalSection DequeueLock = new CCriticalSection();
+
+        /// <summary>
+        /// Receive Queue size. Defaults to 20. Will set to 20 if QueueSize property is less than 20. Use constructor or set queue size property before
+        /// calling initialize. 
+        /// </summary>
+        public int ReceiveQueueSize { get; set; }
+
+        /// <summary>
+        /// Queue to temporarily store received messages with the source IP and Port info. Defaults to size 20. Use constructor or set queue size property before
+        /// calling initialize. 
+        /// </summary>
+        private CrestronQueue<GenericTcpServerCommMethodReceiveTextArgs> MessageQueue;
 
         #endregion
 
@@ -367,7 +416,7 @@ namespace PepperDash.Core
         {
             if (programEventType == eProgramStatusEventType.Stopping || programEventType == eProgramStatusEventType.Paused)
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Program stopping. Closing Client connection");
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Program stopping. Closing _client connection");
                 ProgramIsStopping = true;
                 Disconnect();
             }
@@ -376,9 +425,9 @@ namespace PepperDash.Core
 
         public override bool Deactivate()
         {
-            if (Client != null)
+            if (_client != null)
             {
-                Client.SocketStatusChange -= this.Client_SocketStatusChange;
+                _client.SocketStatusChange -= this.Client_SocketStatusChange;
                 DisconnectClient();
             }
             return true;
@@ -428,18 +477,18 @@ namespace PepperDash.Core
                 }
 
                 // clean up previous client
-                if (Client != null)
+                if (_client != null)
                 {
                     Disconnect();
                 }
                 DisconnectCalledByUser = false;
 
-                Client = new SecureTCPClient(Hostname, Port, BufferSize);
-                Client.SocketStatusChange += Client_SocketStatusChange;
+                _client = new SecureTCPClient(Hostname, Port, BufferSize);
+                _client.SocketStatusChange += Client_SocketStatusChange;
                 if (HeartbeatEnabled)
-                    Client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
-                Client.AddressClientConnectedTo = Hostname;
-                Client.PortNumber = Port;
+                    _client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
+                _client.AddressClientConnectedTo = Hostname;
+                _client.PortNumber = Port;
                 // SecureClient = c;
 
                 //var timeOfConnect = DateTime.Now.ToString("HH:mm:ss.fff");
@@ -461,7 +510,7 @@ namespace PepperDash.Core
                 }, 30000);
 
                 Debug.Console(2, this, "Making Connection Count:{0}", ConnectionCount);
-                Client.ConnectToServerAsync(o =>
+                _client.ConnectToServerAsync(o =>
                 {
                     Debug.Console(2, this, "ConnectToServerAsync Count:{0} Ran!", ConnectionCount);
 
@@ -473,7 +522,7 @@ namespace PepperDash.Core
 
                     if (o.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
                     {
-                        Debug.Console(2, this, "Client connected to {0} on port {1}", o.AddressClientConnectedTo, o.LocalPortNumberOfClient);
+                        Debug.Console(2, this, "_client connected to {0} on port {1}", o.AddressClientConnectedTo, o.LocalPortNumberOfClient);
                         o.ReceiveDataAsync(Receive);
 
                         if (SharedKeyRequired)
@@ -509,7 +558,7 @@ namespace PepperDash.Core
             }
             catch (Exception ex)
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Client connection exception: {0}", ex.Message);
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "_client connection exception: {0}", ex.Message);
                 IsTryingToConnect = false;
                 CheckClosedAndTryReconnect();
             }
@@ -531,7 +580,7 @@ namespace PepperDash.Core
                 RetryTimer = null;
             }
 
-            if (Client != null)
+            if (_client != null)
             {
                 DisconnectClient();
                 Debug.Console(1, this, "Disconnected");
@@ -543,19 +592,19 @@ namespace PepperDash.Core
         /// </summary>
         public void DisconnectClient()
         {
-            if (Client == null) return;
+            if (_client == null) return;
 
             Debug.Console(1, this, "Disconnecting client");
             if (IsConnected)
-                Client.DisconnectFromServer();
+                _client.DisconnectFromServer();
 
             // close up client. ALWAYS use this when disconnecting.
             IsTryingToConnect = false;
 
-            Debug.Console(2, this, "Disconnecting Client {0}", DisconnectCalledByUser ? ", Called by user" : "");
-            Client.SocketStatusChange -= Client_SocketStatusChange;
-            Client.Dispose();
-            Client = null;
+            Debug.Console(2, this, "Disconnecting _client {0}", DisconnectCalledByUser ? ", Called by user" : "");
+            _client.SocketStatusChange -= Client_SocketStatusChange;
+            _client.Dispose();
+            _client = null;
 
             if (ConnectFailTimer == null) return;
             ConnectFailTimer.Stop();
@@ -570,13 +619,13 @@ namespace PepperDash.Core
         //{
         //    IsTryingToConnect = false;
 
-        //    if (Client != null)
+        //    if (_client != null)
         //    {
         //        //SecureClient.DisconnectFromServer();
-        //        Debug.Console(2, this, "Disconnecting Client {0}", DisconnectCalledByUser ? ", Called by user" : "");
-        //        Client.SocketStatusChange -= Client_SocketStatusChange;
-        //        Client.Dispose();
-        //        Client = null;
+        //        Debug.Console(2, this, "Disconnecting _client {0}", DisconnectCalledByUser ? ", Called by user" : "");
+        //        _client.SocketStatusChange -= Client_SocketStatusChange;
+        //        _client.Dispose();
+        //        _client = null;
         //    }
         //    if (ConnectFailTimer != null)
         //    {
@@ -586,136 +635,16 @@ namespace PepperDash.Core
         //    }
         //}
 
-
-
-
-
-
-
-
-
-
-
-
-
-        /// <summary>
-        /// Band aid delegate for choked server
-        /// </summary>
-        internal delegate void ConnectionHasHungCallbackDelegate();
-
-        #region Events
-
-        //public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
-
-
-        event EventHandler<GenericCommMethodReceiveTextArgs> ICommunicationReceiver.TextReceived
-        {
-            add { throw new NotImplementedException(); }
-            remove { throw new NotImplementedException(); }
-        }
-
-
-
-        public event EventHandler AutoReconnectTriggered;
-
-        /// <summary>
-        /// Event for Receiving text. Once subscribed to this event the receive callback will start a thread that dequeues the messages and invokes the event on a new thread. 
-        /// It is not recommended to use both the TextReceived event and the TextReceivedQueueInvoke event. 
-        /// </summary>
-        public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceivedQueueInvoke;
-
-
-
-
-
-        /// <summary>
-        /// This is something of a band-aid callback. If the client times out during the connection process, because the server
-        /// is stuck, this will fire.  It is intended to be used by the Server class monitor client, to help
-        /// keep a watch on the server and reset it if necessary.
-        /// </summary>
-        internal ConnectionHasHungCallbackDelegate ConnectionHasHungCallback;
-
-        /// <summary>
-        /// For a client with a pre shared key, this will fire after the communication is established and the key exchange is complete. If you require
-        /// a key and subscribe to the socket change event and try to send data on a connection the data sent will interfere with the key exchange and disconnect.
-        /// </summary>
-        public event EventHandler<GenericTcpServerClientReadyForcommunicationsEventArgs> ClientReadyForCommunications;
-
-        #endregion
-
-        #region Properties & Variables
-
-
-
-
-
-
-
-
-        event EventHandler<GenericSocketStatusChageEventArgs> ISocketStatus.ConnectionChange
-        {
-            add { throw new NotImplementedException(); }
-            remove { throw new NotImplementedException(); }
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /// <summary>
-        /// Queue lock
-        /// </summary>
-        CCriticalSection DequeueLock = new CCriticalSection();
-
-        /// <summary>
-        /// Receive Queue size. Defaults to 20. Will set to 20 if QueueSize property is less than 20. Use constructor or set queue size property before
-        /// calling initialize. 
-        /// </summary>
-        public int ReceiveQueueSize { get; set; }
-
-        /// <summary>
-        /// Queue to temporarily store received messages with the source IP and Port info. Defaults to size 20. Use constructor or set queue size property before
-        /// calling initialize. 
-        /// </summary>
-        private CrestronQueue<GenericTcpServerCommMethodReceiveTextArgs> MessageQueue;
-
-
-        #endregion
-
-
+       
         #region Methods
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-        /// <summary>ff
+        /// <summary>
         /// Called from Connect failure or Socket Status change if 
         /// auto reconnect and socket disconnected (Not disconnected by user)
         /// </summary>
         void CheckClosedAndTryReconnect()
         {
-            if (Client != null)
+            if (_client != null)
             {
                 Debug.Console(2, this, "Cleaning up remotely closed/failed connection.");
                 Disconnect();
@@ -751,7 +680,7 @@ namespace PepperDash.Core
                 {
                     var bytes = client.IncomingDataBuffer.Take(numBytes).ToArray();
                     str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
-                    Debug.Console(2, this, "Client Received:\r--------\r{0}\r--------", str);
+                    Debug.Console(2, this, "_client Received:\r--------\r{0}\r--------", str);
                     if (!string.IsNullOrEmpty(checkHeartbeat(str)))
                     {
 
@@ -926,7 +855,7 @@ namespace PepperDash.Core
             }
             catch (Exception ex)
             {
-                ErrorLog.Error("Heartbeat timeout Error on Client: {0}, {1}", Key, ex);
+                ErrorLog.Error("Heartbeat timeout Error on _client: {0}, {1}", Key, ex);
             }
         }
 
@@ -952,9 +881,9 @@ namespace PepperDash.Core
                 try
                 {
                     var bytes = Encoding.GetEncoding(28591).GetBytes(text);
-                    if (Client != null && Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
+                    if (_client != null && _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
                     {
-                        Client.SendDataAsync(bytes, bytes.Length, (c, n) =>
+                        _client.SendDataAsync(bytes, bytes.Length, (c, n) =>
                         {
                             // HOW IN THE HELL DO WE CATCH AN EXCEPTION IN SENDING?????
                             if (n <= 0)
@@ -980,8 +909,8 @@ namespace PepperDash.Core
             {
                 try
                 {
-                    if (Client != null && Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
-                        Client.SendData(bytes, bytes.Length);
+                    if (_client != null && _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
+                        _client.SendData(bytes, bytes.Length);
                 }
                 catch (Exception ex)
                 {
@@ -1008,7 +937,7 @@ namespace PepperDash.Core
 
                 OnConnectionChange();
                 // The client could be null or disposed by this time...
-                if (Client == null || Client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
+                if (_client == null || _client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
                 {
                     HeartbeatStop();
                     OnClientReadyForcommunications(false); // socket has gone low
@@ -1027,8 +956,10 @@ namespace PepperDash.Core
         void OnConnectionChange()
         {
             var handler = ConnectionChange;
-            if (handler != null)
-                ConnectionChange(this, new GenericTcpServerSocketStatusChangeEventArgs(this, Client.ClientStatus));
+            if (handler == null) return;
+
+
+            handler(this, new GenericTcpServerSocketStatusChangeEventArgs(this, _client.ClientStatus));
         }
 
         /// <summary>
@@ -1037,10 +968,13 @@ namespace PepperDash.Core
         void OnClientReadyForcommunications(bool isReady)
         {
             IsReadyForCommunication = isReady;
-            if (this.IsReadyForCommunication) { HeartbeatStart(); }
+            if (IsReadyForCommunication) 
+                HeartbeatStart();
+
             var handler = ClientReadyForCommunications;
-            if (handler != null)
-                handler(this, new GenericTcpServerClientReadyForcommunicationsEventArgs(IsReadyForCommunication));
+            if (handler == null) return;
+            
+            handler(this, new GenericTcpServerClientReadyForcommunicationsEventArgs(IsReadyForCommunication));
         }
         #endregion
     }
