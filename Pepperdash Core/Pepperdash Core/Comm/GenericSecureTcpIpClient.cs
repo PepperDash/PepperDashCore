@@ -35,14 +35,7 @@ namespace PepperDash.Core
         /// 
         /// </summary>
         //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;		
-        public event EventHandler<GenericTcpServerSocketStatusChangeEventArgs> ConnectionChange;
-
-        // TODO [ ] review event handler to determine best implementation for secure class
-        event EventHandler<GenericSocketStatusChageEventArgs> ISocketStatus.ConnectionChange
-        {
-            add { throw new NotImplementedException(); }
-            remove { throw new NotImplementedException(); }
-        } 
+        public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
         /// <summary>
         /// Auto reconnect evant handler
@@ -958,8 +951,7 @@ namespace PepperDash.Core
             var handler = ConnectionChange;
             if (handler == null) return;
 
-
-            handler(this, new GenericTcpServerSocketStatusChangeEventArgs(this, _client.ClientStatus));
+            handler(this, new GenericSocketStatusChageEventArgs(this));
         }
 
         /// <summary>
