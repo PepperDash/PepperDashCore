@@ -193,7 +193,7 @@ namespace PepperDash.Core
         {
             if (IsConnecting)
             {
-                Debug.Console(0, this, "Connection attempt in progress.  Exiting Connect()");
+                Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Connection attempt in progress.  Exiting Connect()");
                 return;
             }
 
@@ -216,7 +216,7 @@ namespace PepperDash.Core
             if (string.IsNullOrEmpty(Hostname) || Port < 1 || Port > 65535
                 || Username == null || Password == null)
             {
-                Debug.Console(1, this, "Connect failed.  Check hostname, port, username and password are set or not null");
+                Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Connect failed.  Check hostname, port, username and password are set or not null");
                 return;
             }
 
@@ -248,7 +248,7 @@ namespace PepperDash.Core
                 TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
                 TheStream.DataReceived += Stream_DataReceived;
                 //TheStream.ErrorOccurred += TheStream_ErrorOccurred;
-                Debug.Console(1, this, "Connected");
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connected");
                 ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
                 IsConnecting = false;
                 return; // Success will not pass here
@@ -257,26 +257,27 @@ namespace PepperDash.Core
             {
                 var ie = e.InnerException; // The details are inside!!
                 if (ie is SocketException)
-                    Debug.Console(1, this, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.GetType());
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.Message);
                 else if (ie is System.Net.Sockets.SocketException)
-                    Debug.Console(1, this, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
                         Key, Hostname, Port, ie.GetType());
                 else if (ie is SshAuthenticationException)
                 {
-                    Debug.Console(1, this, "Authentication failure for username '{0}', ({1})",
-                        Username, ie.GetType());
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Authentication failure for username '{0}', ({1})",
+                        Username, ie.Message);
                 }
                 else
-                    Debug.Console(1, this, "Error on connect:\r({0})", e);
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error on connect:\r({0})", e);
+
+                ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
+                HandleConnectionFailure();
             }
             catch (Exception e)
             {
-                Debug.Console(1, this, "Unhandled exception on connect:\r({0})", e);
-            }
-
-            // Sucess will not make it this far
-            ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
-            HandleConnectionFailure();
+                Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Unhandled exception on connect:\r({0})", e);
+                ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
+                HandleConnectionFailure();
+            }  
         }
 
 
@@ -335,7 +336,7 @@ namespace PepperDash.Core
 						Connect();
 						ReconnectTimer = null;
 					}, AutoReconnectIntervalMs);
-					Debug.Console(1, this, "Attempting connection in {0} seconds",
+					Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Attempting connection in {0} seconds",
 						(float)(AutoReconnectIntervalMs / 1000));
 				}
 				else
@@ -402,9 +403,9 @@ namespace PepperDash.Core
 		void Client_ErrorOccurred(object sender, Crestron.SimplSharp.Ssh.Common.ExceptionEventArgs e)
 		{
 			if (e.Exception is SshConnectionException || e.Exception is System.Net.Sockets.SocketException)
-				Debug.Console(1, this, "Disconnected by remote");
+				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Disconnected by remote");
 			else
-				Debug.Console(1, this, "Unhandled SSH client error: {0}", e.Exception);
+				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Unhandled SSH client error: {0}", e.Exception);
 
 			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
 			HandleConnectionFailure();
@@ -444,7 +445,7 @@ namespace PepperDash.Core
 			    Debug.Console(0, "Exception: {0}", ex.Message);
 			    Debug.Console(0, "Stack Trace: {0}", ex.StackTrace);
 
-				Debug.Console(1, this, "Stream write failed. Disconnected, closing");
+				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed. Disconnected, closing");
 				ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
 				HandleConnectionFailure();
 			}
@@ -469,7 +470,7 @@ namespace PepperDash.Core
 			}
 			catch
 			{
-				Debug.Console(1, this, "Stream write failed. Disconnected, closing");
+				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed. Disconnected, closing");
 				ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
 				HandleConnectionFailure();
 			}
