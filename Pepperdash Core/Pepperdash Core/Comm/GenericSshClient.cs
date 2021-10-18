@@ -277,7 +277,10 @@ namespace PepperDash.Core
                 Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Unhandled exception on connect:\r({0})", e);
                 ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
                 HandleConnectionFailure();
-            }  
+            }
+
+            ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
+            HandleConnectionFailure();
         }
 
 
