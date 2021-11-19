@@ -84,7 +84,7 @@ namespace PepperDash.Core
                     SaveTimer = null;
                 }
                 Console(0, "Saving debug settings");
-                SaveMemory();
+               // SaveMemory();
             }
         }
 
