@@ -35,11 +35,6 @@ namespace PepperDash.Core
 		public event EventHandler<GenericUdpReceiveTextExtraArgs> DataRecievedExtra;
 
         /// <summary>
-        /// Queue to temporarily store received messages with the source IP and Port info
-        /// </summary>
-		private CrestronQueue<GenericUdpReceiveTextExtraArgs> MessageQueue;
-
-        /// <summary>
         /// 
         /// </summary>
         public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
@@ -68,8 +63,6 @@ namespace PepperDash.Core
             get { return (ushort)Server.ServerStatus; }
         }
 
-
-		CCriticalSection DequeueLock;
         /// <summary>
         /// Address of server
         /// </summary>
@@ -124,8 +117,6 @@ namespace PepperDash.Core
         {
             StreamDebugging = new CommunicationStreamDebugging(SplusKey);
             BufferSize = 5000;
-            DequeueLock = new CCriticalSection();
-            MessageQueue = new CrestronQueue<GenericUdpReceiveTextExtraArgs>();
 
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
             CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
@@ -145,9 +136,6 @@ namespace PepperDash.Core
             Hostname = address;
             Port = port;
             BufferSize = buffefSize;
-
-			DequeueLock = new CCriticalSection();
-			MessageQueue = new CrestronQueue<GenericUdpReceiveTextExtraArgs>();
 
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
             CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
@@ -186,11 +174,11 @@ namespace PepperDash.Core
         /// <param name="programEventType"></param>
         void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
-            if (programEventType == eProgramStatusEventType.Stopping)
-            {
-                Debug.Console(1, this, "Program stopping. Disabling Server");
-                Disconnect();
-            }
+            if (programEventType != eProgramStatusEventType.Stopping) 
+                return;
+
+            Debug.Console(1, this, "Program stopping. Disabling Server");
+            Disconnect();
         }
 
         /// <summary>
@@ -255,68 +243,47 @@ namespace PepperDash.Core
         {
             Debug.Console(2, this, "Received {0} bytes", numBytes);
 
-            if (numBytes > 0)
+            try
             {
-				var sourceIp = Server.IPAddressLastMessageReceivedFrom;
-				var sourcePort = Server.IPPortLastMessageReceivedFrom;
-                var bytes = server.IncomingDataBuffer.Take(numBytes).ToArray();
-				var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
-				MessageQueue.TryToEnqueue(new GenericUdpReceiveTextExtraArgs(str, sourceIp, sourcePort, bytes));
+                if (numBytes <= 0) 
+                    return;
 
-				Debug.Console(2, this, "Bytes: {0}", bytes.ToString());
+                var sourceIp = Server.IPAddressLastMessageReceivedFrom;
+                var sourcePort = Server.IPPortLastMessageReceivedFrom;
+                var bytes = server.IncomingDataBuffer.Take(numBytes).ToArray();
+                var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+
+                var dataRecivedExtra = DataRecievedExtra;
+                if (dataRecivedExtra != null)
+                    dataRecivedExtra(this, new GenericUdpReceiveTextExtraArgs(str, sourceIp, sourcePort, bytes));
+
+                Debug.Console(2, this, "Bytes: {0}", bytes.ToString());
                 var bytesHandler = BytesReceived;
                 if (bytesHandler != null)
+                {
+                    if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                    {
+                        Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
+                    }
                     bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
-                else
-                    Debug.Console(2, this, "bytesHandler is null");
+                }
                 var textHandler = TextReceived;
                 if (textHandler != null)
                 {
                     if (StreamDebugging.RxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Recevied: '{0}'", str);
-                    
+                        Debug.Console(0, this, "Received {1} characters of text: '{0}'", ComTextHelper.GetDebugText(str), str.Length);
                     textHandler(this, new GenericCommMethodReceiveTextArgs(str));
                 }
-                else
-                    Debug.Console(2, this, "textHandler is null");
             }
-            server.ReceiveDataAsync(Receive);
-
-            //  Attempt to enter the CCritical Secion and if we can, start the dequeue thread 
-            var gotLock = DequeueLock.TryEnter();
-            if (gotLock)
-                CrestronInvoke.BeginInvoke((o) => DequeueEvent());
+            catch (Exception ex)
+            {
+                Debug.Console(0, "GenericUdpServer Receive error: {0}{1}", ex.Message, ex.StackTrace);
+            }
+            finally
+            {
+                server.ReceiveDataAsync(Receive);
+            }
         }
-
-        /// <summary>
-        /// This method gets spooled up in its own thread an protected by a CCriticalSection to prevent multiple threads from running concurrently.
-        /// It will dequeue items as they are enqueued automatically.
-        /// </summary>
-		void DequeueEvent()
-		{
-			try
-			{
-				while (true)
-				{
-					// Pull from Queue and fire an event. Block indefinitely until an item can be removed, similar to a Gather.
-					var message = MessageQueue.Dequeue();
-					var dataRecivedExtra = DataRecievedExtra;
-					if (dataRecivedExtra != null)
-					{
-						dataRecivedExtra(this, message);
-					}
-				}
-			}
-			catch (Exception e)
-			{
-				Debug.Console(0, "GenericUdpServer DequeueEvent error: {0}\r", e);
-			}
-			// Make sure to leave the CCritical section in case an exception above stops this thread, or we won't be able to restart it.
-			if (DequeueLock != null)
-			{
-				DequeueLock.Leave();
-			}
-		}
 
         /// <summary>
         /// General send method
@@ -329,7 +296,7 @@ namespace PepperDash.Core
             if (IsConnected && Server != null)
             {
                 if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                    Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, text);
+                    Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
 
                 Server.SendData(bytes, bytes.Length);
             }

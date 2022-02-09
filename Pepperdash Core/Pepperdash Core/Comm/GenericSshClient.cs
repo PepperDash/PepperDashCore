@@ -383,18 +383,24 @@ namespace PepperDash.Core
 			if (bytes.Length > 0)
 			{
 				var bytesHandler = BytesReceived;
-				if (bytesHandler != null)
-					bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
+			    if (bytesHandler != null)
+			    {
+			        if (StreamDebugging.RxStreamDebuggingIsEnabled)
+			        {
+			            Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
+			        }
+                    bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
+			    }
+					
 				var textHandler = TextReceived;
 				if (textHandler != null)
 				{
 					var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
-					textHandler(this, new GenericCommMethodReceiveTextArgs(str));
-
                     if (StreamDebugging.RxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Recevied: '{0}'", str);
+                        Debug.Console(0, this, "Received: '{0}'", ComTextHelper.GetDebugText(str));
 
-				}
+                    textHandler(this, new GenericCommMethodReceiveTextArgs(str));
+                }
 			}
 		}
 
@@ -433,14 +439,18 @@ namespace PepperDash.Core
 		{
 			try
 			{
-                if (Client != null)
+                if (Client != null && TheStream != null && IsConnected)
                 {
                     if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, text);
+                        Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
 
                     TheStream.Write(text);
                     TheStream.Flush();
 
+                }
+                else
+                {
+                    Debug.Console(2, this, "Client is null or disconnected.  Cannot Send Text");
                 }
 			}
 			catch (Exception ex)
@@ -462,13 +472,17 @@ namespace PepperDash.Core
 		{
 			try
 			{
-                if (Client != null)
+                if (Client != null && TheStream != null && IsConnected)
                 {
                     if (StreamDebugging.TxStreamDebuggingIsEnabled)
                         Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
 
                     TheStream.Write(bytes, 0, bytes.Length);
                     TheStream.Flush();
+                }
+                else
+                {
+                    Debug.Console(2, this, "Client is null or disconnected.  Cannot Send Bytes");
                 }
 			}
 			catch

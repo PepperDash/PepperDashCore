@@ -119,7 +119,14 @@ namespace PepperDash.Core
 		/// <returns></returns>
 		public virtual bool Deactivate() { return true; }
 
-		/// <summary>
+        /// <summary>
+        /// Call this method to start communications with a device. Overriding classes do not need to call base.Initialize()
+        /// </summary>
+	    public virtual void Initialize()
+	    {
+	    }
+
+	    /// <summary>
 		/// Helper method to check object for bool value false and fire an Action method
 		/// </summary>
 		/// <param name="o">Should be of type bool, others will be ignored</param>

@@ -83,6 +83,7 @@
     <Compile Include="Comm\EventArgs.cs" />
     <Compile Include="Comm\GenericSshClient.cs" />
     <Compile Include="Comm\GenericUdpServer.cs" />
+    <Compile Include="Comm\QscCoreDoubleTcpIpClient.cs" />
     <Compile Include="Comm\TcpClientConfigObject.cs" />
     <Compile Include="Comm\TcpServerConfigObject.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
