@@ -319,31 +319,26 @@ namespace PepperDash.Core
 		/// </summary>
 		void HandleConnectionFailure()
 		{
-
             KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
-
-            Debug.Console(2, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
-
-			if (AutoReconnect && ConnectEnabled)
-			{
-				Debug.Console(2, this, "Checking autoreconnect: {0}, {1}ms", 
-					AutoReconnect, AutoReconnectIntervalMs);
-				if (ReconnectTimer == null)// || !ReconnectTimerRunning)
-				{
-					ReconnectTimer = new CTimer(o =>
-					{
-						Connect();
-						ReconnectTimer = null;
-					}, AutoReconnectIntervalMs);
-					Debug.Console(1, this, "Attempting connection in {0} seconds",
-						(float)(AutoReconnectIntervalMs / 1000));
-				}
-				else
-				{
-					Debug.Console(2, this, "{0} second reconnect cycle running",
-						(float)(AutoReconnectIntervalMs / 1000));
-				}
-			}
+            Debug.Console(1, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
+            if (AutoReconnect && ConnectEnabled)
+            {
+                Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+                if (ReconnectTimer == null)
+                {
+                    ReconnectTimer = new CTimer(o =>
+                    {
+                        Connect();
+                    }, AutoReconnectIntervalMs);
+                    Debug.Console(1, this, "Attempting connection in {0} seconds",
+                        (float)(AutoReconnectIntervalMs / 1000));
+                }
+                else
+                {
+                    Debug.Console(1, this, "{0} second reconnect cycle running",
+                        (float)(AutoReconnectIntervalMs / 1000));
+                }
+            }
 		}
 
         /// <summary>
@@ -446,7 +441,7 @@ namespace PepperDash.Core
                 }
                 else
                 {
-                    Debug.Console(2, this, "Client is null or disconnected.  Cannot Send Text");
+                    Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Text");
                 }
 			}
 			catch (Exception ex)
@@ -478,7 +473,7 @@ namespace PepperDash.Core
                 }
                 else
                 {
-                    Debug.Console(2, this, "Client is null or disconnected.  Cannot Send Bytes");
+                    Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Bytes");
                 }
 			}
 			catch
