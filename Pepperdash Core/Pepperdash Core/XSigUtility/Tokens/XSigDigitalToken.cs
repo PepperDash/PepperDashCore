@@ -29,7 +29,7 @@ namespace PepperDash.Core.Intersystem.Tokens
         public override byte[] GetBytes()
         {
             return new[] {
-                (byte)(0x80 | (Value ? 0 : 0x20) | (Index >> 7)),
+                (byte)(0x80 | (Value ? 0 : 0x20) | ((Index - 1) >> 7)),
                 (byte)((Index - 1) & 0x7F)
             };
         }
