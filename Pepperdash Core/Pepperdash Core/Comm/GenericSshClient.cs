@@ -326,23 +326,24 @@ namespace PepperDash.Core
             KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
 
             Debug.Console(1, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
-            if (AutoReconnect && ConnectEnabled)
-            {
-                Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
-                if (ReconnectTimer == null)
-                {
-                    ReconnectTimer = new CTimer(o =>
-                    {
-                        Connect();
-                    }, AutoReconnectIntervalMs);
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Attempting connection in {0} seconds",
-                        (float)(AutoReconnectIntervalMs / 1000));
-                }
-                else
-                {
-                    Debug.Console(1, this, "{0} second reconnect cycle running",
-                        (float)(AutoReconnectIntervalMs / 1000));
-                }
+		    if (AutoReconnect && ConnectEnabled)
+		    {
+		        Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+		        if (ReconnectTimer == null)
+		        {
+		            ReconnectTimer = new CTimer(o =>
+		            {
+		                Connect();
+		            }, AutoReconnectIntervalMs);
+		            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Attempting connection in {0} seconds",
+		                (float) (AutoReconnectIntervalMs/1000));
+		        }
+		        else
+		        {
+		            Debug.Console(1, this, "{0} second reconnect cycle running",
+		                (float) (AutoReconnectIntervalMs/1000));
+		        }
+		    }
 		}
 
         /// <summary>
