@@ -153,7 +153,7 @@ namespace PepperDash.Core
                     {
                         string strToSend = null;
                         if (IncludeDelimiter)
-                            strToSend = lines[i] + StringDelimiters;
+                            strToSend = lines[i] + delimiter;
                         else
                             strToSend = lines[i];
                         handler(this, new GenericCommMethodReceiveTextArgs(strToSend, delimiter));
