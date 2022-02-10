@@ -146,7 +146,7 @@ namespace PepperDash.Core
                 foreach (var delimiter in StringDelimiters)
                 {
                     var lines = Regex.Split(str, delimiter);
-                    if (lines.Length == 0)
+                    if (lines.Length == 1)
                         continue;
                   
                     for (int i = 0; i < lines.Length - 1; i++)
