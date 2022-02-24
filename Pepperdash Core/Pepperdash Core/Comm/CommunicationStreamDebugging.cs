@@ -130,4 +130,15 @@ namespace PepperDash.Core
         Tx = 2,
         Both = Rx | Tx
     }
+
+    /// <summary>
+    /// The available settings for stream debugging response types
+    /// </summary>
+    [Flags]
+    public enum eStreamDebuggingDataTypeSettings
+    {
+        Bytes = 0,
+        Text = 1,
+        Both = Bytes | Text,
+    }
 }
