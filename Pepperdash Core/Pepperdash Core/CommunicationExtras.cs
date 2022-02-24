@@ -110,10 +110,17 @@ namespace PepperDash.Core
 	public class GenericCommMethodReceiveTextArgs : EventArgs
 	{
 		public string Text { get; private set; }
+        public string Delimiter { get; private set; }
 		public GenericCommMethodReceiveTextArgs(string text)
 		{
 			Text = text;
 		}
+
+        public GenericCommMethodReceiveTextArgs(string text, string delimiter)
+            :this(text)
+        {
+            Delimiter = delimiter;
+        }
 
 		/// <summary>
 		/// Stupid S+ Constructor
