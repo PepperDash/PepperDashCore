@@ -178,7 +178,9 @@ jobs:
       - name: Setup MS-Build
         uses: microsoft/setup-msbuild@v1
       - name: restore Nuget Packages
-        run: nuget restore ./$($Env:SOLUTION_PATH)/$($Env:SOLUTION_FILE) 4-Series.sln
+        run: nuget restore ./$($Env:SOLUTION_PATH)/$($Env:SOLUTION_FILE)
+        env:
+          SOLUTION_FILE: PepperDash Core 4-Series.sln
       # Build the solutions in the docker image
       - name: Build Solution
         shell: powershell
