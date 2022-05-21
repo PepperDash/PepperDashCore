@@ -127,3 +127,109 @@ jobs:
         run: nuget push **/*.nupkg -source github
       - name: Publish nuget package to nuget.org
         run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
+  Build_Project_4-Series:
+    runs-on: windows-latest
+    steps:
+      # First we checkout the source repo
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      # Generate the appropriate version number
+      - name: Set Version Number
+        shell: powershell
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: echo "VERSION=$($Env:TAG_NAME)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      # Use the version number to set the version of the assemblies
+      - name: Update AssemblyInfo.cs
+        shell: powershell
+        run: |
+          Write-Output ${{ env.VERSION }}
+          ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
+      - name: Setup MS-Build
+        uses: microsoft/setup-msbuild@v1
+      - name: restore Nuget Packages
+        run: nuget restore ./4-series/$($Env:SOLUTION_FILE).sln
+      # Build the solutions in the docker image
+      - name: Build Solution
+        shell: powershell
+        run: |
+          msbuild "./$($Env:SOLUTION_PATH)/$($Env:SOLUTION_FILE) 4-Series.sln" /p:platform="Any CPU" /p:configuration="Release"
+      # Zip up the output files as needed
+      - name: Zip Build Output
+        shell: powershell
+        run: |
+          $destination = "$($Env:GITHUB_HOME)\output"
+          New-Item -ItemType Directory -Force -Path ($destination)
+          Get-ChildItem ($destination)
+          $exclusions = @("packages", "3-series")
+          # Trying to get any .json schema files (not currently working)
+          # Gets any files with the listed extensions.
+          Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz", "*.cplz", "*.nuspec" | ForEach-Object {
+            $allowed = $true;
+            # Exclude any files in submodules
+            foreach ($exclude in $exclusions) {
+              if ((Split-Path $_.FullName -Parent).contains("$($exclude)")) {
+                $allowed = $false;
+                break;
+              }
+            }
+            if ($allowed) {
+              Write-Host "allowing $($_)"
+              $_;
+            }
+          } | Copy-Item -Destination ($destination) -Force
+          Write-Host "Getting matching files..."
+          # Get any files from the output folder that match the following extensions
+          Get-ChildItem -Path $destination | Where-Object {($_.Extension -eq ".clz") -or ($_.Extension -eq ".cpz" -or ($_.Extension -eq ".cplz"))} | ForEach-Object { 
+            # Replace the extensions with dll and xml and create an array 
+            $filenames = @($($_ -replace "cpz|clz|cplz", "dll"), $($_ -replace "cpz|clz|cplz", "xml"))
+            Write-Host "Filenames:"
+            Write-Host $filenames
+            if ($filenames.length -gt 0) {
+              # Attempt to get the files and return them to the output directory
+              Get-ChildItem -Recurse -Path "$($Env:GITHUB_WORKSPACE)" -include $filenames | Copy-Item -Destination ($destination) -Force
+            }
+          }
+          Get-ChildItem -Path $destination\*.cplz | Rename-Item -NewName { "$($_.BaseName)-4s-$($Env:VERSION)$($_.Extension)" }
+          Compress-Archive -Path $destination -DestinationPath "$($Env:GITHUB_WORKSPACE)\$($Env:SOLUTION_FILE)-4s-$($Env:VERSION).zip" -Force
+          Write-Host "Output Contents post Zip"
+          Get-ChildItem -Path $destination
+      # Write the version to a file to be consumed by the push jobs
+      - name: Write Version
+        run: Write-Output "$($Env:VERSION)" | Out-File -FilePath "$($Env:GITHUB_HOME)\output\version.txt"
+      - name: Upload Build Output
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
+          path: ./${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
+      # Upload the Version file as an artifact
+      - name: Upload version.txt
+        uses: actions/upload-artifact@v1
+        with:
+          name: Version
+          path: ${{env.GITHUB_HOME}}\output\version.txt
+      # Upload the build package to the release
+      - name: Upload Release Package
+        id: upload_release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
+          asset_name: ${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Add nuget.exe
+        uses: nuget/setup-nuget@v1
+      - name: Add Github Packages source
+        run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
+      - name: Add nuget.org API Key
+        run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}
+      - name: Create nuget package
+        run: nuget pack "./Pepperdash Core/Pepperdash Core/PepperDash_Core_4-Series.csproj.nuspec" -version ${{ env.VERSION }}
+      - name: Publish nuget package to Github registry
+        run: nuget push **/*.nupkg -source github
+      - name: Publish nuget package to nuget.org
+        run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
