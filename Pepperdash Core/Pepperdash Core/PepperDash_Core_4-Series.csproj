@@ -128,7 +128,7 @@
     <Compile Include="PasswordManagement\Constants.cs" />
     <Compile Include="PasswordManagement\PasswordClient.cs" />
     <Compile Include="PasswordManagement\PasswordManager.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\4-Series\AssemblyInfo.cs" />
     <Compile Include="SystemInfo\EventArgs and Constants.cs" />
     <Compile Include="SystemInfo\SystemInfoConfig.cs" />
     <Compile Include="SystemInfo\SystemInfoToSimpl.cs" />
