@@ -8,6 +8,7 @@
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/PepperDash/PepperDashCore</projectUrl>    
     <description>PepperDash Core is an open source Crestron SIMPL# library that can be used in SIMPL# Pro applications such as Essentials or as a standalone library with SIMPL+ wrappers to expose functionality in SIMPL Windows programs.</description>
+    <repository type="git" url="https://github.com/PepperDash/PepperDashCore"/>
     <copyright>$copyright$</copyright>
     <tags>Crestron 4series</tags>
     <dependencies>
