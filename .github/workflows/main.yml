@@ -230,6 +230,6 @@ jobs:
       - name: Create nuget package
         run: nuget pack "./Pepperdash Core/Pepperdash Core/PepperDash_Core_4-Series.csproj.nuspec" -version ${{ env.VERSION }}
       - name: Publish nuget package to Github registry
-        run: nuget push "./Pepperdash Core/Pepperdash Core/*.nupkg" -source github
+        run: nuget push "./Pepperdash Core/Pepperdash Core/*.nupkg" -Source github
       - name: Publish nuget package to nuget.org
         run: nuget push "./Pepperdash Core/Pepperdash Core/*.nupkg" -Source https://api.nuget.org/v3/index.json
