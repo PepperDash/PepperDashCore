@@ -241,9 +241,15 @@ jobs:
         with:
           name: Version
           path: ${{env.GITHUB_HOME}}\output\version.txt
+      - name: Create tag for non-rc builds
+        if: contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta')
+        run: |
+          git tag $($Env:VERSION)-4-Series
+          git push --tags origin
       # Create the release on the source repo
       - name: Create Release
         id: create_release
+        if: contains(env.VERSION,'-rc-') || contains(env.VERSION,'-hotfix-')
         uses: actions/create-release@v1
         with:
           tag_name: ${{ env.VERSION  }}-4-Series
@@ -254,6 +260,7 @@ jobs:
       # Upload the build package to the release
       - name: Upload Release Package
         id: upload_release
+        if: contains(env.VERSION,'-rc-') || contains(env.VERSION,'-hotfix-')
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
