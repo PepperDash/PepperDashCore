@@ -12,6 +12,9 @@ using PepperDash.Core;
 
 namespace PepperDash.Core.Config
 {
+    /// <summary>
+    /// Reads a Portal formatted config file
+    /// </summary>
 	public class PortalConfigReader
 	{
 		/// <summary>

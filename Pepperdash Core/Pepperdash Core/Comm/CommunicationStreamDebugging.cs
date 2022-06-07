@@ -22,6 +22,9 @@ namespace PepperDash.Core
         /// </summary>
         private CTimer DebugExpiryPeriod;
 
+        /// <summary>
+        /// The current debug setting
+        /// </summary>
         public eStreamDebuggingSetting DebugSetting { get; private set; }
 
         private uint _DebugTimeoutInMs;
@@ -38,11 +41,20 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// Indicates that receive stream debugging is enabled
+        /// </summary>
         public bool RxStreamDebuggingIsEnabled{ get; private set; }
 
+        /// <summary>
+        /// Indicates that transmit stream debugging is enabled
+        /// </summary>
         public bool TxStreamDebuggingIsEnabled { get; private set; }
 
-
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="parentDeviceKey"></param>
         public CommunicationStreamDebugging(string parentDeviceKey)
         {
             ParentDeviceKey = parentDeviceKey;

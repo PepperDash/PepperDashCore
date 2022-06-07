@@ -8,6 +8,9 @@ using Newtonsoft.Json;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Class to help with accessing values from the CrestronEthernetHelper class 
+    /// </summary>
 	public class EthernetHelper
 	{
 		/// <summary>

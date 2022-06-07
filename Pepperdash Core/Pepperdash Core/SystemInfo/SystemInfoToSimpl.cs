@@ -11,12 +11,30 @@ namespace PepperDash.Core.SystemInfo
 	/// </summary>
 	public class SystemInfoToSimpl
 	{
+        /// <summary>
+        /// Notifies of bool change
+        /// </summary>
 		public event EventHandler<BoolChangeEventArgs> BoolChange;
+        /// <summary>
+        /// Notifies of string change
+        /// </summary>
 		public event EventHandler<StringChangeEventArgs> StringChange;
 
+        /// <summary>
+        /// Notifies of processor change
+        /// </summary>
 		public event EventHandler<ProcessorChangeEventArgs> ProcessorChange;
+        /// <summary>
+        /// Notifies of ethernet change
+        /// </summary>
 		public event EventHandler<EthernetChangeEventArgs> EthernetChange;
+        /// <summary>
+        /// Notifies of control subnet change
+        /// </summary>
 		public event EventHandler<ControlSubnetChangeEventArgs> ControlSubnetChange;
+        /// <summary>
+        /// Notifies of program change
+        /// </summary>
 		public event EventHandler<ProgramChangeEventArgs> ProgramChange;
 
 		/// <summary>

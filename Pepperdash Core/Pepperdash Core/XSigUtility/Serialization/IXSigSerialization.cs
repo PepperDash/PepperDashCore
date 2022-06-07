@@ -8,7 +8,18 @@ namespace PepperDash.Core.Intersystem.Serialization
     /// </summary>
     public interface IXSigSerialization
     {
+        /// <summary>
+        /// Serialize the sig data
+        /// </summary>
+        /// <returns></returns>
         IEnumerable<XSigToken> Serialize();
+
+        /// <summary>
+        /// Deserialize the sig data
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="tokens"></param>
+        /// <returns></returns>
         T Deserialize<T>(IEnumerable<XSigToken> tokens) where T : class, IXSigSerialization;
     }
 }

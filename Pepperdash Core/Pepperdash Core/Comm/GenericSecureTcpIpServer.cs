@@ -20,6 +20,9 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Generic secure TCP/IP server
+    /// </summary>
     public class GenericSecureTcpIpServer : Device
     {
         #region Events
@@ -55,6 +58,9 @@ namespace PepperDash.Core
         /// </summary>
         public ServerHasChokedCallbackDelegate ServerHasChoked { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public delegate void ServerHasChokedCallbackDelegate();
 
         #endregion

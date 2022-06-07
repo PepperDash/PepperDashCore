@@ -11,17 +11,40 @@ namespace PepperDash.Core.JsonToSimpl
 	/// </summary>
 	public class JsonToSimplConstants
 	{
+        /// <summary>
+        /// 
+        /// </summary>
 		public const ushort BoolValueChange = 1;
+        /// <summary>
+        /// 
+        /// </summary>
 		public const ushort JsonIsValidBoolChange = 2;
 
+        /// <summary>
+        /// 
+        /// </summary>
 		public const ushort UshortValueChange = 101;
 		
+        /// <summary>
+        /// 
+        /// </summary>
 		public const ushort StringValueChange = 201;
+        /// <summary>
+        /// 
+        /// </summary>
 		public const ushort FullPathToArrayChange = 202;
+        /// <summary>
+        /// 
+        /// </summary>
 		public const ushort ActualFilePathChange = 203;
 
-		// TODO: pdc-20: Added below constants for passing file path and filename back to S+
+        /// <summary>
+        /// 
+        /// </summary>
 		public const ushort FilenameResolvedChange = 204;
+        /// <summary>
+        /// 
+        /// </summary>
 		public const ushort FilePathResolvedChange = 205;
 	}
 
@@ -35,13 +58,33 @@ namespace PepperDash.Core.JsonToSimpl
 	/// </summary>
 	public class SPlusValueWrapper
 	{
+        /// <summary>
+        /// 
+        /// </summary>
 		public SPlusType ValueType { get; private set; }
+        /// <summary>
+        /// 
+        /// </summary>
 		public ushort Index { get; private set; }
+        /// <summary>
+        /// 
+        /// </summary>
 		public ushort BoolUShortValue { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
 		public string StringValue { get; set; }
 
-		public SPlusValueWrapper() { }
+        /// <summary>
+        /// 
+        /// </summary>
+		public SPlusValueWrapper() {}
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="index"></param>
 		public SPlusValueWrapper(SPlusType type, ushort index)
 		{
 			ValueType = type;

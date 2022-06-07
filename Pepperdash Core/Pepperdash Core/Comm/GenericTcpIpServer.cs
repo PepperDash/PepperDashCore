@@ -20,6 +20,9 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Generic TCP/IP server device
+    /// </summary>
     public class GenericTcpIpServer : Device
     {
         #region Events
@@ -49,6 +52,9 @@ namespace PepperDash.Core
         /// </summary>
         public ServerHasChokedCallbackDelegate ServerHasChoked { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public delegate void ServerHasChokedCallbackDelegate();
 
         #endregion
@@ -330,6 +336,10 @@ namespace PepperDash.Core
             Key = key;
         }
 
+        /// <summary>
+        /// Initialze with server configuration object
+        /// </summary>
+        /// <param name="serverConfigObject"></param>
         public void Initialize(TcpServerConfigObject serverConfigObject)
         {
             try
@@ -416,7 +426,7 @@ namespace PepperDash.Core
         }
 
         /// <summary>
-        /// Stop Listeneing
+        /// Stop Listening
         /// </summary>
         public void StopListening()
         {
@@ -592,6 +602,11 @@ namespace PepperDash.Core
             return received;
         }
 
+        /// <summary>
+        /// Gets the IP address based on the client index
+        /// </summary>
+        /// <param name="clientIndex"></param>
+        /// <returns>IP address of the client</returns>
         public string GetClientIPAddress(uint clientIndex)
         {
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "GetClientIPAddress Index: {0}", clientIndex);

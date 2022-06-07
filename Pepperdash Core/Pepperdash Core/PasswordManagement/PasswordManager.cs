@@ -10,6 +10,9 @@ using PepperDash.Core.JsonStandardObjects;
 
 namespace PepperDash.Core.PasswordManagement
 {
+    /// <summary>
+    /// Allows passwords to be stored and managed
+    /// </summary>
 	public class PasswordManager
 	{
 		/// <summary>

@@ -17,6 +17,9 @@ namespace PepperDash.Core
 	public class GenericTcpIpClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
     {
         private const string SplusKey = "Uninitialized TcpIpClient";
+        /// <summary>
+        /// Object to enable stream debugging
+        /// </summary>
         public CommunicationStreamDebugging StreamDebugging { get; private set; }
 
 		/// <summary>
@@ -172,7 +175,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="key">unique string to differentiate between instances</param>
         /// <param name="address"></param>
         /// <param name="port"></param>
         /// <param name="bufferSize"></param>

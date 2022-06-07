@@ -9,20 +9,44 @@ using Newtonsoft.Json;
 
 namespace PepperDash.Core.WebApi.Presets
 {
+    /// <summary>
+    /// Represents a preset
+    /// </summary>
 	public class Preset
 	{
+        /// <summary>
+        /// ID of preset
+        /// </summary>
 		public int Id { get; set; }
 
+        /// <summary>
+        /// User ID
+        /// </summary>
 		public int UserId { get; set; }
 
+        /// <summary>
+        /// Room Type ID
+        /// </summary>
 		public int RoomTypeId { get; set; }
 
+        /// <summary>
+        /// Preset Name
+        /// </summary>
 		public string PresetName { get; set; }
 
+        /// <summary>
+        /// Preset Number
+        /// </summary>
 		public int PresetNumber { get; set; }
 
+        /// <summary>
+        /// Preset Data
+        /// </summary>
 		public string Data { get; set; }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
 		public Preset()
 		{
 			PresetName = "";
@@ -53,6 +77,11 @@ namespace PepperDash.Core.WebApi.Presets
 		/// </summary>
 		public PresetReceivedEventArgs() { }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="preset"></param>
+        /// <param name="success"></param>
 		public PresetReceivedEventArgs(Preset preset, bool success)
 		{
             LookupSuccess = success;

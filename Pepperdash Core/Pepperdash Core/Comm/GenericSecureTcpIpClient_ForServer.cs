@@ -20,6 +20,9 @@ using Crestron.SimplSharp.CrestronSockets;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Generic secure TCP/IP client for server
+    /// </summary>
     public class GenericSecureTcpIpClient_ForServer : Device, IAutoReconnect
     {
         /// <summary>
@@ -31,8 +34,14 @@ namespace PepperDash.Core
 
         //public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
 
+        /// <summary>
+        /// Notifies of text received
+        /// </summary>
         public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceived;
 
+        /// <summary>
+        /// Notifies of auto reconnect sequence triggered
+        /// </summary>
         public event EventHandler AutoReconnectTriggered;
 
         /// <summary>
@@ -41,7 +50,9 @@ namespace PepperDash.Core
         /// </summary>
         public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceivedQueueInvoke;
 
-
+        /// <summary>
+        /// Notifies of socket status change
+        /// </summary>
         public event EventHandler<GenericTcpServerSocketStatusChangeEventArgs> ConnectionChange;
 
 

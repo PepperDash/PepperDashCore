@@ -15,9 +15,15 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Generic UDP Server device
+    /// </summary>
     public class GenericUdpServer : Device, ISocketStatusWithStreamDebugging
     {
         private const string SplusKey = "Uninitialized Udp Server";
+        /// <summary>
+        /// Object to enable stream debugging
+        /// </summary>
         public CommunicationStreamDebugging StreamDebugging { get; private set; }
         /// <summary>
         /// 

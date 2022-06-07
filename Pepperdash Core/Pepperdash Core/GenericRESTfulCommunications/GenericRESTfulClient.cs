@@ -42,6 +42,7 @@ namespace PepperDash.Core.GenericRESTfulCommunications
 		/// <param name="requestType"></param>
 		/// <param name="username"></param>
 		/// <param name="password"></param>
+        /// <param name="contentType"></param>
 		public void SubmitRequest(string url, ushort port, ushort requestType, string contentType, string username, string password)
 		{
 			if (url.StartsWith("https:", StringComparison.OrdinalIgnoreCase))
