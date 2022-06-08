@@ -159,7 +159,7 @@ namespace PepperDash.Core
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="asynchronousResult"></param>
+        /// <param name="request"></param>
         /// <param name="error"></param>
         /// <param name="status"></param>
         private void GetResponseStreamCallback(HttpClientRequest request, HTTP_CALLBACK_ERROR error, object status)

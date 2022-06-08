@@ -143,7 +143,7 @@ namespace PepperDash.Core.SystemInfo
 		/// <summary>
 		/// Constructor overload
 		/// </summary>
-		/// <param name="Ethernet"></param>
+        /// <param name="ethernet"></param>
 		/// <param name="type"></param>
 		public EthernetChangeEventArgs(EthernetInfo ethernet, ushort type)
 		{
@@ -154,8 +154,9 @@ namespace PepperDash.Core.SystemInfo
 		/// <summary>
 		/// Constructor overload
 		/// </summary>
-		/// <param name="Ethernet"></param>
+        /// <param name="ethernet"></param>
 		/// <param name="type"></param>
+        /// <param name="index"></param>
 		public EthernetChangeEventArgs(EthernetInfo ethernet, ushort type, ushort index)
 		{
 			Adapter = ethernet;
@@ -239,7 +240,7 @@ namespace PepperDash.Core.SystemInfo
 		/// <summary>
 		/// Constructor overload
 		/// </summary>
-		/// <param name="Program"></param>
+        /// <param name="program"></param>
 		/// <param name="type"></param>
 		public ProgramChangeEventArgs(ProgramInfo program, ushort type)
 		{
@@ -250,8 +251,9 @@ namespace PepperDash.Core.SystemInfo
 		/// <summary>
 		/// Constructor overload
 		/// </summary>
-		/// <param name="Program"></param>
+        /// <param name="program"></param>
 		/// <param name="type"></param>
+        /// <param name="index"></param>
 		public ProgramChangeEventArgs(ProgramInfo program, ushort type, ushort index)
 		{
 			Program = program;

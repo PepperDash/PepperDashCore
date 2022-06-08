@@ -97,6 +97,17 @@ namespace PepperDash.Core.JsonToSimpl
 	/// </summary>
 	public enum SPlusType
 	{
-		Digital, Analog, String
+        /// <summary>
+        /// Digital
+        /// </summary>
+		Digital, 
+        /// <summary>
+        /// Analog
+        /// </summary>
+        Analog, 
+        /// <summary>
+        /// String
+        /// </summary>
+        String
 	}
 }

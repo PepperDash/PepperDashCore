@@ -152,7 +152,12 @@ namespace PepperDash.Core
             get { return (ushort)(IsListening ? 1 : 0); }
         }
 
-        public ushort MaxClients { get; set; } // should be set by parameter in SIMPL+ in the MAIN method, Should not ever need to be configurable
+        /// <summary>
+        /// The maximum number of clients.
+        /// Should be set by parameter in SIMPL+ in the MAIN method, Should not ever need to be configurable
+        /// </summary>
+        public ushort MaxClients { get; set; }
+
         /// <summary>
         /// Number of clients currently connected.
         /// </summary>
@@ -247,7 +252,9 @@ namespace PepperDash.Core
 
         List<uint> ClientReadyAfterKeyExchange = new List<uint>();
 
-        //Store the connected client indexes
+        /// <summary>
+        /// The connected client indexes
+        /// </summary>
         public List<uint> ConnectedClientsIndexes = new List<uint>();
 
         /// <summary>
@@ -664,7 +671,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Secure Server Socket Status Changed Callback
         /// </summary>
-        /// <param name="mySecureTCPServer"></param>
+        /// <param name="server"></param>
         /// <param name="clientIndex"></param>
         /// <param name="serverSocketStatus"></param>
         void TcpServer_SocketStatusChange(TCPServer server, uint clientIndex, SocketStatus serverSocketStatus)
@@ -702,7 +709,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Secure TCP Client Connected to Secure Server Callback
         /// </summary>
-        /// <param name="mySecureTCPServer"></param>
+        /// <param name="server"></param>
         /// <param name="clientIndex"></param>
         void TcpConnectCallback(TCPServer server, uint clientIndex)
         {
@@ -777,7 +784,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Secure Received Data Async Callback
         /// </summary>
-        /// <param name="mySecureTCPServer"></param>
+        /// <param name="myTCPServer"></param>
         /// <param name="clientIndex"></param>
         /// <param name="numberOfBytesReceived"></param>
         void TcpServerReceivedDataAsyncCallback(TCPServer myTCPServer, uint clientIndex, int numberOfBytesReceived)

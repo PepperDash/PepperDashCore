@@ -79,6 +79,9 @@ namespace PepperDash.Core.JsonToSimpl
 				PathSuffix == null ? "" : PathSuffix);
 		}
 
+        /// <summary>
+        /// Process all values
+        /// </summary>
 		public override void ProcessAll()
 		{
 			if (FindInArray())

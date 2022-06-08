@@ -271,8 +271,14 @@ namespace PepperDash.Core
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class DebugContextSaveData
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public int Level { get; set; }
     }
 }

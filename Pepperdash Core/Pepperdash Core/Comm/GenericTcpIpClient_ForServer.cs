@@ -212,14 +212,30 @@ namespace PepperDash.Core
         CTimer RetryTimer;
 
 
+        /// <summary>
+        /// 
+        /// </summary>
         public bool HeartbeatEnabled { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public ushort UHeartbeatEnabled
         {
             get { return (ushort)(HeartbeatEnabled ? 1 : 0); }
             set { HeartbeatEnabled = value == 1; }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
         public string HeartbeatString = "heartbeat";
+
+        /// <summary>
+        /// 
+        /// </summary>
         public int HeartbeatInterval = 50000;
+
         CTimer HeartbeatSendTimer;
         CTimer HeartbeatAckTimer;
         /// <summary>
@@ -239,7 +255,13 @@ namespace PepperDash.Core
 
         #region Constructors
 
-        //Base class constructor
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="address"></param>
+        /// <param name="port"></param>
+        /// <param name="bufferSize"></param>
         public GenericTcpIpClient_ForServer(string key, string address, int port, int bufferSize)
             : base(key)
         {
@@ -251,7 +273,9 @@ namespace PepperDash.Core
 
         }
 
-        //base class constructor
+        /// <summary>
+        /// Constructor for S+
+        /// </summary>
         public GenericTcpIpClient_ForServer()
             : base("Uninitialized DynamicTcpClient")
         {

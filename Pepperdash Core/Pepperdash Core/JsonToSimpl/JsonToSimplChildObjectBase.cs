@@ -62,9 +62,17 @@ namespace PepperDash.Core.JsonToSimpl
         /// </summary>
 		protected JsonToSimplMaster Master;
 
-		// The sent-in JPaths for the various types
-		protected Dictionary<ushort, string> BoolPaths = new Dictionary<ushort, string>();
+        /// <summary>
+        /// Paths to boolean values in JSON structure
+        /// </summary>
+        protected Dictionary<ushort, string> BoolPaths = new Dictionary<ushort, string>();
+        /// <summary>
+        /// Paths to numeric values in JSON structure
+        /// </summary>
 		protected Dictionary<ushort, string> UshortPaths = new Dictionary<ushort, string>();
+        /// <summary>
+        /// Paths to string values in JSON structure
+        /// </summary>
 		protected Dictionary<ushort, string> StringPaths = new Dictionary<ushort, string>();
 
 		/// <summary>

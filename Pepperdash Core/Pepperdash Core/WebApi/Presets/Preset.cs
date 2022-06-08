@@ -66,10 +66,13 @@ namespace PepperDash.Core.WebApi.Presets
         public bool LookupSuccess { get; private set; }
         
         /// <summary>
-        /// S+ helper for stupid S+
+        /// S+ helper
         /// </summary>
         public ushort ULookupSuccess { get { return (ushort)(LookupSuccess ? 1 : 0); } }
 
+        /// <summary>
+        /// The preset
+        /// </summary>
         public Preset Preset { get; private set; }
 
 		/// <summary>

@@ -141,7 +141,6 @@ namespace PepperDash.Core.JsonStandardObjects
         /// 
         /// </summary>
 		public int autoReconnectIntervalMs { get; set; }
-        ///
 
 		// convert properties for simpl
         /// <summary>
@@ -250,6 +249,9 @@ namespace PepperDash.Core.JsonStandardObjects
 	/// </summary>
 	public class RootObject
 	{
+        /// <summary>
+        /// The collection of devices
+        /// </summary>
 		public List<DeviceConfig> devices { get; set; }
 	}
 }

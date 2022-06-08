@@ -128,10 +128,10 @@ namespace PepperDash.Core
 		/// </summary>
 		public string ClientStatusText { get { return ClientStatus.ToString(); } }
 
-        [Obsolete]
 		/// <summary>
 		/// Ushort representation of client status
 		/// </summary>
+        [Obsolete]
 		public ushort UClientStatus { get { return (ushort)ClientStatus; } }
 
 		/// <summary>
@@ -505,6 +505,9 @@ namespace PepperDash.Core
 		/// </summary>
 		public int AutoReconnectIntervalMs { get; set; }
 
+        /// <summary>
+        /// Default constructor
+        /// </summary>
 		public TcpSshPropertiesConfig()
 		{
 			BufferSize = 32768;

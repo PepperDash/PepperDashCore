@@ -327,10 +327,10 @@ namespace PepperDash.Core.SystemInfo
 		/// <summary>
 		/// private method to parse console messages
 		/// </summary>
-		/// <param name="response"></param>
+        /// <param name="data"></param>
 		/// <param name="line"></param>
-		/// <param name="start"></param>
-		/// <param name="end"></param>
+        /// <param name="dataStart"></param>
+        /// <param name="dataEnd"></param>
 		/// <returns></returns>
 		private string ParseConsoleResponse(string data, string line, string dataStart, string dataEnd)
 		{

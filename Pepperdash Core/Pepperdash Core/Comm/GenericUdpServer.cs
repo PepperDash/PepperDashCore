@@ -74,10 +74,6 @@ namespace PepperDash.Core
         /// </summary>
         public string Hostname { get; set; }
 
-		/// <summary>
-		/// IP Address of the sender of the last recieved message 
-		/// </summary>
-
 
         /// <summary>
         /// Port on server
@@ -103,6 +99,9 @@ namespace PepperDash.Core
             private set;
         }
 
+        /// <summary>
+        /// Numeric value indicating 
+        /// </summary>
         public ushort UIsConnected
         {
             get { return IsConnected ? (ushort)1 : (ushort)0; }
@@ -113,6 +112,9 @@ namespace PepperDash.Core
         /// </summary>
         public int BufferSize { get; set; }
 
+        /// <summary>
+        /// The server
+        /// </summary>
         public UDPServer Server { get; private set; }
 
         /// <summary>
