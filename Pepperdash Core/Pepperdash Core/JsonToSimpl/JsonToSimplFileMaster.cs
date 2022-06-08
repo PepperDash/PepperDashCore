@@ -10,6 +10,9 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core.JsonToSimpl
 {
+    /// <summary>
+    /// Represents a JSON file that can be read and written to
+    /// </summary>
 	public class JsonToSimplFileMaster : JsonToSimplMaster
 	{
 		/// <summary>
@@ -17,10 +20,18 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public string Filepath { get; private set; }
 
+        /// <summary>
+        /// Filepath to the actual file that will be read (Portal or local)
+        /// </summary>
 		public string ActualFilePath { get; private set; }
 
-		// TODO: pdc-20: added to return filename back to SIMPL
+		/// <summary>
+		/// 
+		/// </summary>
 		public string Filename { get; private set; }
+        /// <summary>
+        /// 
+        /// </summary>
 		public string FilePathName { get; private set; }
 
 		/*****************************************************************************************/
@@ -102,11 +113,20 @@ namespace PepperDash.Core.JsonToSimpl
 				return;
 			}
 		}
+
+
+        /// <summary>
+        /// Sets the debug level
+        /// </summary>
+        /// <param name="level"></param>
 		public void setDebugLevel(int level)
 		{
 			Debug.SetDebugLevel(level);
 		}
 
+        /// <summary>
+        /// Saves the values to the file
+        /// </summary>
 		public override void Save()
 		{
 			// this code is duplicated in the other masters!!!!!!!!!!!!!

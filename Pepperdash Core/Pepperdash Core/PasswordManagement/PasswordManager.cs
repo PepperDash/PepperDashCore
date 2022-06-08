@@ -10,6 +10,9 @@ using PepperDash.Core.JsonStandardObjects;
 
 namespace PepperDash.Core.PasswordManagement
 {
+    /// <summary>
+    /// Allows passwords to be stored and managed
+    /// </summary>
 	public class PasswordManager
 	{
 		/// <summary>
@@ -193,7 +196,7 @@ namespace PepperDash.Core.PasswordManagement
 		/// <summary>
 		/// Protected ushort change event handler
 		/// </summary>
-		/// <param name="state"></param>
+        /// <param name="value"></param>
 		/// <param name="index"></param>
 		/// <param name="type"></param>
 		protected void OnUshrtChange(ushort value, ushort index, ushort type)

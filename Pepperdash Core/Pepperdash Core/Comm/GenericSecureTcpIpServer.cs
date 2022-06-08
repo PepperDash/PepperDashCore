@@ -20,6 +20,9 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Generic secure TCP/IP server
+    /// </summary>
     public class GenericSecureTcpIpServer : Device
     {
         #region Events
@@ -55,6 +58,9 @@ namespace PepperDash.Core
         /// </summary>
         public ServerHasChokedCallbackDelegate ServerHasChoked { get; set; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public delegate void ServerHasChokedCallbackDelegate();
 
         #endregion
@@ -265,7 +271,9 @@ namespace PepperDash.Core
 
         List<uint> ClientReadyAfterKeyExchange = new List<uint>();
 
-        //Store the connected client indexes
+        /// <summary>
+        /// The connected client indexes
+        /// </summary>
         public List<uint> ConnectedClientsIndexes = new List<uint>();
 
         /// <summary>
@@ -354,6 +362,10 @@ namespace PepperDash.Core
             Key = key;
         }
 
+        /// <summary>
+        /// Initialze the server
+        /// </summary>
+        /// <param name="serverConfigObject"></param>
         public void Initialize(TcpServerConfigObject serverConfigObject)
         {
             try
@@ -618,6 +630,11 @@ namespace PepperDash.Core
             return received;
         }
 
+        /// <summary>
+        /// Get the IP Address for the client at the specifed index
+        /// </summary>
+        /// <param name="clientIndex"></param>
+        /// <returns></returns>
         public string GetClientIPAddress(uint clientIndex)
         {
             Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "GetClientIPAddress Index: {0}", clientIndex);
@@ -675,7 +692,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Secure Server Socket Status Changed Callback
         /// </summary>
-        /// <param name="mySecureTCPServer"></param>
+        /// <param name="server"></param>
         /// <param name="clientIndex"></param>
         /// <param name="serverSocketStatus"></param>
         void SecureServer_SocketStatusChange(SecureTCPServer server, uint clientIndex, SocketStatus serverSocketStatus)
@@ -723,7 +740,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Secure TCP Client Connected to Secure Server Callback
         /// </summary>
-        /// <param name="mySecureTCPServer"></param>
+        /// <param name="server"></param>
         /// <param name="clientIndex"></param>
         void SecureConnectCallback(SecureTCPServer server, uint clientIndex)
         {

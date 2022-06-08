@@ -561,9 +561,27 @@ namespace PepperDash.Core
             Directory.Delete(@"\nvram\debugSettings");
         }
 
+        /// <summary>
+        /// Error level to for message to be logged at
+        /// </summary>
         public enum ErrorLogLevel
         {
-            Error, Warning, Notice, None
+            /// <summary>
+            /// Error
+            /// </summary>
+            Error, 
+            /// <summary>
+            /// Warning
+            /// </summary>
+            Warning, 
+            /// <summary>
+            /// Notice
+            /// </summary>
+            Notice, 
+            /// <summary>
+            /// None
+            /// </summary>
+            None,
         }
     }
 }

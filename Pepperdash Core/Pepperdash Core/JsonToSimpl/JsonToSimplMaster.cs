@@ -10,15 +10,27 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core.JsonToSimpl
 {
+    /// <summary>
+    /// Abstract base class for JsonToSimpl interactions
+    /// </summary>
 	public abstract class JsonToSimplMaster : IKeyed
 	{
-		/*****************************************************************************************/
-		/** Events **/
-
+        /// <summary>
+        /// Notifies of bool change
+        /// </summary>
 		public event EventHandler<BoolChangeEventArgs> BoolChange;
+        /// <summary>
+        /// Notifies of ushort change
+        /// </summary>
 		public event EventHandler<UshrtChangeEventArgs> UshrtChange;
+        /// <summary>
+        /// Notifies of string change
+        /// </summary>
 		public event EventHandler<StringChangeEventArgs> StringChange;
 
+        /// <summary>
+        /// A collection of associated child modules
+        /// </summary>
 		protected List<JsonToSimplChildObjectBase> Children = new List<JsonToSimplChildObjectBase>();
 
 		/*****************************************************************************************/
@@ -28,6 +40,9 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public string Key { get { return UniqueID; } }
 
+        /// <summary>
+        /// A unique ID
+        /// </summary>
 		public string UniqueID { get; protected set; }
 
 		/// <summary>
@@ -70,6 +85,9 @@ namespace PepperDash.Core.JsonToSimpl
 			}
 		}
 
+        /// <summary>
+        /// 
+        /// </summary>
 		public JObject JsonObject { get; protected set; }
 
 		/*****************************************************************************************/
@@ -126,12 +144,22 @@ namespace PepperDash.Core.JsonToSimpl
 			//Debug.Console(0, "Master[{0}] Unsaved size={1}", UniqueID, UnsavedValues.Count);
 		}
 
+        /// <summary>
+        /// Saves the file
+        /// </summary>
 		public abstract void Save();
 
 
-		//******************************************************************************************
+		/// <summary>
+		/// 
+		/// </summary>
 		public static class JsonFixes
 		{
+            /// <summary>
+            /// Deserializes a string into a JObject
+            /// </summary>
+            /// <param name="json"></param>
+            /// <returns></returns>
 			public static JObject ParseObject(string json)
 			{
 				using (var reader = new JsonTextReader(new Crestron.SimplSharp.CrestronIO.StringReader(json)))
@@ -144,6 +172,11 @@ namespace PepperDash.Core.JsonToSimpl
 				}
 			}
 
+            /// <summary>
+            /// Deserializes a string into a JArray
+            /// </summary>
+            /// <param name="json"></param>
+            /// <returns></returns>
 			public static JArray ParseArray(string json)
 			{
 				using (var reader = new JsonTextReader(new Crestron.SimplSharp.CrestronIO.StringReader(json)))
@@ -157,8 +190,12 @@ namespace PepperDash.Core.JsonToSimpl
 			}
 		}
 
-		// Helpers for events
-		//******************************************************************************************
+		/// <summary>
+		/// Helper event
+		/// </summary>
+		/// <param name="state"></param>
+		/// <param name="index"></param>
+		/// <param name="type"></param>
 		protected void OnBoolChange(bool state, ushort index, ushort type)
 		{
 			if (BoolChange != null)
@@ -169,7 +206,12 @@ namespace PepperDash.Core.JsonToSimpl
 			}
 		}
 
-		//******************************************************************************************
+		/// <summary>
+		/// Helper event
+		/// </summary>
+		/// <param name="state"></param>
+		/// <param name="index"></param>
+		/// <param name="type"></param>
 		protected void OnUshrtChange(ushort state, ushort index, ushort type)
 		{
 			if (UshrtChange != null)
@@ -180,6 +222,12 @@ namespace PepperDash.Core.JsonToSimpl
 			}
 		}
 
+        /// <summary>
+        /// Helper event
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="index"></param>
+        /// <param name="type"></param>
 		protected void OnStringChange(string value, ushort index, ushort type)
 		{
 			if (StringChange != null)

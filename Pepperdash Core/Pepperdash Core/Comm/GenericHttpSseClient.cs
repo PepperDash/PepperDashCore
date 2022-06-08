@@ -8,50 +8,86 @@ using Crestron.SimplSharp.Net.Http;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Client for communicating with an HTTP Server Side Event pattern
+    /// </summary>
     public class GenericHttpSseClient : ICommunicationReceiver 
     {
+        /// <summary>
+        /// Notifies when bytes have been received
+        /// </summary>
         public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
+        /// <summary>
+        /// Notifies when text has been received
+        /// </summary>
         public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
 
+        /// <summary>
+        /// Indicates connection status
+        /// </summary>
         public bool IsConnected
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// Unique identifier for the instance
+        /// </summary>
         public string Key
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// Name for the instance
+        /// </summary>
         public string Name
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// URL of the server
+        /// </summary>
         public string Url { get; set; }
 
         HttpClient Client;
         HttpClientRequest Request;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="name"></param>
         public GenericHttpSseClient(string key, string name)
         {
             Key = key;
             Name = name;
         }
 
+        /// <summary>
+        /// Connects to the server.  Requires Url to be set first.
+        /// </summary>
         public void Connect()
         {
             InitiateConnection(Url);
         }
 
+        /// <summary>
+        /// Disconnects from the server
+        /// </summary>
         public void Disconnect()
         {
             CloseConnection(null);
         }
 
+        /// <summary>
+        /// Initiates connection to the server
+        /// </summary>
+        /// <param name="url"></param>
         public void InitiateConnection(string url)
         {
             CrestronInvoke.BeginInvoke(o => 
@@ -84,6 +120,10 @@ namespace PepperDash.Core
             });
         }
 
+        /// <summary>
+        /// Closes the connection to the server
+        /// </summary>
+        /// <param name="s"></param>
         public void CloseConnection(string s)
         {
             if (Client != null)
@@ -119,7 +159,7 @@ namespace PepperDash.Core
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="asynchronousResult"></param>
+        /// <param name="request"></param>
         /// <param name="error"></param>
         /// <param name="status"></param>
         private void GetResponseStreamCallback(HttpClientRequest request, HTTP_CALLBACK_ERROR error, object status)
@@ -165,10 +205,6 @@ namespace PepperDash.Core
             Debug.Console(1, this, "DataConnection OnBytesReceived Fired");
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="asyncResult"></param>
         private void ReadCallBack(Crestron.SimplSharp.CrestronIO.IAsyncResult asyncResult)
         {
             //we are getting back everything here, so cast the state from the call
@@ -222,14 +258,38 @@ namespace PepperDash.Core
     /// </summary>
     public class RequestState
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public const int BUFFER_SIZE = 10000;
+        /// <summary>
+        /// 
+        /// </summary>
         public byte[] BufferRead;
+        /// <summary>
+        /// 
+        /// </summary>
         public HttpClient HttpClient;
+        /// <summary>
+        /// 
+        /// </summary>
         public HttpClientRequest Request;
+        /// <summary>
+        /// 
+        /// </summary>
         public HttpClientResponse Response;
+        /// <summary>
+        /// 
+        /// </summary>
         public Stream StreamResponse;
+        /// <summary>
+        /// 
+        /// </summary>
         public bool Done;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public RequestState()
         {
             BufferRead = new byte[BUFFER_SIZE];
@@ -246,6 +306,9 @@ namespace PepperDash.Core
     /// </summary>
     public class StreamAsyncTest
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public CEvent wait_for_response = new CEvent(true, false);
     }
 }

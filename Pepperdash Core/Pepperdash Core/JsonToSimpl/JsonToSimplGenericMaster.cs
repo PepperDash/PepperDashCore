@@ -1,17 +1,13 @@
 ﻿using System;
-//using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Crestron.SimplSharp;
-using Crestron.SimplSharp.CrestronIO;
-using Crestron.SimplSharp.Net.Http;
-using Crestron.SimplSharp.Net.Https;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core.JsonToSimpl
 {
+    /// <summary>
+    /// Generic Master
+    /// </summary>
 	public class JsonToSimplGenericMaster : JsonToSimplMaster
     {
 		/*****************************************************************************************/
@@ -24,6 +20,9 @@ namespace PepperDash.Core.JsonToSimpl
 		// To prevent multiple same-file access
 		static object WriteLock = new object();
 
+        /// <summary>
+        /// Callback action for saving
+        /// </summary>
 		public Action<string> SaveCallback { get; set; }
 
 		/*****************************************************************************************/
@@ -117,37 +116,3 @@ namespace PepperDash.Core.JsonToSimpl
 		}
 	}
 }
-
-
-//            JContainer jpart = JsonObject;
-//            // walk down the path and find where it goes
-//#warning Does not handle arrays.
-//            foreach (var part in path.Split('.'))
-//            {
-
-//                var openPos = part.IndexOf('[');
-//                if (openPos > -1)
-//                {
-//                    openPos++; // move to number
-//                    var closePos = part.IndexOf(']');
-//                    var arrayName = part.Substring(0, openPos - 1); // get the name
-//                    var index = Convert.ToInt32(part.Substring(openPos, closePos - openPos));
-
-//                    // Check if the array itself exists and add the item if so
-//                    if (jpart[arrayName] != null)
-//                    {
-//                        var arrayObj = jpart[arrayName] as JArray;
-//                        var item = arrayObj[index];
-//                        if (item == null)
-//                            arrayObj.Add(new JObject());
-//                    }
-
-//                    Debug.Console(0, "IGNORING MISSING ARRAY VALUE FOR NOW");
-//                    continue;
-//                }
-//                // Build the 
-//                if (jpart[part] == null)
-//                    jpart.Add(new JProperty(part, new JObject()));
-//                jpart = jpart[part] as JContainer;
-//            }
-//            jpart.Replace(UnsavedValues[path]);
