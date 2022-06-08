@@ -11,6 +11,9 @@ using PepperDash.Core.DebugThings;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Represents a debugging context
+    /// </summary>
     public class DebugContext
     {
         /// <summary>
@@ -149,6 +152,14 @@ namespace PepperDash.Core
                 Console(level, "[{0}] {1}", dev.Key, string.Format(format, items));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="level"></param>
+        /// <param name="dev"></param>
+        /// <param name="errorLogLevel"></param>
+        /// <param name="format"></param>
+        /// <param name="items"></param>
         public void Console(uint level, IKeyed dev, Debug.ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
@@ -160,6 +171,13 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="level"></param>
+        /// <param name="errorLogLevel"></param>
+        /// <param name="format"></param>
+        /// <param name="items"></param>
         public void Console(uint level, Debug.ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
@@ -171,6 +189,11 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="errorLogLevel"></param>
+        /// <param name="str"></param>
         public void LogError(Debug.ErrorLogLevel errorLogLevel, string str)
         {
             string msg = string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
@@ -248,8 +271,14 @@ namespace PepperDash.Core
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class DebugContextSaveData
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public int Level { get; set; }
     }
 }

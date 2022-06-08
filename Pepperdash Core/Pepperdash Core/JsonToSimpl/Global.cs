@@ -8,6 +8,9 @@ using Crestron.SimplSharp;
 
 namespace PepperDash.Core.JsonToSimpl
 {
+    /// <summary>
+    /// The global class to manage all the instances of JsonToSimplMaster 
+    /// </summary>
 	public class J2SGlobal
 	{
 		static List<JsonToSimplMaster> Masters = new List<JsonToSimplMaster>();

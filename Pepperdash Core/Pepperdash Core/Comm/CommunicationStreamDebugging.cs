@@ -22,6 +22,9 @@ namespace PepperDash.Core
         /// </summary>
         private CTimer DebugExpiryPeriod;
 
+        /// <summary>
+        /// The current debug setting
+        /// </summary>
         public eStreamDebuggingSetting DebugSetting { get; private set; }
 
         private uint _DebugTimeoutInMs;
@@ -38,11 +41,20 @@ namespace PepperDash.Core
             }
         }
 
+        /// <summary>
+        /// Indicates that receive stream debugging is enabled
+        /// </summary>
         public bool RxStreamDebuggingIsEnabled{ get; private set; }
 
+        /// <summary>
+        /// Indicates that transmit stream debugging is enabled
+        /// </summary>
         public bool TxStreamDebuggingIsEnabled { get; private set; }
 
-
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="parentDeviceKey"></param>
         public CommunicationStreamDebugging(string parentDeviceKey)
         {
             ParentDeviceKey = parentDeviceKey;
@@ -125,9 +137,21 @@ namespace PepperDash.Core
     [Flags]
     public enum eStreamDebuggingSetting
     {
+        /// <summary>
+        /// Debug off
+        /// </summary>
         Off = 0,
+        /// <summary>
+        /// Debug received data
+        /// </summary>
         Rx = 1, 
+        /// <summary>
+        /// Debug transmitted data
+        /// </summary>
         Tx = 2,
+        /// <summary>
+        /// Debug both received and transmitted data
+        /// </summary>
         Both = Rx | Tx
     }
 
@@ -137,8 +161,17 @@ namespace PepperDash.Core
     [Flags]
     public enum eStreamDebuggingDataTypeSettings
     {
+        /// <summary>
+        /// Debug data in byte format
+        /// </summary>
         Bytes = 0,
+        /// <summary>
+        /// Debug data in text format
+        /// </summary>
         Text = 1,
+        /// <summary>
+        /// Debug data in both byte and text formats
+        /// </summary>
         Both = Bytes | Text,
     }
 }

@@ -36,6 +36,9 @@ namespace PepperDash.Core
 		List<Action> _PreActivationActions;
 		List<Action> _PostActivationActions;
 
+        /// <summary>
+        /// 
+        /// </summary>
 		public static Device DefaultDevice { get { return _DefaultDevice; } }
 		static Device _DefaultDevice = new Device("Default", "Default");
 
@@ -51,6 +54,11 @@ namespace PepperDash.Core
 
 		}
 
+        /// <summary>
+        /// Constructor with key and name
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="name"></param>
 		public Device(string key, string name) : this(key)
 		{
 			Name = name;
@@ -63,6 +71,10 @@ namespace PepperDash.Core
         //    Config = config;
         //}
 
+        /// <summary>
+        /// Adds a pre activation action
+        /// </summary>
+        /// <param name="act"></param>
 		public void AddPreActivationAction(Action act)
 		{
 			if (_PreActivationActions == null)
@@ -70,6 +82,10 @@ namespace PepperDash.Core
 			_PreActivationActions.Add(act);
 		}
 
+        /// <summary>
+        /// Adds a post activation action
+        /// </summary>
+        /// <param name="act"></param>
 		public void AddPostActivationAction(Action act)
 		{
 			if (_PostActivationActions == null)
@@ -77,6 +93,9 @@ namespace PepperDash.Core
 			_PostActivationActions.Add(act);
 		}
 
+        /// <summary>
+        /// Executes the preactivation actions
+        /// </summary>
         public void PreActivate()
         {
             if (_PreActivationActions != null)
@@ -98,6 +117,9 @@ namespace PepperDash.Core
 			return result; 	
 		}
 
+        /// <summary>
+        /// Executes the postactivation actions
+        /// </summary>
         public void PostActivate()
         {
             if (_PostActivationActions != null)

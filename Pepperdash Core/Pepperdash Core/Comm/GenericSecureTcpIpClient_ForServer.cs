@@ -20,6 +20,9 @@ using Crestron.SimplSharp.CrestronSockets;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Generic secure TCP/IP client for server
+    /// </summary>
     public class GenericSecureTcpIpClient_ForServer : Device, IAutoReconnect
     {
         /// <summary>
@@ -31,8 +34,14 @@ namespace PepperDash.Core
 
         //public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
 
+        /// <summary>
+        /// Notifies of text received
+        /// </summary>
         public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceived;
 
+        /// <summary>
+        /// Notifies of auto reconnect sequence triggered
+        /// </summary>
         public event EventHandler AutoReconnectTriggered;
 
         /// <summary>
@@ -41,7 +50,9 @@ namespace PepperDash.Core
         /// </summary>
         public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceivedQueueInvoke;
 
-
+        /// <summary>
+        /// Notifies of socket status change
+        /// </summary>
         public event EventHandler<GenericTcpServerSocketStatusChangeEventArgs> ConnectionChange;
 
 
@@ -212,13 +223,22 @@ namespace PepperDash.Core
         CTimer RetryTimer;
 
 
+        /// <summary>
+        /// 
+        /// </summary>
         public bool HeartbeatEnabled { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public ushort UHeartbeatEnabled
         {
             get { return (ushort)(HeartbeatEnabled ? 1 : 0); }
             set { HeartbeatEnabled = value == 1; }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public string HeartbeatString { get; set; }
         //public int HeartbeatInterval = 50000;
 
@@ -269,7 +289,13 @@ namespace PepperDash.Core
 
         #region Constructors
 
-        //Base class constructor
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="address"></param>
+        /// <param name="port"></param>
+        /// <param name="bufferSize"></param>
         public GenericSecureTcpIpClient_ForServer(string key, string address, int port, int bufferSize)
             : base(key)
         {
@@ -281,7 +307,9 @@ namespace PepperDash.Core
 
         }
 
-        //base class constructor
+        /// <summary>
+        /// Constructor for S+
+        /// </summary>
         public GenericSecureTcpIpClient_ForServer()
             : base("Uninitialized Secure Tcp Client For Server")
         {
@@ -293,7 +321,8 @@ namespace PepperDash.Core
         /// <summary>
         /// Contstructor that sets all properties by calling the initialize method with a config object. 
         /// </summary>
-        /// <param name="serverConfigObject"></param>
+        /// <param name="key"></param>
+        /// <param name="clientConfigObject"></param>
         public GenericSecureTcpIpClient_ForServer(string key, TcpClientConfigObject clientConfigObject)
             : base(key)
         {
