@@ -66,15 +66,33 @@ namespace PepperDash.Core.JsonToSimpl
                 var dirSeparator = Path.DirectorySeparatorChar;
                 var dirSeparatorAlt = Path.AltDirectorySeparatorChar;
 
-                var is4Series = CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4;
-                var isServer = CrestronEnvironment.DevicePlatform == eDevicePlatform.Server;
+                var series = CrestronEnvironment.ProgramCompatibility;
 
-                OnUshrtChange((ushort)CrestronEnvironment.ProgramCompatibility, 0, 
-                    JsonToSimplConstants.CrestronSeriesValueChange);
-                
-                OnUshrtChange((ushort) CrestronEnvironment.DevicePlatform, 0,
+                var is3Series = (eCrestronSeries.Series3 == (series & eCrestronSeries.Series3));
+                OnBoolChange(is3Series, 0,
+                    JsonToSimplConstants.ProgramCompatibility3SeriesChange);
+
+                var is4Series = (eCrestronSeries.Series4 == (series & eCrestronSeries.Series4));
+                OnBoolChange(is4Series, 0,
+                    JsonToSimplConstants.ProgramCompatibility4SeriesChange);
+
+                var isServer = CrestronEnvironment.DevicePlatform == eDevicePlatform.Server;
+                OnBoolChange(isServer, 0,
                     JsonToSimplConstants.DevicePlatformValueChange);
-                                
+
+                // get the roomID
+                var roomId = Crestron.SimplSharp.InitialParametersClass.RoomId;                
+                if (!string.IsNullOrEmpty(roomId))
+                {
+                    OnStringChange(roomId, 0, JsonToSimplConstants.RoomIdChange);
+                }
+
+                // get the roomName
+                var roomName = Crestron.SimplSharp.InitialParametersClass.RoomName;
+                if (!string.IsNullOrEmpty(roomName))
+                {
+                    OnStringChange(roomName, 0, JsonToSimplConstants.RoomNameChange);
+                }
 
                 var rootDirectory = Directory.GetApplicationRootDirectory();
                 OnStringChange(rootDirectory, 0, JsonToSimplConstants.RootDirectoryChange);                
@@ -114,14 +132,7 @@ namespace PepperDash.Core.JsonToSimpl
                 if (Directory.Exists(fileDirectory))
                 {
                     // get the directory info                    
-                    var directoryInfo = new DirectoryInfo(fileDirectory);
-                    
-                    // get the roomID
-                    if (!string.IsNullOrEmpty(rootDirectory))
-                    {
-                        var roomId = directoryInfo.Name;
-                        OnStringChange(roomId, 0, JsonToSimplConstants.RoomIdChange);
-                    }
+                    var directoryInfo = new DirectoryInfo(fileDirectory);                                       
 
                     // get the file to be read
                     var actualFile = directoryInfo.GetFiles(fileName).FirstOrDefault();                    
