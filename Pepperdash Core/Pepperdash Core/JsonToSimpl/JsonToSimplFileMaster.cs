@@ -63,9 +63,8 @@ namespace PepperDash.Core.JsonToSimpl
             {
                 OnBoolChange(false, 0, JsonToSimplConstants.JsonIsValidBoolChange);
 
-
-                var dirSeparator = Path.DirectorySeparatorChar;         // win-'\', linux-'/'
-                var dirSeparatorAlt = Path.AltDirectorySeparatorChar;   // win-'\', linux-'/'
+                var dirSeparator = Path.DirectorySeparatorChar;
+                var dirSeparatorAlt = Path.AltDirectorySeparatorChar;
 
                 var is4Series = CrestronEnvironment.ProgramCompatibility == eCrestronSeries.Series4;
                 var isServer = CrestronEnvironment.DevicePlatform == eDevicePlatform.Server;
@@ -78,16 +77,17 @@ namespace PepperDash.Core.JsonToSimpl
                                 
 
                 var rootDirectory = Directory.GetApplicationRootDirectory();
-                OnStringChange(rootDirectory, 0, JsonToSimplConstants.RootDirectory);
-
-
+                OnStringChange(rootDirectory, 0, JsonToSimplConstants.RootDirectoryChange);                
+                
                 var splusPath = string.Empty;
                 if (Regex.IsMatch(filepath, @"user", RegexOptions.IgnoreCase))
                 {
                     if (is4Series) 
                         splusPath = Regex.Replace(filepath, "user", "user", RegexOptions.IgnoreCase);
-                    else if (isServer) 
+                    else if (isServer)
                         splusPath = Regex.Replace(filepath, "user", "User", RegexOptions.IgnoreCase);
+                    else
+                        splusPath = filepath;
                 }
 
                 filepath = splusPath.Replace(dirSeparatorAlt, dirSeparator);
@@ -95,11 +95,11 @@ namespace PepperDash.Core.JsonToSimpl
                 Filepath = string.Format("{1}{0}{2}", dirSeparator, rootDirectory,
                     filepath.TrimStart(dirSeparator, dirSeparatorAlt));
                 
-                OnStringChange(string.Format("Attempting to evaluate {0}", Filepath), 0, JsonToSimplConstants.MessageToSimpl);
+                OnStringChange(string.Format("Attempting to evaluate {0}", Filepath), 0, JsonToSimplConstants.StringValueChange);
 
                 if (string.IsNullOrEmpty(Filepath))
                 {
-                    OnStringChange(string.Format("Cannot evaluate file. JSON file path not set"), 0, JsonToSimplConstants.MessageToSimpl);
+                    OnStringChange(string.Format("Cannot evaluate file. JSON file path not set"), 0, JsonToSimplConstants.StringValueChange);
                     CrestronConsole.PrintLine("Cannot evaluate file. JSON file path not set");
                     return;
                 }
@@ -108,19 +108,27 @@ namespace PepperDash.Core.JsonToSimpl
                 var fileDirectory = Path.GetDirectoryName(Filepath);
                 var fileName = Path.GetFileName(Filepath);
 
-                OnStringChange(string.Format("Checking '{0}' for '{1}'", fileDirectory, fileName), 0, JsonToSimplConstants.MessageToSimpl);
+                OnStringChange(string.Format("Checking '{0}' for '{1}'", fileDirectory, fileName), 0, JsonToSimplConstants.StringValueChange);
                 Debug.Console(1, "Checking '{0}' for '{1}'", fileDirectory, fileName);
 
                 if (Directory.Exists(fileDirectory))
                 {
-                    // get the directory info
+                    // get the directory info                    
                     var directoryInfo = new DirectoryInfo(fileDirectory);
-                    var actualFile = directoryInfo.GetFiles(fileName).FirstOrDefault();
-                    //var actualFile = new DirectoryInfo(Filepath).GetFiles(fileName).FirstOrDefault();
+                    
+                    // get the roomID
+                    if (!string.IsNullOrEmpty(rootDirectory))
+                    {
+                        var roomId = directoryInfo.Name;
+                        OnStringChange(roomId, 0, JsonToSimplConstants.RoomIdChange);
+                    }
+
+                    // get the file to be read
+                    var actualFile = directoryInfo.GetFiles(fileName).FirstOrDefault();                    
                     if (actualFile == null)
                     {
                         var msg = string.Format("JSON file not found: {0}", Filepath);
-                        OnStringChange(msg, 0, JsonToSimplConstants.MessageToSimpl);
+                        OnStringChange(msg, 0, JsonToSimplConstants.StringValueChange);
                         CrestronConsole.PrintLine(msg);
                         ErrorLog.Error(msg);
                         return;
@@ -130,45 +138,45 @@ namespace PepperDash.Core.JsonToSimpl
                     // \USER\PDT000-Template_Main_Config-Combined_DSP_v00.02.json
                     ActualFilePath = actualFile.FullName;                    
                     OnStringChange(ActualFilePath, 0, JsonToSimplConstants.ActualFilePathChange);
-                    OnStringChange(string.Format("Actual JSON file is {0}", ActualFilePath), 0, JsonToSimplConstants.MessageToSimpl);
+                    OnStringChange(string.Format("Actual JSON file is {0}", ActualFilePath), 0, JsonToSimplConstants.StringValueChange);
                     Debug.Console(1, "Actual JSON file is {0}", ActualFilePath);
 
                     Filename = actualFile.Name;
                     OnStringChange(Filename, 0, JsonToSimplConstants.FilenameResolvedChange);
-                    OnStringChange(string.Format("JSON Filename is {0}", Filename), 0, JsonToSimplConstants.MessageToSimpl);
+                    OnStringChange(string.Format("JSON Filename is {0}", Filename), 0, JsonToSimplConstants.StringValueChange);
                     Debug.Console(1, "JSON Filename is {0}", Filename);
 
 
                     FilePathName = string.Format(@"{0}{1}", actualFile.DirectoryName, dirSeparator);
-                    OnStringChange(FilePathName, 0, JsonToSimplConstants.FilePathResolvedChange);
-                    OnStringChange(string.Format("JSON File Path is {0}", FilePathName), 0, JsonToSimplConstants.MessageToSimpl);
-                    Debug.Console(1, "JSON File Path is {0}", FilePathName);
+                    OnStringChange(string.Format(@"{0}", actualFile.DirectoryName), 0, JsonToSimplConstants.FilePathResolvedChange);
+                    OnStringChange(string.Format(@"JSON File Path is {0}", actualFile.DirectoryName), 0, JsonToSimplConstants.StringValueChange);
+                    Debug.Console(1, "JSON File Path is {0}", FilePathName);                    
 
                     var json = File.ReadToEnd(ActualFilePath, System.Text.Encoding.ASCII);
 
                     JsonObject = JObject.Parse(json);
                     foreach (var child in Children)
                         child.ProcessAll();
+
                     OnBoolChange(true, 0, JsonToSimplConstants.JsonIsValidBoolChange);
                 }
                 else
                 {
-                    OnStringChange(string.Format("'{0}' not found", fileDirectory), 0, JsonToSimplConstants.MessageToSimpl);
+                    OnStringChange(string.Format("'{0}' not found", fileDirectory), 0, JsonToSimplConstants.StringValueChange);
                     Debug.Console(1, "'{0}' not found", fileDirectory);
                 }
             }
             catch (Exception e)
             {
                 var msg = string.Format("EvaluateFile Exception: Message\r{0}", e.Message);
-                OnStringChange(msg, 0, JsonToSimplConstants.MessageToSimpl);
+                OnStringChange(msg, 0, JsonToSimplConstants.StringValueChange);
                 CrestronConsole.PrintLine(msg);
                 ErrorLog.Error(msg);
 
                 var stackTrace = string.Format("EvaluateFile: Stack Trace\r{0}", e.StackTrace);
-                OnStringChange(stackTrace, 0, JsonToSimplConstants.MessageToSimpl);
+                OnStringChange(stackTrace, 0, JsonToSimplConstants.StringValueChange);
                 CrestronConsole.PrintLine(stackTrace);
                 ErrorLog.Error(stackTrace);
-                return;
             }
         }
 

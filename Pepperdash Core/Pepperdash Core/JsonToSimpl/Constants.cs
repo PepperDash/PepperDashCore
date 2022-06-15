@@ -58,14 +58,14 @@ namespace PepperDash.Core.JsonToSimpl
 		public const ushort FilePathResolvedChange = 205;
 
         /// <summary>
-        /// 
-        /// </summary>
-	    public const ushort MessageToSimpl = 206;
-
-        /// <summary>
         /// Reports the root directory
         /// </summary>
-        public const ushort RootDirectory = 207;
+        public const ushort RootDirectoryChange = 206;
+
+        /// <summary>
+        /// Reports the room ID
+        /// </summary>
+        public const ushort RoomIdChange = 207;
 	}
 
 	/// <summary>
