@@ -24,6 +24,16 @@ namespace PepperDash.Core.JsonToSimpl
         /// 
         /// </summary>
 		public const ushort UshortValueChange = 101;
+
+        /// <summary>
+        /// Reports the Crestron Series enum value
+        /// </summary>
+	    public const ushort CrestronSeriesValueChange = 102;
+
+        /// <summary>
+        /// Reports the device platform enum value
+        /// </summary>
+        public const ushort DevicePlatformValueChange = 103;
 		
         /// <summary>
         /// 
@@ -46,6 +56,16 @@ namespace PepperDash.Core.JsonToSimpl
         /// 
         /// </summary>
 		public const ushort FilePathResolvedChange = 205;
+
+        /// <summary>
+        /// 
+        /// </summary>
+	    public const ushort MessageToSimpl = 206;
+
+        /// <summary>
+        /// Reports the root directory
+        /// </summary>
+        public const ushort RootDirectory = 207;
 	}
 
 	/// <summary>
