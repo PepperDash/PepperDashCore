@@ -389,7 +389,10 @@ namespace PepperDash.Core
             string format, params object[] items)
         {
             var str = string.Format("[{0}] {1}", dev.Key, string.Format(format, items));
-			LogError(errorLogLevel, str);
+            if (errorLogLevel != ErrorLogLevel.None)
+            {
+                LogError(errorLogLevel, str);
+            }
             if (Level >= level)
             {
                 Console(level, str);
@@ -403,7 +406,10 @@ namespace PepperDash.Core
             string format, params object[] items)
         {
             var str = string.Format(format, items);
-            LogError(errorLogLevel, str);
+            if (errorLogLevel != ErrorLogLevel.None)
+            {
+                LogError(errorLogLevel, str);
+            }
 			if (Level >= level)
 			{
 				Console(level, str);
