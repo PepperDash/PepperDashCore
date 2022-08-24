@@ -151,6 +151,11 @@ namespace PepperDash.Core
 			Username = username;
 			Password = password; 
 			AutoReconnectIntervalMs = 5000;
+
+            ReconnectTimer = new CTimer(o =>
+	            {
+	                Connect();
+	            }, Timeout.Infinite);
 		}
 
 		/// <summary>
@@ -162,6 +167,11 @@ namespace PepperDash.Core
             StreamDebugging = new CommunicationStreamDebugging(SPlusKey);
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			AutoReconnectIntervalMs = 5000;
+
+            ReconnectTimer = new CTimer(o =>
+            {
+                Connect();
+            }, Timeout.Infinite);
 		}
 
 		/// <summary>
@@ -203,11 +213,7 @@ namespace PepperDash.Core
             Debug.Console(1, this, "attempting connect");
 
             // Cancel reconnect if running.
-            if (ReconnectTimer != null)
-            {
-                ReconnectTimer.Stop();
-                ReconnectTimer = null;
-            }
+            ReconnectTimer.Stop();
 
             // Don't try to connect if already
             if (IsConnected)
@@ -297,11 +303,7 @@ namespace PepperDash.Core
 		{
 			ConnectEnabled = false;
 			// Stop trying reconnects, if we are
-			if (ReconnectTimer != null)
-			{
-				ReconnectTimer.Stop();
-				ReconnectTimer = null;
-			}
+		    ReconnectTimer.Stop();
 
             KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
 		}
@@ -334,20 +336,9 @@ namespace PepperDash.Core
 		    if (AutoReconnect && ConnectEnabled)
 		    {
 		        Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
-		        if (ReconnectTimer == null)
-		        {
-		            ReconnectTimer = new CTimer(o =>
-		            {
-		                Connect();
-		            }, AutoReconnectIntervalMs);
-		            Debug.Console(1, this, "Attempting connection in {0} seconds",
-		                (float) (AutoReconnectIntervalMs/1000));
-		        }
-		        else
-		        {
-		            Debug.Console(1, this, "{0} second reconnect cycle running",
-		                (float) (AutoReconnectIntervalMs/1000));
-		        }
+	            ReconnectTimer.Reset(AutoReconnectIntervalMs);
+	            Debug.Console(1, this, "Attempting connection in {0} seconds",
+	                (float) (AutoReconnectIntervalMs/1000));
 		    }
 		}
 

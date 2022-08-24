@@ -185,6 +185,16 @@ namespace PepperDash.Core
             BufferSize = bufferSize;
 			AutoReconnectIntervalMs = 5000;
 
+            RetryTimer = new CTimer(o =>
+            {
+                if (Client == null)
+                {
+                    return;
+                }
+
+                Client.ConnectToServerAsync(ConnectToServerCallback);
+            }, Timeout.Infinite);
+
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 		}
 
@@ -199,6 +209,16 @@ namespace PepperDash.Core
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
             AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
+
+            RetryTimer = new CTimer(o =>
+            {
+                if (Client == null)
+                {
+                    return;
+                }
+
+                Client.ConnectToServerAsync(ConnectToServerCallback);
+            }, Timeout.Infinite);
         }
 
         /// <summary>
@@ -211,6 +231,16 @@ namespace PepperDash.Core
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
+
+            RetryTimer = new CTimer(o =>
+            {
+                if (Client == null)
+                {
+                    return;
+                }
+
+                Client.ConnectToServerAsync(ConnectToServerCallback);
+            }, Timeout.Infinite);
 		}
 
         /// <summary>
@@ -287,11 +317,7 @@ namespace PepperDash.Core
             DisconnectCalledByUser = true;
 
             // Stop trying reconnects, if we are
-            if (RetryTimer != null)
-            {
-                RetryTimer.Stop();
-                RetryTimer = null;
-            }
+            RetryTimer.Stop();
 
             if (Client != null)
             {
@@ -337,15 +363,7 @@ namespace PepperDash.Core
                 Debug.Console(1, this, "Attempting reconnect, status={0}", Client.ClientStatus);
 
                 if (!DisconnectCalledByUser)
-                    RetryTimer = new CTimer(o => 
-                    {
-                        if (Client == null)
-                        {
-                            return;
-                        }
-                        
-                        Client.ConnectToServerAsync(ConnectToServerCallback); 
-                    }, AutoReconnectIntervalMs);
+                    RetryTimer.Reset(AutoReconnectIntervalMs);
             }
 
 		}
@@ -381,11 +399,8 @@ namespace PepperDash.Core
 
                         textHandler(this, new GenericCommMethodReceiveTextArgs(str));
 
-                    }
-
-                    
+                    }                    
                 }
-
                 client.ReceiveDataAsync(Receive);
             }
 		}
