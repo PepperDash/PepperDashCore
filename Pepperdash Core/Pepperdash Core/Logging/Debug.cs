@@ -537,10 +537,6 @@ namespace PepperDash.Core
             //check for file at old path
             if (!File.Exists(oldFilePath))
             {
-                Console(0, ErrorLogLevel.Notice,
-                    String.Format(
-                        @"Debug settings file not found at \nvram\debugSettings\program{0}. Attempting to use file at \user\debugSettings\program{0}",
-                        InitialParametersClass.ApplicationNumber));
                 return;
             }
 
