@@ -292,7 +292,7 @@ namespace PepperDash.Core
             {
                 if (IsConnected)
                 {
-                    Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Connection already connected. Exiting Connect()");
+                    Debug.Console(1, this, "Connection already connected. Exiting Connect()");
                 }
                 else
                 {
@@ -319,10 +319,11 @@ namespace PepperDash.Core
             {
                 if (IsConnected || DisconnectCalledByUser == true)
                 {
-                    Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Reconnect no longer needed. Exiting Reconnect()");
+                    Debug.Console(1, this, "Reconnect no longer needed. Exiting Reconnect()");
                 }
                 else
                 {
+                    Debug.Console(1, this, "Attempting reconnect now");
                     Client.ConnectToServerAsync(ConnectToServerCallback);
                 }
             }
@@ -362,9 +363,15 @@ namespace PepperDash.Core
         /// <param name="c"></param>
 		void ConnectToServerCallback(TCPClient c)
 		{
-			Debug.Console(1, this, "Server connection result: {0}", c.ClientStatus);
-			if (c.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
-				WaitAndTryReconnect();
+            if (c.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
+            {
+                Debug.Console(0, this, "Server connection result: {0}", c.ClientStatus);
+                WaitAndTryReconnect();
+            }
+            else
+            {
+                Debug.Console(1, this, "Server connection result: {0}", c.ClientStatus);
+            }
 		}
 
         /// <summary>
@@ -467,14 +474,14 @@ namespace PepperDash.Core
         /// <param name="clientSocketStatus"></param>
 		void Client_SocketStatusChange(TCPClient client, SocketStatus clientSocketStatus)
 		{
-			Debug.Console(1, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
-			if (client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
-				WaitAndTryReconnect();
-
-            if(clientSocketStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
+            if (clientSocketStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
             {
+                Debug.Console(0, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
+                WaitAndTryReconnect();
+            }
+            {
+                Debug.Console(1, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
 				Client.ReceiveDataAsync(Receive);
-				DisconnectCalledByUser = false;
             }
 
 			var handler = ConnectionChange;

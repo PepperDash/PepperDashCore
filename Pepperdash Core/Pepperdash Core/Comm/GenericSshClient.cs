@@ -217,7 +217,7 @@ namespace PepperDash.Core
             {
                 if (IsConnected)
                 {
-                    Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Connection already connected.  Exiting Connect()");
+                    Debug.Console(1, this, "Connection already connected.  Exiting Connect()");
                 }
                 else
                 {
@@ -272,7 +272,7 @@ namespace PepperDash.Core
                                 Username, ie.Message);
                         }
                         else
-                            Debug.Console(1, this, errorLogLevel, "Error on connect:\r({0})", e);
+                            Debug.Console(1, this, errorLogLevel, "Error on connect:\r({0})", ie.Message);
 
                         DisconnectLogged = true;
                         KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
@@ -285,7 +285,7 @@ namespace PepperDash.Core
                     catch (Exception e)
                     {
                         var errorLogLevel = DisconnectLogged == true ? Debug.ErrorLogLevel.None : Debug.ErrorLogLevel.Error;
-                        Debug.Console(1, this, errorLogLevel, "Unhandled exception on connect:\r({0})", e);
+                        Debug.Console(1, this, errorLogLevel, "Unhandled exception on connect:\r({0})", e.Message);
                         DisconnectLogged = true;
                         KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
                         if (AutoReconnect)
@@ -330,7 +330,7 @@ namespace PepperDash.Core
                 }
                 catch (Exception ex)
                 {
-                    Debug.Console(0, this, "Exception killing client: {0}", ex.Message);
+                    Debug.Console(1, this, "Exception killing client: {0}", ex.Message);
                 }
             }
         }
