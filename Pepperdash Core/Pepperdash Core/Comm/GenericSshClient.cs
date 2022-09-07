@@ -129,7 +129,7 @@ namespace PepperDash.Core
 		CTimer ReconnectTimer;
 
         //Lock object to prevent simulatneous connect/disconnect operations
-        private readonly object connectLock = new object();
+        private CCriticalSection connectLock = new CCriticalSection();
 
         private bool DisconnectLogged = false;
 
@@ -163,7 +163,6 @@ namespace PepperDash.Core
 		public GenericSshClient()
 			: base(SPlusKey)
 		{
-            StreamDebugging = new CommunicationStreamDebugging(SPlusKey);
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			AutoReconnectIntervalMs = 5000;
 
@@ -213,8 +212,10 @@ namespace PepperDash.Core
             }
 
             ConnectEnabled = true;
-            lock (connectLock)
+
+            try
             {
+                connectLock.Enter();
                 if (IsConnected)
                 {
                     Debug.Console(1, this, "Connection already connected.  Exiting Connect()");
@@ -296,6 +297,10 @@ namespace PepperDash.Core
                     }
                 }
             }
+            finally
+            {
+                connectLock.Leave();
+            }
         }
 
 		/// <summary>
@@ -303,11 +308,16 @@ namespace PepperDash.Core
 		/// </summary>
 		public void Disconnect()
 		{
-            lock(connectLock)
+            try
             {
+                connectLock.Enter();
                 // Stop trying reconnects, if we are
                 ReconnectTimer.Stop();
                 KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
+            }
+            finally
+            {
+                connectLock.Leave();
             }
 		}
 
@@ -404,9 +414,14 @@ namespace PepperDash.Core
                 else
                     Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Unhandled SSH client error: {0}", e.Exception);
 
-                lock (connectLock)
+                try
                 {
+                    connectLock.Enter();
                     KillClient(SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY);
+                }
+                finally
+                {
+                    connectLock.Leave();
                 }
                 if (AutoReconnect && ConnectEnabled)
                 {

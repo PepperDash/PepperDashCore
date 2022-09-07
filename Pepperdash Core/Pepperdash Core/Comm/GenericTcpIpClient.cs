@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {
@@ -18,7 +17,7 @@ namespace PepperDash.Core
         private const string SplusKey = "Uninitialized TcpIpClient";
 
         /// <summary>
-        /// Enables debugging to console
+        /// Stream debugging 
         /// </summary>
         public CommunicationStreamDebugging StreamDebugging { get; private set; }
 
@@ -39,23 +38,24 @@ namespace PepperDash.Core
 		public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
 
-		private string _Hostname { get; set;} 
+		private string _hostname;
+
         /// <summary>
         /// Address of server
         /// </summary>
-        public string Hostname {
+        public string Hostname
+        {
 			get
 			{
-				return _Hostname;
+				return _hostname;
 			}
 
 			set
 			{
-				_Hostname = value;
-				if (Client != null)
+			 _hostname = value;
+				if (_client != null)
 				{
-
-					Client.AddressClientConnectedTo = _Hostname;
+					_client.AddressClientConnectedTo = _hostname;
 				}
 			}
 		}
@@ -83,14 +83,14 @@ namespace PepperDash.Core
 		/// <summary>
 		/// The actual client class
 		/// </summary>
-		public TCPClient Client { get; private set; }
+		private TCPClient _client;
 
 		/// <summary>
-		/// True if connected to the server
+		/// Bool showing if socket is connected
 		/// </summary>
 		public bool IsConnected 
         { 
-            get { return Client != null && Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; } 
+            get { return _client != null && _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; } 
         }
         
         /// <summary>
@@ -102,21 +102,19 @@ namespace PepperDash.Core
         }
 
 		/// <summary>
-		/// Status of the socket
+		/// _client socket status Read only
 		/// </summary>
 		public SocketStatus ClientStatus 
         { 
             get 
             {
-                if (Client == null)
-                    return SocketStatus.SOCKET_STATUS_NO_CONNECT;
-                return Client.ClientStatus; 
+                return _client == null ? SocketStatus.SOCKET_STATUS_NO_CONNECT : _client.ClientStatus; 
             } 
         }
 
         /// <summary>
         /// Contains the familiar Simpl analog status values. This drives the ConnectionChange event
-        /// and IsConnected with be true when this == 2.
+        /// and IsConnected would be true when this == 2.
         /// </summary>
         public ushort UStatus
         {
@@ -124,7 +122,7 @@ namespace PepperDash.Core
         }
 
 		/// <summary>
-        /// Status of the socket
+        /// Status text shows the message associated with socket status
 		/// </summary>
 		public string ClientStatusText { get { return ClientStatus.ToString(); } }
 
@@ -140,7 +138,7 @@ namespace PepperDash.Core
 		public string ConnectionFailure { get { return ClientStatus.ToString(); } }
 
 		/// <summary>
-		/// If true, enables AutoConnect
+		/// bool to track if auto reconnect should be set on the socket
 		/// </summary>
 		public bool AutoReconnect { get; set; }
 
@@ -152,13 +150,14 @@ namespace PepperDash.Core
             get { return (ushort)(AutoReconnect ? 1 : 0); }
             set { AutoReconnect = value == 1; }
         }
+
 		/// <summary>
 		/// Milliseconds to wait before attempting to reconnect. Defaults to 5000
 		/// </summary>
 		public int AutoReconnectIntervalMs { get; set; }
 
 		/// <summary>
-		/// Set only when the disconnect method is called.
+		/// Set only when the disconnect method is called
 		/// </summary>
 		bool DisconnectCalledByUser;
 
@@ -167,13 +166,14 @@ namespace PepperDash.Core
 		/// </summary>
 		public bool Connected
 		{
-			get { return Client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
+			get { return _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
 		}
 
         //Lock object to prevent simulatneous connect/disconnect operations
-        private readonly object connectLock = new object();
+        private CCriticalSection connectLock = new CCriticalSection();
 
-		CTimer RetryTimer;
+        // private Timer for auto reconnect
+		private CTimer RetryTimer;
 
         /// <summary>
         /// Constructor
@@ -186,18 +186,17 @@ namespace PepperDash.Core
 			: base(key)
 		{
             StreamDebugging = new CommunicationStreamDebugging(key);
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            AutoReconnectIntervalMs = 5000;
             Hostname = address;
             Port = port;
             BufferSize = bufferSize;
-			AutoReconnectIntervalMs = 5000;
 
             RetryTimer = new CTimer(o =>
             {
                 Reconnect();
             }, Timeout.Infinite);
-
-            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
-		}
+        }
 
         /// <summary>
         /// Constructor
@@ -223,7 +222,6 @@ namespace PepperDash.Core
         public GenericTcpIpClient()
 			: base(SplusKey)
 		{
-            StreamDebugging = new CommunicationStreamDebugging(SplusKey);
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
@@ -262,9 +260,9 @@ namespace PepperDash.Core
 		{
             RetryTimer.Stop();
             RetryTimer.Dispose();
-            if (Client != null)
+            if (_client != null)
             {
-                Client.SocketStatusChange -= this.Client_SocketStatusChange;
+             _client.SocketStatusChange -= this.Client_SocketStatusChange;
                 DisconnectClient();
             }
 			return true;
@@ -288,8 +286,9 @@ namespace PepperDash.Core
                 }
             }
 
-            lock(connectLock)
+            try
             {
+                connectLock.Enter();
                 if (IsConnected)
                 {
                     Debug.Console(1, this, "Connection already connected. Exiting Connect()");
@@ -298,25 +297,28 @@ namespace PepperDash.Core
                 {
                     //Stop retry timer if running
                     RetryTimer.Stop();
-
-                    Client = new TCPClient(Hostname, Port, BufferSize);
-                    Client.SocketStatusChange -= Client_SocketStatusChange;
-                    Client.SocketStatusChange += Client_SocketStatusChange;
+                    _client = new TCPClient(Hostname, Port, BufferSize);
+                    _client.SocketStatusChange -= Client_SocketStatusChange;
+                    _client.SocketStatusChange += Client_SocketStatusChange;
                     DisconnectCalledByUser = false;
-
-                    Client.ConnectToServerAsync(ConnectToServerCallback);
+                    _client.ConnectToServerAsync(ConnectToServerCallback);
                 }
+            }
+            finally
+            {
+                connectLock.Leave();
             }
 		}
 
         private void Reconnect()
         {
-            if (Client == null)
+            if (_client == null)
             {
                 return;
             }
-            lock (connectLock)
+            try
             {
+                connectLock.Enter();
                 if (IsConnected || DisconnectCalledByUser == true)
                 {
                     Debug.Console(1, this, "Reconnect no longer needed. Exiting Reconnect()");
@@ -324,8 +326,12 @@ namespace PepperDash.Core
                 else
                 {
                     Debug.Console(1, this, "Attempting reconnect now");
-                    Client.ConnectToServerAsync(ConnectToServerCallback);
+                    _client.ConnectToServerAsync(ConnectToServerCallback);
                 }
+            }
+            finally
+            {
+                connectLock.Leave();
             }
         }
 
@@ -334,13 +340,18 @@ namespace PepperDash.Core
         /// </summary>
 		public void Disconnect()
 		{
-            lock (connectLock)
+            try
             {
+                connectLock.Enter();
                 DisconnectCalledByUser = true;
 
                 // Stop trying reconnects, if we are
                 RetryTimer.Stop();
                 DisconnectClient();
+            }
+            finally
+            {
+                connectLock.Leave();
             }
 		}
 
@@ -349,11 +360,11 @@ namespace PepperDash.Core
         /// </summary>
         public void DisconnectClient()
         {
-            if (Client != null)
+            if (_client != null)
             {
                 Debug.Console(1, this, "Disconnecting client");
                 if (IsConnected)
-                    Client.DisconnectFromServer();
+                    _client.DisconnectFromServer();
             }
         }
 
@@ -381,14 +392,19 @@ namespace PepperDash.Core
 		{
             CrestronInvoke.BeginInvoke(o =>
             {
-                lock (connectLock)
+                try
                 {
-                    if (!IsConnected && AutoReconnect && !DisconnectCalledByUser && Client != null)
+                    connectLock.Enter();
+                    if (!IsConnected && AutoReconnect && !DisconnectCalledByUser && _client != null)
                     {
                         DisconnectClient();
-                        Debug.Console(1, this, "Attempting reconnect, status={0}", Client.ClientStatus);
+                        Debug.Console(1, this, "Attempting reconnect, status={0}", _client.ClientStatus);
                         RetryTimer.Reset(AutoReconnectIntervalMs);
                     }
+                }
+                finally
+                {
+                    connectLock.Leave();
                 }
             });
 		}
@@ -420,7 +436,9 @@ namespace PepperDash.Core
                         var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
 
                         if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                        {
                             Debug.Console(0, this, "Received {1} characters of text: '{0}'", ComTextHelper.GetDebugText(str), str.Length);
+                        }
 
                         textHandler(this, new GenericCommMethodReceiveTextArgs(str));
                     }                    
@@ -438,8 +456,8 @@ namespace PepperDash.Core
 			// Check debug level before processing byte array
             if (StreamDebugging.TxStreamDebuggingIsEnabled)
                 Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
-            if(Client != null)
-			    Client.SendData(bytes, bytes.Length);
+            if (_client != null)
+			    _client.SendData(bytes, bytes.Length);
 		}
 
 		/// <summary>
@@ -463,8 +481,8 @@ namespace PepperDash.Core
 		{
             if (StreamDebugging.TxStreamDebuggingIsEnabled)
                 Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
-            if(Client != null)
-			    Client.SendData(bytes, bytes.Length);
+            if (_client != null)
+			    _client.SendData(bytes, bytes.Length);
 		}
 
         /// <summary>
@@ -479,9 +497,10 @@ namespace PepperDash.Core
                 Debug.Console(0, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
                 WaitAndTryReconnect();
             }
+            else
             {
                 Debug.Console(1, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
-				Client.ReceiveDataAsync(Receive);
+			    _client.ReceiveDataAsync(Receive);
             }
 
 			var handler = ConnectionChange;
