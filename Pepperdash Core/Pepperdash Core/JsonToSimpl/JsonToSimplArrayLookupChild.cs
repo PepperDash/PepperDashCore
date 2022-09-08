@@ -8,15 +8,24 @@ using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core.JsonToSimpl
 {
+    /// <summary>
+    /// Used to interact with an array of values with the S+ modules
+    /// </summary>
 	public class JsonToSimplArrayLookupChild : JsonToSimplChildObjectBase
 	{
+        /// <summary>
+        /// 
+        /// </summary>
 		public string SearchPropertyName { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
 		public string SearchPropertyValue { get; set; }
 
 		int ArrayIndex;
 
 		/// <summary>
-		/// For <2.4.1 array lookups
+		/// For gt2.4.1 array lookups
 		/// </summary>
 		/// <param name="file"></param>
 		/// <param name="key"></param>
@@ -70,6 +79,9 @@ namespace PepperDash.Core.JsonToSimpl
 				PathSuffix == null ? "" : PathSuffix);
 		}
 
+        /// <summary>
+        /// Process all values
+        /// </summary>
 		public override void ProcessAll()
 		{
 			if (FindInArray())

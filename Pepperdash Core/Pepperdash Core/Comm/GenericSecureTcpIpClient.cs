@@ -416,6 +416,10 @@ namespace PepperDash.Core
 
         }
 
+        /// <summary>
+        /// Deactivate the client
+        /// </summary>
+        /// <returns></returns>
         public override bool Deactivate()
         {
             if (_client != null)
@@ -604,30 +608,6 @@ namespace PepperDash.Core
             ConnectFailTimer.Dispose();
             ConnectFailTimer = null;
         }
-
-        /// <summary>
-        ///  Internal call to close up client. ALWAYS use this when disconnecting.
-        /// </summary>
-        //void Cleanup()
-        //{
-        //    IsTryingToConnect = false;
-
-        //    if (_client != null)
-        //    {
-        //        //SecureClient.DisconnectFromServer();
-        //        Debug.Console(2, this, "Disconnecting _client {0}", DisconnectCalledByUser ? ", Called by user" : "");
-        //        _client.SocketStatusChange -= Client_SocketStatusChange;
-        //        _client.Dispose();
-        //        _client = null;
-        //    }
-        //    if (ConnectFailTimer != null)
-        //    {
-        //        ConnectFailTimer.Stop();
-        //        ConnectFailTimer.Dispose();
-        //        ConnectFailTimer = null;
-        //    }
-        //}
-
        
         #region Methods
 

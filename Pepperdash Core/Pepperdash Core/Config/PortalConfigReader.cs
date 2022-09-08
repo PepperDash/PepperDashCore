@@ -12,6 +12,9 @@ using PepperDash.Core;
 
 namespace PepperDash.Core.Config
 {
+    /// <summary>
+    /// Reads a Portal formatted config file
+    /// </summary>
 	public class PortalConfigReader
 	{
 		/// <summary>
@@ -170,8 +173,9 @@ namespace PepperDash.Core.Config
 		/// <summary>
 		/// Merge o2 onto o1
 		/// </summary>
-		/// <param name="a"></param>
-		/// <param name="b"></param>
+        /// <param name="o1"></param>
+        /// <param name="o2"></param>
+        /// <param name="path"></param>
 		static JObject Merge(JObject o1, JObject o2, string path)
 		{
 			foreach (var o2Prop in o2)
