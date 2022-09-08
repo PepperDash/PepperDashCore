@@ -51,7 +51,7 @@ namespace PepperDash.Core
 		string[] StringDelimiters;
 
 		/// <summary>
-		/// Fires up a gather, given a IBasicCommunicaion port and char for de
+		/// Constructor for using a char delimiter
 		/// </summary>
 		/// <param name="port"></param>
 		/// <param name="delimiter"></param>
@@ -63,7 +63,7 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// 
+		/// Constructor for using a single string delimiter
 		/// </summary>
 		/// <param name="port"></param>
 		/// <param name="delimiter"></param>
@@ -72,6 +72,11 @@ namespace PepperDash.Core
 		{
 		}
 
+        /// <summary>
+        /// Constructor for using an array of string delimiters
+        /// </summary>
+        /// <param name="port"></param>
+        /// <param name="delimiters"></param>
         public CommunicationGather(ICommunicationReceiver port, string[] delimiters)
         {
             Port = port;

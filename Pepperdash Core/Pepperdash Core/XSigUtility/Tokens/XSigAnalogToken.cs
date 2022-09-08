@@ -2,10 +2,18 @@ using System;
 
 namespace PepperDash.Core.Intersystem.Tokens
 {
+    /// <summary>
+    /// Represents an XSigAnalogToken
+    /// </summary>
     public sealed class XSigAnalogToken : XSigToken, IFormattable
     {
         private readonly ushort _value;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
         public XSigAnalogToken(int index, ushort value)
             : base(index)
         {
@@ -16,16 +24,26 @@ namespace PepperDash.Core.Intersystem.Tokens
             _value = value;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public ushort Value
         {
             get { return _value; }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override XSigTokenType TokenType
         {
             get { return XSigTokenType.Analog; }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override byte[] GetBytes()
         {
             return new[] {
@@ -36,17 +54,32 @@ namespace PepperDash.Core.Intersystem.Tokens
             };
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public override XSigToken GetTokenWithOffset(int offset)
         {
             if (offset == 0) return this;
             return new XSigAnalogToken(Index + offset, Value);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return Index + " = 0x" + Value.ToString("X4");
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="format"></param>
+        /// <param name="formatProvider"></param>
+        /// <returns></returns>
         public string ToString(string format, IFormatProvider formatProvider)
         {
             return Value.ToString(format, formatProvider);

@@ -14,9 +14,8 @@ namespace PepperDash.Core
     public class GenericSshClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
 	{
 	    private const string SPlusKey = "Uninitialized SshClient";
-
         /// <summary>
-        /// Enables debugging to console
+        /// Object to enable stream debugging
         /// </summary>
         public CommunicationStreamDebugging StreamDebugging { get; private set; }
 
@@ -34,6 +33,11 @@ namespace PepperDash.Core
 		/// Event when the connection status changes.
 		/// </summary>
 		public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
 
 		/// <summary>
 		/// Address of server

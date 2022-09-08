@@ -15,9 +15,8 @@ namespace PepperDash.Core
 	public class GenericTcpIpClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
     {
         private const string SplusKey = "Uninitialized TcpIpClient";
-
         /// <summary>
-        /// Stream debugging 
+        /// Object to enable stream debugging
         /// </summary>
         public CommunicationStreamDebugging StreamDebugging { get; private set; }
 
@@ -126,10 +125,10 @@ namespace PepperDash.Core
 		/// </summary>
 		public string ClientStatusText { get { return ClientStatus.ToString(); } }
 
-        [Obsolete]
 		/// <summary>
 		/// Ushort representation of client status
 		/// </summary>
+        [Obsolete]
 		public ushort UClientStatus { get { return (ushort)ClientStatus; } }
 
 		/// <summary>
@@ -178,7 +177,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="key">unique string to differentiate between instances</param>
         /// <param name="address"></param>
         /// <param name="port"></param>
         /// <param name="bufferSize"></param>
@@ -550,6 +549,9 @@ namespace PepperDash.Core
 		/// </summary>
 		public int AutoReconnectIntervalMs { get; set; }
 
+        /// <summary>
+        /// Default constructor
+        /// </summary>
 		public TcpSshPropertiesConfig()
 		{
 			BufferSize = 32768;

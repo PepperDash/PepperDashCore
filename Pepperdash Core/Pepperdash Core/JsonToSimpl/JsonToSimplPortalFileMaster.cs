@@ -12,6 +12,9 @@ using PepperDash.Core.Config;
 
 namespace PepperDash.Core.JsonToSimpl
 {
+    /// <summary>
+    /// Portal File Master
+    /// </summary>
     public class JsonToSimplPortalFileMaster : JsonToSimplMaster
     {
 		/// <summary>
@@ -19,6 +22,9 @@ namespace PepperDash.Core.JsonToSimpl
 		/// </summary>
 		public string PortalFilepath { get; private set; }
 
+        /// <summary>
+        /// File path of the actual file being read (Portal or local)
+        /// </summary>
         public string ActualFilePath { get; private set; }
 
 		/*****************************************************************************************/
@@ -166,38 +172,6 @@ namespace PepperDash.Core.JsonToSimpl
 						//http://stackoverflow.com/questions/17455052/how-to-set-the-value-of-a-json-path-using-json-net
 						Debug.Console(1, "JSON Master[{0}] Cannot write value onto missing property: '{1}'", UniqueID, path);
 						
-//                        JContainer jpart = JsonObject;
-//                        // walk down the path and find where it goes
-//#warning Does not handle arrays.
-//                        foreach (var part in path.Split('.'))
-//                        {
-
-//                            var openPos = part.IndexOf('[');
-//                            if (openPos > -1)
-//                            {
-//                                openPos++; // move to number
-//                                var closePos = part.IndexOf(']');
-//                                var arrayName = part.Substring(0, openPos - 1); // get the name
-//                                var index = Convert.ToInt32(part.Substring(openPos, closePos - openPos));
-
-//                                // Check if the array itself exists and add the item if so
-//                                if (jpart[arrayName] != null)
-//                                {
-//                                    var arrayObj = jpart[arrayName] as JArray;
-//                                    var item = arrayObj[index];
-//                                    if (item == null)
-//                                        arrayObj.Add(new JObject());
-//                                }
-								
-//                                Debug.Console(0, "IGNORING MISSING ARRAY VALUE FOR NOW");
-//                                continue;
-//                            }
-//                            // Build the 
-//                            if (jpart[part] == null)
-//                                jpart.Add(new JProperty(part, new JObject()));
-//                            jpart = jpart[part] as JContainer;
-//                        }
-//                        jpart.Replace(UnsavedValues[path]);
 					}
 				}
 				using (StreamWriter sw = new StreamWriter(ActualFilePath))
