@@ -40,7 +40,6 @@ namespace PepperDash.Core.DebugThings
 		/// </summary>
 		/// <param name="contextKey"></param>
 		/// <param name="level"></param>
-		/// <returns>True if level is between 0 & 2 and the conte </returns>
 		public void SetLevel(string contextKey, int level)
 		{
 			if (level < 0 || level > 2)

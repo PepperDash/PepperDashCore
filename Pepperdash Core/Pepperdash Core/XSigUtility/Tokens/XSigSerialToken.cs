@@ -3,10 +3,18 @@ using System.Text;
 
 namespace PepperDash.Core.Intersystem.Tokens
 {
+    /// <summary>
+    /// Represents an XSigSerialToken
+    /// </summary>
     public sealed class XSigSerialToken : XSigToken
     {
         private readonly string _value;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
         public XSigSerialToken(int index, string value)
             : base(index)
         {
@@ -17,16 +25,26 @@ namespace PepperDash.Core.Intersystem.Tokens
             _value = value;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public string Value
         {
             get { return _value; }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override XSigTokenType TokenType
         {
             get { return XSigTokenType.Serial; }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override byte[] GetBytes()
         {
             var serialBytes = String.IsNullOrEmpty(Value) ? new byte[0] : Encoding.GetEncoding(28591).GetBytes(Value);
@@ -40,12 +58,21 @@ namespace PepperDash.Core.Intersystem.Tokens
             return xsig;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="offset"></param>
+        /// <returns></returns>
         public override XSigToken GetTokenWithOffset(int offset)
         {
             if (offset == 0) return this;
             return new XSigSerialToken(Index + offset, Value);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return Index + " = \"" + Value + "\"";

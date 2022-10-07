@@ -14,12 +14,24 @@ using PepperDash.Core.JsonToSimpl;
 
 namespace PepperDash.Core.WebApi.Presets
 {
+    /// <summary>
+    /// Passcode client for the WebApi
+    /// </summary>
 	public class WebApiPasscodeClient : IKeyed
 	{
+        /// <summary>
+        /// Notifies when user received
+        /// </summary>
 		public event EventHandler<UserReceivedEventArgs> UserReceived;
 
+        /// <summary>
+        /// Notifies when Preset received
+        /// </summary>
 		public event EventHandler<PresetReceivedEventArgs> PresetReceived;
 
+        /// <summary>
+        /// Unique identifier for this instance
+        /// </summary>
 		public string Key { get; private set; }
 
 		//string JsonMasterKey;
@@ -46,6 +58,13 @@ namespace PepperDash.Core.WebApi.Presets
 		{
 		}
 
+        /// <summary>
+        /// Initializes the instance
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="jsonMasterKey"></param>
+        /// <param name="urlBase"></param>
+        /// <param name="defaultPresetJsonFilePath"></param>
 		public void Initialize(string key, string jsonMasterKey, string urlBase, string defaultPresetJsonFilePath)
 		{
 			Key = key;
@@ -58,6 +77,10 @@ namespace PepperDash.Core.WebApi.Presets
 			J2SMaster.Initialize(jsonMasterKey);
 		}
 
+        /// <summary>
+        /// Gets the user for a passcode
+        /// </summary>
+        /// <param name="passcode"></param>
 		public void GetUserForPasscode(string passcode)
 		{
             // Bullshit duplicate code here... These two cases should be the same 

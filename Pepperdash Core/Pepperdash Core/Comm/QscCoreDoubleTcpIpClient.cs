@@ -6,15 +6,36 @@ using Crestron.SimplSharp;
 
 namespace PepperDash.Core
 {
+    /// <summary>
+    /// Allows for two simultaneous TCP clients to connect to a redundant pair of QSC Core DSPs and manages 
+    /// </summary>
     public class QscCoreDoubleTcpIpClient : IKeyed
     {
+        /// <summary>
+        /// Key to uniquely identify the instance of the class
+        /// </summary>
         public string Key { get; private set; }
 
+        /// <summary>
+        /// Fires when a bool value changes to notify the S+ module
+        /// </summary>
         public event EventHandler<BoolChangeEventArgs> BoolChange;
+        /// <summary>
+        /// Fires when a ushort value changes to notify the S+ module
+        /// </summary>
         public event EventHandler<UshrtChangeEventArgs> UshortChange;
+        /// <summary>
+        /// Fires when a string value changes to notify the S+ module
+        /// </summary>
         public event EventHandler<StringChangeEventArgs> StringChange;
 
+        /// <summary>
+        /// The client for the master DSP unit
+        /// </summary>
         public GenericTcpIpClient MasterClient { get; private set; }
+        /// <summary>
+        /// The client for the slave DSP unit
+        /// </summary>
         public GenericTcpIpClient SlaveClient { get; private set; }
 
         string Username;
@@ -45,7 +66,7 @@ namespace PepperDash.Core
         }
 
         /// <summary>
-        /// 
+        /// Connects to both DSP units
         /// </summary>
         /// <param name="key"></param>
         /// <param name="masterAddress"></param>
@@ -55,6 +76,7 @@ namespace PepperDash.Core
         /// <param name="username"></param>
         /// <param name="password"></param>
         /// <param name="pollingIntervalSeconds"></param>
+        /// <param name="lineEnding"></param>
         public void Connect(string key, string masterAddress, int masterPort,
             string slaveAddress, int slavePort, string username, string password,
             int pollingIntervalSeconds, string lineEnding)
@@ -299,14 +321,31 @@ namespace PepperDash.Core
                 handler(this, new StringChangeEventArgs(value, type));
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public const ushort MasterIsActiveId = 3;
+        /// <summary>
+        /// 
+        /// </summary>
         public const ushort SlaveIsActiveId = 4;
+        /// <summary>
+        /// 
+        /// </summary>
         public const ushort MainModuleInitiailzeId = 5;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public const ushort MasterClientStatusId = 101;
+        /// <summary>
+        /// 
+        /// </summary>
         public const ushort SlaveClientStatusId = 102;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public const ushort LineReceivedId = 201;
     }
 }
