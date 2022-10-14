@@ -8,6 +8,7 @@ using Crestron.SimplSharp.Ssh.Common;
 
 namespace PepperDash.Core
 {
+    /*
 	/// <summary>
 	/// 
 	/// </summary>
@@ -378,6 +379,7 @@ namespace PepperDash.Core
 		/// </summary>
 		void Stream_DataReceived(object sender, Crestron.SimplSharp.Ssh.Common.ShellDataEventArgs e)
 		{
+
 			var bytes = e.Data;
 			if (bytes.Length > 0)
 			{
@@ -537,5 +539,5 @@ namespace PepperDash.Core
 			IsConnected = isConnected;
 			Client = client;
 		}
-	}
+	}*/
 }
