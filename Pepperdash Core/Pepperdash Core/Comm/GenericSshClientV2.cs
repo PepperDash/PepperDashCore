@@ -193,7 +193,6 @@ namespace PepperDash.Core
             else
             {
                 Debug.Console(1, this, "SendText() called but not connected");
-                Disconnect(SocketStatus.SOCKET_STATUS_NO_CONNECT); 
             }
         }
 
@@ -214,7 +213,6 @@ namespace PepperDash.Core
             else
             {
                 Debug.Console(1, this, "SendText() called but not connected");
-                Disconnect(SocketStatus.SOCKET_STATUS_NO_CONNECT);
             }
         }
 
