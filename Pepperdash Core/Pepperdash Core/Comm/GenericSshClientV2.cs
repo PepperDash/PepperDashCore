@@ -508,15 +508,12 @@ namespace PepperDash.Core
 
         private void AuthenticationPromptHandler(object sender, AuthenticationPromptEventArgs e)
         {
-            foreach (
-                var prompt in
-                    e.Prompts.Where(
-                        prompt => prompt.Request.IndexOf("Password:", StringComparison.InvariantCultureIgnoreCase) != -1)
-                )
-                prompt.Response = Password;
+            foreach (var prompt in e.Prompts)
+                if (prompt.Request.IndexOf("Password:", StringComparison.InvariantCultureIgnoreCase) != -1)
+                    prompt.Response = Password;
         }
 
-        private static void HostKeyReceivedHandler(object sender, HostKeyEventArgs e)
+        private void HostKeyReceivedHandler(object sender, HostKeyEventArgs e)
         {
             e.CanTrust = true;
         }
