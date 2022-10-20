@@ -279,7 +279,7 @@ namespace PepperDash.Core
 
                 Debug.Console(1, this, "Ingoring connection request while connect/disconnect in progress...");
                 if (!connectTimer.Disposed && AutoReconnect)
-                    connectTimer.Reset(10000);
+                    connectTimer.Reset(AutoReconnectIntervalMs);
             }
         }
 
@@ -378,21 +378,30 @@ namespace PepperDash.Core
 
         private void DisconnectInternal(SocketStatus status)
         {
-            DisposeOfStream();
-            DisposeOfClient();
-            DisposeOfAuthMethods();
-
-            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Disconnect Complete");
-            ClientStatus = status;
-
-            DisposeOfTimer(disconnectTimer);
-            if (!connectTimer.Disposed && AutoReconnect)
+            try
             {
-                Debug.Console(1, this, "Autoreconnect try again soon");
-                connectTimer.Reset(AutoReconnectIntervalMs);
-            }
+                DisposeOfStream();
+                DisposeOfClient();
+                DisposeOfAuthMethods();
 
-            Interlocked.Exchange(ref connectionProgress, ConnectionProgress.Idle);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Disconnect Complete");
+                ClientStatus = status;
+
+                DisposeOfTimer(disconnectTimer);
+                if (!connectTimer.Disposed && AutoReconnect)
+                {
+                    Debug.Console(1, this, "Autoreconnect try again soon");
+                    connectTimer.Reset(AutoReconnectIntervalMs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Caught a general exception in disconnect:{0}", ex);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref connectionProgress, ConnectionProgress.Idle);
+            }
         }
 
         private void DisposeOfAuthMethods()
