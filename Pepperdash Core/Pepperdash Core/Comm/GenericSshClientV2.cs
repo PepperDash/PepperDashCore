@@ -277,7 +277,7 @@ namespace PepperDash.Core
             else
             {
 
-                Debug.Console(1, this, "Ingoring connection request while connect/disconnect in progress...");
+                Debug.Console(1, this, "Ignoring connection request while connect/disconnect in progress...");
                 if (!connectTimer.Disposed && AutoReconnect)
                     connectTimer.Reset(AutoReconnectIntervalMs);
             }
@@ -372,7 +372,7 @@ namespace PepperDash.Core
                     DisposeOfTimer(disconnectTimer);
 
                 disconnectTimer = new CTimer(_ => Disconnect(status), 10000);
-                Debug.Console(1, this, "Ingoring disconnect request while connect/disconnect in progress... will try again soon");
+                Debug.Console(1, this, "Ignoring disconnect request while connect/disconnect in progress... will try again soon");
             }
         }
 
