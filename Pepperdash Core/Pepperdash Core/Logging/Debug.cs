@@ -519,8 +519,13 @@ namespace PepperDash.Core
         /// </summary>
         static string GetMemoryFileName()
         {
-            CheckForMigration();
-            return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
+            {
+                CheckForMigration();
+                return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            }
+
+            return string.Format("", InitialParametersClass.RoomId);
         }
 
         private static void CheckForMigration()
