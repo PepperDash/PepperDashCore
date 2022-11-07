@@ -69,7 +69,16 @@ namespace PepperDash.Core
             // Get the assembly version and print it to console and the log
             GetVersion();
 
-            var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
+            string msg = "";
+
+            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
+            {
+                msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
+            }
+            else if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
+            {
+                msg = string.Format("[Room {0}] Using PepperDash_Core v{1}", InitialParametersClass.RoomId, PepperDashCoreVersion);
+            }
 
             CrestronConsole.PrintLine(msg);
 
