@@ -69,6 +69,7 @@ namespace PepperDash.Core
 		}
 
         private bool IsConnecting = false;
+        private bool DisconnectLogged = false;
 
 		/// <summary>
 		/// S+ helper for IsConnected
@@ -254,24 +255,28 @@ namespace PepperDash.Core
                 Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connected");
                 ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
                 IsConnecting = false;
+                DisconnectLogged = false;
                 return; // Success will not pass here
             }
             catch (SshConnectionException e)
             {
                 var ie = e.InnerException; // The details are inside!!
+                var errorLogLevel = DisconnectLogged == true ? Debug.ErrorLogLevel.None : Debug.ErrorLogLevel.Error;
+
                 if (ie is SocketException)
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.Message);
+                    Debug.Console(1, this, errorLogLevel, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.Message);
                 else if (ie is System.Net.Sockets.SocketException)
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
+                    Debug.Console(1, this, errorLogLevel, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
                         Key, Hostname, Port, ie.GetType());
                 else if (ie is SshAuthenticationException)
                 {
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Authentication failure for username '{0}', ({1})",
+                    Debug.Console(1, this, errorLogLevel, "Authentication failure for username '{0}', ({1})",
                         Username, ie.Message);
                 }
                 else
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error on connect:\r({0})", e);
+                    Debug.Console(1, this, errorLogLevel, "Error on connect:\r({0})", e);
 
+                DisconnectLogged = true;
                 ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
                 HandleConnectionFailure();
             }
@@ -341,7 +346,7 @@ namespace PepperDash.Core
 		            {
 		                Connect();
 		            }, AutoReconnectIntervalMs);
-		            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Attempting connection in {0} seconds",
+		            Debug.Console(1, this, "Attempting connection in {0} seconds",
 		                (float) (AutoReconnectIntervalMs/1000));
 		        }
 		        else
