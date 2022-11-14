@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
@@ -8,262 +8,324 @@ using Crestron.SimplSharp.Ssh.Common;
 
 namespace PepperDash.Core
 {
-    /*
-	/// <summary>
-	/// 
-	/// </summary>
-    public class GenericSshClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
-	{
-	    private const string SPlusKey = "Uninitialized SshClient";
-        /// <summary>
-        /// Object to enable stream debugging
-        /// </summary>
-        public CommunicationStreamDebugging StreamDebugging { get; private set; }
-
-		/// <summary>
-		/// Event that fires when data is received.  Delivers args with byte array
-		/// </summary>
-		public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
-
-		/// <summary>
-		/// Event that fires when data is received.  Delivered as text.
-		/// </summary>
-		public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
-
-		/// <summary>
-		/// Event when the connection status changes.
-		/// </summary>
-		public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
-
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
-
-		/// <summary>
-		/// Address of server
-		/// </summary>
-		public string Hostname { get; set; }
-
-		/// <summary>
-		/// Port on server
-		/// </summary>
-		public int Port { get; set; }
-
-		/// <summary>
-		/// Username for server
-		/// </summary>
-		public string Username { get; set; }
-
-		/// <summary>
-		/// And... Password for server.  That was worth documenting!
-		/// </summary>
-		public string Password { get; set; }
-
-		/// <summary>
-		/// True when the server is connected - when status == 2.
-		/// </summary>
-		public bool IsConnected 
-		{ 
-			// returns false if no client or not connected
-			get { return ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
-		}
-
-        private bool IsConnecting = false;
-
-		/// <summary>
-		/// S+ helper for IsConnected
-		/// </summary>
-		public ushort UIsConnected
-		{
-			get { return (ushort)(IsConnected ? 1 : 0); }
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		public SocketStatus ClientStatus
-		{
-			get { return _ClientStatus; }
-			private set
-			{
-				if (_ClientStatus == value)
-					return;
-				_ClientStatus = value;
-				OnConnectionChange();
-			}
-		}
-		SocketStatus _ClientStatus;
-
-		/// <summary>
-		/// Contains the familiar Simpl analog status values. This drives the ConnectionChange event
-		/// and IsConnected with be true when this == 2.
-		/// </summary>
-		public ushort UStatus 
-		{
-			get { return (ushort)_ClientStatus; }	
-		}
-
-		/// <summary>
-		/// Determines whether client will attempt reconnection on failure. Default is true
-		/// </summary>
-		public bool AutoReconnect { get; set; }
-
-		/// <summary>
-		/// Will be set and unset by connect and disconnect only
-		/// </summary>
-		public bool ConnectEnabled { get; private set; }
-
-		/// <summary>
-		/// S+ helper for AutoReconnect
-		/// </summary>
-		public ushort UAutoReconnect
-		{
-			get { return (ushort)(AutoReconnect ? 1 : 0); }
-			set { AutoReconnect = value == 1; }
-		}
-
-		/// <summary>
-		/// Millisecond value, determines the timeout period in between reconnect attempts.
-		/// Set to 5000 by default
-		/// </summary>
-		public int AutoReconnectIntervalMs { get; set; }
-
-		SshClient Client;
-
-		ShellStream TheStream;
-
-		CTimer ReconnectTimer;
-
-		//string PreviousHostname;
-		//int PreviousPort;
-		//string PreviousUsername;
-		//string PreviousPassword;
-
-		/// <summary>
-		/// Typical constructor.
-		/// </summary>
-		public GenericSshClient(string key, string hostname, int port, string username, string password) :
-			base(key)
-		{
-            StreamDebugging = new CommunicationStreamDebugging(key);
-			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
-			Key = key;
-			Hostname = hostname;
-			Port = port;
-			Username = username;
-			Password = password; 
-			AutoReconnectIntervalMs = 5000;
-		}
-
-		/// <summary>
-		/// S+ Constructor - Must set all properties before calling Connect
-		/// </summary>
-		public GenericSshClient()
-			: base(SPlusKey)
-		{
-            StreamDebugging = new CommunicationStreamDebugging(SPlusKey);
-			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
-			AutoReconnectIntervalMs = 5000;
-		}
-
-		/// <summary>
-		/// Just to help S+ set the key
-		/// </summary>
-		public void Initialize(string key)
-		{
-			Key = key;
-		}
-
-		/// <summary>
-		/// Handles closing this up when the program shuts down
-		/// </summary>
-		void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
-		{
-			if (programEventType == eProgramStatusEventType.Stopping)
-			{
-				if (Client != null)
-				{
-					Debug.Console(1, this, "Program stopping. Closing connection");
-                    Disconnect();
-				}
-			}
-		}
-
-		/// <summary>
-		/// Connect to the server, using the provided properties.
-		/// </summary>
-		public void Connect()
+    /// <summary>
+    /// Generic ssh client
+    /// </summary>
+    public class GenericSshClient : Device, IStreamDebugging, ISocketStatus, IAutoReconnect, IDisposable
+    {
+        private static class ConnectionProgress
         {
-            if (IsConnecting)
+            public const int Idle = 0;
+            public const int InProgress = 1;
+        }
+
+        private SshClient client;
+        private ShellStream stream;
+        private CTimer connectTimer;
+        private CTimer disconnectTimer;
+        private int connectionProgress = ConnectionProgress.Idle;
+        private KeyboardInteractiveAuthenticationMethod keyboardAuth;
+        private PasswordAuthenticationMethod passwordAuth;
+        private SocketStatus socketSatus;
+
+        /// <summary>
+        /// Address of server
+        /// </summary>
+        public string Hostname { get; set; }
+
+        /// <summary>
+        /// Port on server
+        /// </summary>
+        public int Port { get; set; }
+
+        /// <summary>
+        /// Username for server
+        /// </summary>
+        public string Username { get; set; }
+
+        /// <summary>
+        /// And... Password for server.  That was worth documenting!
+        /// </summary>
+        public string Password { get; set; }
+
+        /// <summary>
+        /// Client socket status
+        /// </summary>
+        public SocketStatus ClientStatus
+        {
+            get { return socketSatus; }
+            private set
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Warning, "Connection attempt in progress.  Exiting Connect()");
-                return;
+                if (socketSatus == value)
+                    return;
+                socketSatus = value;
+                OnConnectionChange();
             }
+        }
 
-            IsConnecting = true;
-            ConnectEnabled = true;
-            Debug.Console(1, this, "attempting connect");
+        /// <summary>
+        /// Will be set and unset by connect and disconnect only
+        /// </summary>
+        public bool ConnectEnabled { get; private set; }
 
-            // Cancel reconnect if running.
-            if (ReconnectTimer != null)
+        private void OnConnectionChange()
+        {
+            var handler = ConnectionChange;
+            if (handler != null)
+                handler(this, new GenericSocketStatusChageEventArgs(this));
+        }
+
+        private const string SPlusKey = "Uninitialized SshClient";
+
+        /// <summary>
+        /// S+ Constructor - Must set all properties before calling Connect
+        /// </summary>
+        public GenericSshClient()
+            : base(SPlusKey)
+        {
+            StreamDebugging = new CommunicationStreamDebugging(SPlusKey);
+            AutoReconnectIntervalMs = 10000;
+
+            connectTimer = new CTimer(_ =>
             {
-                ReconnectTimer.Stop();
-                ReconnectTimer = null;
-            }
+                Debug.Console(1, this, "Attempting to reconnect");
+                Connect();
+            }, Timeout.Infinite);
 
-            // Don't try to connect if already
-            if (IsConnected)
-                return;
-
-            // Don't go unless everything is here
-            if (string.IsNullOrEmpty(Hostname) || Port < 1 || Port > 65535
-                || Username == null || Password == null)
+            disconnectTimer = new CTimer(_ =>
             {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Connect failed.  Check hostname, port, username and password are set or not null");
-                return;
-            }
+                Debug.Console(1, this, "Attempting to disconnect");
+                Disconnect();
+            }, Timeout.Infinite);
 
-            // Cleanup the old client if it already exists
-            if (Client != null)
+            CrestronEnvironment.ProgramStatusEventHandler += OnProgramShutdown;
+        }
+
+        /// <summary>
+        /// Typical constructor.
+        /// </summary>
+        public GenericSshClient(string key, string hostname, int port, string username, string password)
+            : base(key)
+        {
+            Key = key;
+            Hostname = hostname;
+            Port = port;
+            Username = username;
+            Password = password;
+            AutoReconnectIntervalMs = 10000;
+
+            connectTimer = new CTimer(_ =>
             {
-                Debug.Console(1, this, "Cleaning up disconnected client");
-                Client.ErrorOccurred -= Client_ErrorOccurred;
-                KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
-            }
+                Debug.Console(1, this, "Attempting to reconnect");
+                Connect();
+            }, Timeout.Infinite);
 
-            // This handles both password and keyboard-interactive (like on OS-X, 'nixes)
-            KeyboardInteractiveAuthenticationMethod kauth = new KeyboardInteractiveAuthenticationMethod(Username);
-            kauth.AuthenticationPrompt += new EventHandler<AuthenticationPromptEventArgs>(kauth_AuthenticationPrompt);
-            PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
+            disconnectTimer = new CTimer(_ =>
+            {
+                Debug.Console(1, this, "Attempting to disconnect");
+                Disconnect();
+            }, Timeout.Infinite);
 
-            Debug.Console(1, this, "Creating new SshClient");
-            ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
-            Client = new SshClient(connectionInfo);
-        
-            Client.ErrorOccurred -= Client_ErrorOccurred;
-            Client.ErrorOccurred += Client_ErrorOccurred;
+            StreamDebugging = new CommunicationStreamDebugging(key);
+            CrestronEnvironment.ProgramStatusEventHandler += OnProgramShutdown;
+        }
 
-            //Attempt to connect
-            ClientStatus = SocketStatus.SOCKET_STATUS_WAITING;
+        private void OnProgramShutdown(eProgramStatusEventType type)
+        {
             try
             {
-                Client.Connect();
-                TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
-                TheStream.DataReceived += Stream_DataReceived;
-                //TheStream.ErrorOccurred += TheStream_ErrorOccurred;
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connected");
-                ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
-                IsConnecting = false;
-                return; // Success will not pass here
+                if (type == eProgramStatusEventType.Stopping)
+                    Disconnect();
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Error at shutdown:{0}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Just to help S+ set the key
+        /// </summary>
+        public void Initialize(string key)
+        {
+            Key = key;
+        }
+
+        /// <summary>
+        /// True when the server is connected - when status == 2.
+        /// </summary>
+        public bool IsConnected
+        {
+            get { return client != null && client.IsConnected; }
+        }
+
+        /// <summary>
+        /// S+ helper for IsConnected
+        /// </summary>
+        public ushort UIsConnected
+        {
+            get { return (ushort)(IsConnected ? 1 : 0); }
+        }
+
+        /// <summary>
+        /// Event fired when bytes are received on the shell
+        /// </summary>
+        public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
+
+        /// <summary>
+        /// Event fired when test is received on the shell
+        /// </summary>
+        public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
+
+        /// <summary>
+        /// Sends text to the server
+        /// </summary>
+        /// <param name="text"></param>
+        public void SendText(string text)
+        {
+            if (CanSend())
+            {
+                if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                    Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text.Trim()));
+
+                stream.WriteLine(text);
+            }
+            else
+            {
+                Debug.Console(1, this, "SendText() called but not connected");
+            }
+        }
+
+        /// <summary>
+        /// Sends bytes to the server
+        /// </summary>
+        /// <param name="bytes"></param>
+        public void SendBytes(byte[] bytes)
+        {
+            if (CanSend())
+            {
+                if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                    Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+
+                stream.Write(bytes, 0, bytes.Length);
+                stream.Flush();
+            }
+            else
+            {
+                Debug.Console(1, this, "SendText() called but not connected");
+            }
+        }
+
+        private bool CanSend()
+        {
+            return client != null && stream != null && client.IsConnected;
+        }
+
+        /// <summary>
+        /// Connect to the server, using the provided properties.
+        /// </summary>
+        public void Connect()
+        {
+            ConnectEnabled = true;
+            DisposeOfTimer(disconnectTimer);
+
+            if (
+                Interlocked.CompareExchange(ref connectionProgress, ConnectionProgress.InProgress,
+                    ConnectionProgress.Idle) == ConnectionProgress.Idle)
+            {
+                if (client != null && client.IsConnected)
+                {
+                    Debug.Console(1, this, "Ignoring connection request... already connected");
+                    Interlocked.Exchange(ref connectionProgress, ConnectionProgress.Idle);
+                    return;
+                }
+
+                CrestronInvoke.BeginInvoke(_ =>
+                {
+                    const int defaultPort = 22;
+                    var p = Port == default(int) ? defaultPort : Port;
+
+                    if (keyboardAuth != null)
+                    {
+                        keyboardAuth.AuthenticationPrompt -= AuthenticationPromptHandler;
+                        keyboardAuth.Dispose();
+                    }
+
+                    if (passwordAuth != null)
+                    {
+                        passwordAuth.Dispose();
+                    }
+
+                    keyboardAuth = new KeyboardInteractiveAuthenticationMethod(Username);
+                    passwordAuth = new PasswordAuthenticationMethod(Username, Password);
+                    keyboardAuth.AuthenticationPrompt += AuthenticationPromptHandler;
+
+                    var connectionInfo = new ConnectionInfo(Hostname, p, Username, passwordAuth, keyboardAuth);
+
+                    if (connectTimer.Disposed && AutoReconnect)
+                    {
+                        connectTimer = new CTimer(obj =>
+                        {
+                            Debug.Console(1, this, "Attempting to reconnect");
+                            Connect();
+                        }, Timeout.Infinite);
+                    }
+
+                    ConnectInternal(connectionInfo);
+                });
+            }
+            else
+            {
+
+                Debug.Console(1, this, "Ignoring connection request while connect/disconnect in progress...");
+                if (!connectTimer.Disposed && AutoReconnect)
+                    connectTimer.Reset(AutoReconnectIntervalMs);
+            }
+        }
+
+        private void ConnectInternal(ConnectionInfo connectionInfo)
+        {
+            Debug.Console(1, this, "Attempting connection to: " + Hostname);
+            try
+            {
+                // Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Creating new client...");
+                client = new SshClient(connectionInfo);
+                client.ErrorOccurred += ClientErrorHandler;
+                client.HostKeyReceived += HostKeyReceivedHandler;
+                ClientStatus = SocketStatus.SOCKET_STATUS_WAITING;
+
+                // Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connecting...");
+                client.Connect();
+
+                // Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Creating shell...");
+                stream = client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
+                stream.DataReceived += StreamDataReceivedHandler;
+                stream.ErrorOccurred += StreamErrorOccurredHandler;
+                // Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Shell created");
+
+                if (client.IsConnected)
+                {
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connected");
+                    connectTimer.Stop();
+                    ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
+                    Interlocked.Exchange(ref connectionProgress, ConnectionProgress.Idle);
+                }
+                else
+                {
+                    throw new Exception("Unknown connection error");
+                }
             }
             catch (SshConnectionException e)
             {
                 var ie = e.InnerException; // The details are inside!!
+
                 if (ie is SocketException)
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.Message);
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error,
+                        "'{0}' CONNECTION failure: Cannot reach host, ({1})",
+                        Key, ie.Message);
                 else if (ie is System.Net.Sockets.SocketException)
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error,
+                        "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
                         Key, Hostname, Port, ie.GetType());
                 else if (ie is SshAuthenticationException)
                 {
@@ -271,273 +333,245 @@ namespace PepperDash.Core
                         Username, ie.Message);
                 }
                 else
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error on connect:\r({0})", e);
+                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Error on connect:({0})", ie.Message);
 
-                ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
-                HandleConnectionFailure();
+                DisconnectInternal(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
             }
             catch (Exception e)
             {
-                Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Unhandled exception on connect:\r({0})", e);
-                ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
-                HandleConnectionFailure();
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connection error: " + e.Message);
+                DisconnectInternal(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
             }
-
-            ClientStatus = SocketStatus.SOCKET_STATUS_CONNECT_FAILED;
-            HandleConnectionFailure();
         }
 
-
-
-		/// <summary>
-		/// Disconnect the clients and put away it's resources.
-		/// </summary>
-		public void Disconnect()
-		{
-			ConnectEnabled = false;
-			// Stop trying reconnects, if we are
-			if (ReconnectTimer != null)
-			{
-				ReconnectTimer.Stop();
-				ReconnectTimer = null;
-			}
-
-            KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
-		}
-
         /// <summary>
-        /// Kills the stream, cleans up the client and sets it to null
+        /// Disconnect the clients and put away it's resources.
         /// </summary>
-        private void KillClient(SocketStatus status)
+        public void Disconnect()
         {
-            KillStream();
+            ConnectEnabled = false;
+            Disconnect(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
+        }
 
-            if (Client != null)
+        private void Disconnect(SocketStatus status)
+        {
+            // kill the reconnect timer if we are disconnecting locally
+            if (status == SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY)
+                DisposeOfTimer(connectTimer);
+
+            if (
+                Interlocked.CompareExchange(ref connectionProgress, ConnectionProgress.InProgress,
+                    ConnectionProgress.Idle) == ConnectionProgress.Idle)
             {
-                IsConnecting = false;
-                Client.Disconnect();
-                Client = null;
-                ClientStatus = status;
-                Debug.Console(1, this, "Disconnected");
+                Debug.Console(1, this, "Disconnecting...");
+                CrestronInvoke.BeginInvoke(_ => DisconnectInternal(status));
+            }
+            else
+            {
+                if (!disconnectTimer.Disposed)
+                    DisposeOfTimer(disconnectTimer);
+
+                disconnectTimer = new CTimer(_ => Disconnect(status), 10000);
+                Debug.Console(1, this, "Ignoring disconnect request while connect/disconnect in progress... will try again soon");
             }
         }
 
-		/// <summary>
-		/// Anything to do with reestablishing connection on failures
-		/// </summary>
-		void HandleConnectionFailure()
-		{
-            KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+        private void DisconnectInternal(SocketStatus status)
+        {
+            try
+            {
+                DisposeOfStream();
+                DisposeOfClient();
+                DisposeOfAuthMethods();
 
-            Debug.Console(1, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
-		    if (AutoReconnect && ConnectEnabled)
-		    {
-		        Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
-		        if (ReconnectTimer == null)
-		        {
-		            ReconnectTimer = new CTimer(o =>
-		            {
-		                Connect();
-		            }, AutoReconnectIntervalMs);
-		            Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Attempting connection in {0} seconds",
-		                (float) (AutoReconnectIntervalMs/1000));
-		        }
-		        else
-		        {
-		            Debug.Console(1, this, "{0} second reconnect cycle running",
-		                (float) (AutoReconnectIntervalMs/1000));
-		        }
-		    }
-		}
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Disconnect Complete");
+                ClientStatus = status;
 
-        /// <summary>
-        /// Kills the stream
-        /// </summary>
-		void KillStream()
-		{
-			if (TheStream != null)
-			{
-				TheStream.DataReceived -= Stream_DataReceived;
-				TheStream.Close();
-				TheStream.Dispose();
-				TheStream = null;
-			}
-		}
+                DisposeOfTimer(disconnectTimer);
+                if (!connectTimer.Disposed && AutoReconnect)
+                {
+                    Debug.Console(1, this, "Autoreconnect try again soon");
+                    connectTimer.Reset(AutoReconnectIntervalMs);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Caught a general exception in disconnect:{0}", ex);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref connectionProgress, ConnectionProgress.Idle);
+            }
+        }
 
-		/// <summary>
-		/// Handles the keyboard interactive authentication, should it be required.
-		/// </summary>
-		void kauth_AuthenticationPrompt(object sender, AuthenticationPromptEventArgs e)
-		{
-			foreach (AuthenticationPrompt prompt in e.Prompts)
-				if (prompt.Request.IndexOf("Password:", StringComparison.InvariantCultureIgnoreCase) != -1)
-					prompt.Response = Password;
-		}
-	
-		/// <summary>
-		/// Handler for data receive on ShellStream.  Passes data across to queue for line parsing.
-		/// </summary>
-		void Stream_DataReceived(object sender, Crestron.SimplSharp.Ssh.Common.ShellDataEventArgs e)
-		{
+        private void DisposeOfAuthMethods()
+        {
+            try
+            {
+                if (keyboardAuth != null)
+                {
+                    keyboardAuth.AuthenticationPrompt -= AuthenticationPromptHandler;
+                    keyboardAuth.Dispose();
+                    keyboardAuth = null;
+                }
 
-			var bytes = e.Data;
-			if (bytes.Length > 0)
-			{
-				var bytesHandler = BytesReceived;
-			    if (bytesHandler != null)
-			    {
-			        if (StreamDebugging.RxStreamDebuggingIsEnabled)
-			        {
-			            Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
-			        }
+                if (passwordAuth != null)
+                {
+                    passwordAuth.Dispose();
+                    passwordAuth = null;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice,
+                    "Disconnect() Exception occured freeing auth: " + e.Message);
+            }
+        }
+
+        private void DisposeOfClient()
+        {
+            try
+            {
+                if (client != null)
+                {
+                    if (client.IsConnected)
+                        client.Disconnect();
+
+                    client.ErrorOccurred -= ClientErrorHandler;
+                    client.HostKeyReceived -= HostKeyReceivedHandler;
+                    client.Dispose();
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice,
+                    "Disconnect() Exception occured freeing client: " + e.Message);
+            }
+        }
+
+        private void DisposeOfStream()
+        {
+            try
+            {
+                if (stream != null)
+                {
+                    stream.DataReceived -= StreamDataReceivedHandler;
+                    stream.ErrorOccurred -= StreamErrorOccurredHandler;
+                    stream.Close();
+                    stream.Dispose();
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice,
+                    "Disconnect() exception occured freeing stream: " + e.Message);
+            }
+        }
+
+        private static void DisposeOfTimer(CTimer timer)
+        {
+            if (timer == null || timer.Disposed) return;
+            timer.Stop();
+            timer.Dispose();
+        }
+
+        private void StreamDataReceivedHandler(object sender, ShellDataEventArgs e)
+        {
+            var bytes = e.Data;
+            if (bytes.Length > 0)
+            {
+                var bytesHandler = BytesReceived;
+                if (bytesHandler != null)
+                {
+                    if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                    {
+                        Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
+                    }
+
                     bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
-			    }
-					
-				var textHandler = TextReceived;
-				if (textHandler != null)
-				{
-					var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
+                }
+
+                var textHandler = TextReceived;
+                if (textHandler != null)
+                {
+                    var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
                     if (StreamDebugging.RxStreamDebuggingIsEnabled)
                         Debug.Console(0, this, "Received: '{0}'", ComTextHelper.GetDebugText(str));
 
                     textHandler(this, new GenericCommMethodReceiveTextArgs(str));
                 }
-			}
-		}
+            }
+        }
 
+        private void ClientErrorHandler(object sender, ExceptionEventArgs e)
+        {
+            Debug.Console(1, this, "SSH client error:{0}", e.Exception);
+            Disconnect(SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY);
+        }
 
-		/// <summary>
-		/// Error event handler for client events - disconnect, etc.  Will forward those events via ConnectionChange
-		/// event
-		/// </summary>
-		void Client_ErrorOccurred(object sender, Crestron.SimplSharp.Ssh.Common.ExceptionEventArgs e)
-		{
-			if (e.Exception is SshConnectionException || e.Exception is System.Net.Sockets.SocketException)
-				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Disconnected by remote");
-			else
-				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Unhandled SSH client error: {0}", e.Exception);
+        private void StreamErrorOccurredHandler(object sender, EventArgs e)
+        {
+            Debug.Console(1, this, "SSH Shellstream error");
+            Disconnect(SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY);
+        }
 
-			ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
-			HandleConnectionFailure();
-		}
+        private void AuthenticationPromptHandler(object sender, AuthenticationPromptEventArgs e)
+        {
+            foreach (var prompt in e.Prompts)
+                if (prompt.Request.IndexOf("Password:", StringComparison.InvariantCultureIgnoreCase) != -1)
+                    prompt.Response = Password;
+        }
 
-		/// <summary>
-		/// Helper for ConnectionChange event
-		/// </summary>
-		void OnConnectionChange()
-		{
-			if (ConnectionChange != null)
-				ConnectionChange(this, new GenericSocketStatusChageEventArgs(this));
-		}
+        private void HostKeyReceivedHandler(object sender, HostKeyEventArgs e)
+        {
+            e.CanTrust = true;
+        }
 
-		#region IBasicCommunication Members
-
-		/// <summary>
-		/// Sends text to the server
-		/// </summary>
-		/// <param name="text"></param>
-		public void SendText(string text)
-		{
-			try
-			{
-                if (Client != null && TheStream != null && IsConnected)
-                {
-                    if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
-
-                    TheStream.Write(text);
-                    TheStream.Flush();
-
-                }
-                else
-                {
-                    Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Text");
-                }
-			}
-			catch (Exception ex)
-			{
-			    Debug.Console(0, "Exception: {0}", ex.Message);
-			    Debug.Console(0, "Stack Trace: {0}", ex.StackTrace);
-
-				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed. Disconnected, closing");
-				ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
-				HandleConnectionFailure();
-			}
-		}
+        private static IEnumerable<string> SplitDataReceived(string str, int maxChunkSize)
+        {
+            for (var i = 0; i < str.Length; i += maxChunkSize)
+            {
+                yield return str.Substring(i, Math.Min(maxChunkSize, str.Length - i));
+            }
+        }
 
         /// <summary>
-        /// Sends Bytes to the server
+        /// Stream debugging properties
         /// </summary>
-        /// <param name="bytes"></param>
-		public void SendBytes(byte[] bytes)
-		{
-			try
-			{
-                if (Client != null && TheStream != null && IsConnected)
-                {
-                    if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
-
-                    TheStream.Write(bytes, 0, bytes.Length);
-                    TheStream.Flush();
-                }
-                else
-                {
-                    Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Bytes");
-                }
-			}
-			catch
-			{
-				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed. Disconnected, closing");
-				ClientStatus = SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY;
-				HandleConnectionFailure();
-			}
-		}
-
-		#endregion
-	}
-
-	//*****************************************************************************************************
-	//*****************************************************************************************************
-	/// <summary>
-	/// Fired when connection changes
-	/// </summary>
-	public class SshConnectionChangeEventArgs : EventArgs
-	{
-        /// <summary>
-        /// Connection State
-        /// </summary>
-		public bool IsConnected { get; private set; }
+        public CommunicationStreamDebugging StreamDebugging { get; private set; }
 
         /// <summary>
-        /// Connection Status represented as a ushort
+        /// Event fired on a connection status change
         /// </summary>
-		public ushort UIsConnected { get { return (ushort)(Client.IsConnected ? 1 : 0); } }
+        public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
         /// <summary>
-        /// The client
+        /// Determines if autoreconnect is enabled
         /// </summary>
-		public GenericSshClient Client { get; private set; }
+        public bool AutoReconnect { get; set; }
 
         /// <summary>
-        /// Socket Status as represented by
+        /// Millisecond value, determines the timeout period in between reconnect attempts.
+        /// Set to 10000 by default
         /// </summary>
-		public ushort Status { get { return Client.UStatus; } }
+        public int AutoReconnectIntervalMs { get; set; }
 
-		/// <summary>
-        ///  S+ Constructor
-		/// </summary>
-		public SshConnectionChangeEventArgs() { }
+        private bool disposed;
+        public void Dispose()
+        {
+            Dispose(true);
+            CrestronEnvironment.GC.SuppressFinalize(this);
+        }
 
-        /// <summary>
-        /// EventArgs class
-        /// </summary>
-        /// <param name="isConnected">Connection State</param>
-        /// <param name="client">The Client</param>
-		public SshConnectionChangeEventArgs(bool isConnected, GenericSshClient client)
-		{
-			IsConnected = isConnected;
-			Client = client;
-		}
-	}*/
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposed)
+                return;
+
+            if (disposing)
+                Disconnect();
+
+            disposed = true;
+        }
+    }
 }

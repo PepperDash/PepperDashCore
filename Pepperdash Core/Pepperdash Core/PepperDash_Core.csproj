@@ -72,7 +72,6 @@
     <Compile Include="Comm\CommunicationStreamDebugging.cs" />
     <Compile Include="Comm\ControlPropertiesConfig.cs" />
     <Compile Include="Comm\GenericSecureTcpIpClient.cs" />
-    <Compile Include="Comm\GenericSshClientV2.cs" />
     <Compile Include="Comm\GenericTcpIpClient_ForServer.cs" />
     <Compile Include="Comm\GenericHttpSseClient.cs" />
     <Compile Include="Comm\GenericSecureTcpIpServer.cs" />
