@@ -298,7 +298,6 @@ namespace PepperDash.Core
 		/// </summary>
 		public void Disconnect()
 		{
-			Debug.Console(2, "Disconnect Called");
 			ConnectEnabled = false;
 			// Stop trying reconnects, if we are
 			if (ReconnectTimer != null)
@@ -316,13 +315,11 @@ namespace PepperDash.Core
         private void KillClient(SocketStatus status)
         {
             KillStream();
-			IsConnecting = false;
+
             if (Client != null)
             {
-				Client.ErrorOccurred -= Client_ErrorOccurred;
+                IsConnecting = false;
                 Client.Disconnect();
-				Client.Dispose();
-				
                 Client = null;
                 ClientStatus = status;
                 Debug.Console(1, this, "Disconnected");
