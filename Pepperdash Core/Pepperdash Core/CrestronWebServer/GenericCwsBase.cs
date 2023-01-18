@@ -44,7 +44,6 @@ namespace PepperDash.Core
 		public GenericCwsBase(string key, string basePath)
 			: base(key)
 		{
-
 			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;
 		}
 
@@ -57,7 +56,6 @@ namespace PepperDash.Core
 		public GenericCwsBase(string key, string name, string basePath)
 			: base(key, name)
 		{
-
 			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;
 		}
 
@@ -67,8 +65,7 @@ namespace PepperDash.Core
 		/// <param name="programEventType"></param>
 		void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
 		{
-			if (programEventType != eProgramStatusEventType.Stopping)
-				return;
+			if (programEventType != eProgramStatusEventType.Stopping) return;
 
 			Debug.Console(DebugInfo, this, "Program stopping. Disabling Server");
 
@@ -82,13 +79,15 @@ namespace PepperDash.Core
 		void CrestronEnvironment_EthernetEventHandler(EthernetEventArgs ethernetEventArgs)
 		{
 			// Re-enable the server if the link comes back up and the status should be connected
-			if (ethernetEventArgs.EthernetEventType == eEthernetEventType.LinkUp
-				&& IsRegistered)
+			if (ethernetEventArgs.EthernetEventType == eEthernetEventType.LinkUp && IsRegistered)
 			{
-				Debug.Console(DebugInfo, this, "Ethernet link up. Starting server");
-
-				Start();
+				Debug.Console(DebugInfo, this, "Ethernet link up. Server is alreedy registered.");
+				return;
 			}
+
+			Debug.Console(DebugInfo, this, "Ethernet link up. Starting server");
+
+			Start();
 		}
 
 		/// <summary>
@@ -97,7 +96,37 @@ namespace PepperDash.Core
 		public void Initialize(string key, string basePath)
 		{
 			Key = key;
-			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;
+			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;			
+		}
+
+		/// <summary>
+		/// Adds a route to CWS
+		/// </summary>
+		public void AddRoute(HttpCwsRoute route)
+		{
+			if (route == null)
+			{
+				Debug.Console(DebugInfo, this, "Failed to add route, route parameter is null");
+				return;
+			}
+
+			_server.Routes.Add(route);
+			
+		}
+
+		/// <summary>
+		/// Removes a route from CWS
+		/// </summary>
+		/// <param name="route"></param>
+		public void RemoveRoute(HttpCwsRoute route)
+		{
+			if (route == null)
+			{
+				Debug.Console(DebugInfo, this, "Failed to remote route, orute parameter is null");
+				return;
+			}
+
+			_server.Routes.Remove(route);
 		}
 
 		/// <summary>
@@ -119,7 +148,7 @@ namespace PepperDash.Core
 
 				_server = new HttpCwsServer(BasePath)
 				{
-					HttpRequestHandler = new RequestHandlerUnknown()
+					HttpRequestHandler = new CwsDefaultRequestHandler()
 				};
 
 				IsRegistered = _server.Register();
@@ -148,29 +177,26 @@ namespace PepperDash.Core
 
 				if (_server == null)
 				{
-					Debug.Console(DebugInfo, this, "Servier has already been stopped");
+					Debug.Console(DebugInfo, this, "Server has already been stopped");
 					return;
 				}
 
-				if (_server.Unregister())
-				{
-					IsRegistered = false;
-				}
-
-				Dispose(true);				
+				IsRegistered = _server.Unregister() == false;
+				_server.Dispose();
+				_server = null;				
 			}
 			catch (Exception ex)
 			{
-				Debug.Console(DebugInfo, this, "ServerStop Exception Message: {0}", ex.Message);
-				Debug.Console(DebugVerbose, this, "ServerStop Exception StackTrace: {0}", ex.StackTrace);
+				Debug.Console(DebugInfo, this, "Server Stop Exception Message: {0}", ex.Message);
+				Debug.Console(DebugVerbose, this, "Server Stop Exception StackTrace: {0}", ex.StackTrace);
 				if (ex.InnerException != null)
-					Debug.Console(DebugVerbose, this, "ServerStop Exception InnerException: {0}", ex.InnerException);
+					Debug.Console(DebugVerbose, this, "Server Stop Exception InnerException: {0}", ex.InnerException);
 			}
 			finally
 			{
 				_serverLock.Leave();
 			}
-		}
+		}		
 
 		/// <summary>
 		/// Received request handler
@@ -184,7 +210,6 @@ namespace PepperDash.Core
 		{
 			try
 			{
-				// TODO [ ] Add logic for received requests
 				Debug.Console(DebugInfo, this, @"RecieveRequestEventHandler 
 Method: {0}
 Path: {1}
@@ -206,7 +231,6 @@ UserHostName: {9}",
 	args.Context.Request.UserAgent,
 	args.Context.Request.UserHostAddress,
 	args.Context.Request.UserHostName);
-
 			}
 			catch (Exception ex)
 			{
@@ -215,52 +239,6 @@ UserHostName: {9}",
 				if (ex.InnerException != null)
 					Debug.Console(DebugVerbose, this, "ReceivedRequestEventHandler Exception InnerException: {0}", ex.InnerException);
 			}
-		}
-
-		/// <summary>
-		/// Tracks if CWS is disposed
-		/// </summary>
-		public bool Disposed
-		{
-			get
-			{
-				return (_server == null); 
-			}
-		}
-
-		/// <summary>
-		/// Disposes CWS instance
-		/// </summary>
-		public void Dispose()
-		{
-			Dispose(true);
-			CrestronEnvironment.GC.SuppressFinalize(this);
-		}
-
-		/// <summary>
-		/// Disposes CWS instance
-		/// </summary>
-		/// <param name="disposing"></param>
-		protected void Dispose(bool disposing)
-		{
-			if (Disposed)
-			{
-				Debug.Console(DebugInfo, this, "Server has already been disposed");
-				return;
-			}
-
-			if (!disposing) return;
-
-			if (_server != null)
-			{
-				_server.Dispose();
-				_server = null;
-			}
-		}
-
-		~GenericCwsBase()
-		{
-			Dispose(true);
-		}
+		}		
 	}
 }
