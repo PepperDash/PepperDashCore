@@ -1,8 +1,8 @@
 ﻿using Crestron.SimplSharp.WebScripting;
 
-namespace PepperDash.Core
+namespace PepperDash.Core.Web.RequestHandlers
 {
-	public class CwsDefaultRequestHandler : CwsBaseHandler
+	public class DefaultRequestRequestHandler : WebApiBaseRequestHandler
 	{
 		/// <summary>
 		/// Handles CONNECT method requests

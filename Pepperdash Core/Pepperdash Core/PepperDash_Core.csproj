@@ -93,9 +93,9 @@
     <Compile Include="Comm\TcpServerConfigObject.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />
-    <Compile Include="CrestronWebServer\CwsBaseHandler.cs" />
-    <Compile Include="CrestronWebServer\GenericCwsBase.cs" />
-    <Compile Include="CrestronWebServer\CwsDefaultRequestHandler.cs" />
+    <Compile Include="Web\RequestHandlers\WebApiBaseRequestHandler.cs" />
+    <Compile Include="Web\WebApiServer.cs" />
+    <Compile Include="Web\RequestHandlers\DefaultRequestRequestHandler.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="GenericRESTfulCommunications\Constants.cs" />
     <Compile Include="GenericRESTfulCommunications\GenericRESTfulClient.cs" />

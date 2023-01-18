@@ -1,12 +1,14 @@
 ﻿using System;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.WebScripting;
+using PepperDash.Core.Web.RequestHandlers;
 
-namespace PepperDash.Core
+namespace PepperDash.Core.Web
 {
-	public class GenericCwsBase : Device
+	public class WebApiServer : IKeyName
 	{
-		private const string SplusKey = "Uninitialized CWS Server";
+		private const string SplusKey = "Uninitialized Web API Server";
+		private const string DefaultName = "Web API Server";
 		private const string DefaultBasePath = "/api";
 
 		private const uint DebugTrace = 0;
@@ -15,6 +17,9 @@ namespace PepperDash.Core
 
 		private HttpCwsServer _server;
 		private readonly CCriticalSection _serverLock = new CCriticalSection();
+
+		public string Key { get; private set; }
+		public string Name { get; private set; }
 
 		/// <summary>
 		/// CWS base path, will default to "/api" if not set via initialize method
@@ -29,11 +34,9 @@ namespace PepperDash.Core
 		/// <summary>
 		/// Constructor for S+.  Make sure to set necessary properties using init method
 		/// </summary>
-		public GenericCwsBase()
-			: base(SplusKey)
-		{
-			CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
-			CrestronEnvironment.EthernetEventHandler += CrestronEnvironment_EthernetEventHandler;
+		public WebApiServer()
+			: this(SplusKey, DefaultName, null)
+		{			
 		}
 
 		/// <summary>
@@ -41,10 +44,9 @@ namespace PepperDash.Core
 		/// </summary>
 		/// <param name="key"></param>
 		/// <param name="basePath"></param>
-		public GenericCwsBase(string key, string basePath)
-			: base(key)
+		public WebApiServer(string key, string basePath)
+			: this(key, DefaultName, basePath)
 		{
-			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;
 		}
 
 		/// <summary>
@@ -53,10 +55,14 @@ namespace PepperDash.Core
 		/// <param name="key"></param>
 		/// <param name="name"></param>
 		/// <param name="basePath"></param>
-		public GenericCwsBase(string key, string name, string basePath)
-			: base(key, name)
+		public WebApiServer(string key, string name, string basePath)
 		{
+			Key = key;
+			Name = string.IsNullOrEmpty(name) ? DefaultName : name;
 			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;
+
+			CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
+			CrestronEnvironment.EthernetEventHandler += CrestronEnvironment_EthernetEventHandler;
 		}
 
 		/// <summary>
@@ -148,7 +154,7 @@ namespace PepperDash.Core
 
 				_server = new HttpCwsServer(BasePath)
 				{
-					HttpRequestHandler = new CwsDefaultRequestHandler()
+					HttpRequestHandler = new DefaultRequestRequestHandler()
 				};
 
 				IsRegistered = _server.Register();

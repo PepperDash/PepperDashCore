@@ -1,21 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using Crestron.SimplSharp.WebScripting;
-using Newtonsoft.Json;
 
-namespace PepperDash.Core
+namespace PepperDash.Core.Web.RequestHandlers
 {
 	/// <summary>
 	/// CWS Base Handler, implements IHttpCwsHandler
 	/// </summary>
-	public abstract class CwsBaseHandler : IHttpCwsHandler
+	public abstract class WebApiBaseRequestHandler : IHttpCwsHandler
 	{
 		private readonly Dictionary<string, Action<HttpCwsContext>> _handlers;
 
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		protected CwsBaseHandler()
+		protected WebApiBaseRequestHandler()
 		{
 			_handlers = new Dictionary<string, Action<HttpCwsContext>>
 			{
