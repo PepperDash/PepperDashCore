@@ -331,7 +331,7 @@ namespace PepperDash.Core
         private void KillClient(SocketStatus status)
         {
             KillStream();
-
+			
             if (Client != null)
             {
                 try

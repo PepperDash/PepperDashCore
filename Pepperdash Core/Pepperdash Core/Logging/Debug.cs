@@ -69,7 +69,16 @@ namespace PepperDash.Core
             // Get the assembly version and print it to console and the log
             GetVersion();
 
-            var msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
+            string msg = "";
+
+            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
+            {
+                msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
+            }
+            else if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
+            {
+                msg = string.Format("[Room {0}] Using PepperDash_Core v{1}", InitialParametersClass.RoomId, PepperDashCoreVersion);
+            }
 
             CrestronConsole.PrintLine(msg);
 
@@ -367,9 +376,21 @@ namespace PepperDash.Core
         /// <param name="items">Object parameters</param>
         public static void Console(uint level, string format, params object[] items)
         {
-            if (Level >= level)
-                CrestronConsole.PrintLine("[{0}]App {1}:{2}", DateTime.Now.ToString("HH:mm:ss.fff"), InitialParametersClass.ApplicationNumber,
-                    string.Format(format, items));
+            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
+            {
+                var logString = string.Format("[level {0}] {1}", level, string.Format(format, items));
+
+                LogError(ErrorLogLevel.Notice, logString);
+                return;
+            }
+
+            if(Level < level) 
+            {
+                return;
+            }
+
+            CrestronConsole.PrintLine("[{0}]App {1}:{2}", DateTime.Now.ToString("HH:mm:ss.fff"), InitialParametersClass.ApplicationNumber,
+                string.Format(format, items));
         }
 
         /// <summary>
@@ -448,7 +469,8 @@ namespace PepperDash.Core
         /// <param name="str"></param>
         public static void LogError(ErrorLogLevel errorLogLevel, string str)
         {
-            var msg = string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
+
+            var msg = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ? string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str) : string.Format("Room {0}:{1}", InitialParametersClass.RoomId, str);
             switch (errorLogLevel)
             {
                 case ErrorLogLevel.Error:
@@ -488,7 +510,11 @@ namespace PepperDash.Core
             //if (!Directory.Exists(dir))
             //    Directory.Create(dir);
 
-            using (var sw = new StreamWriter(GetMemoryFileName()))
+            var fileName = GetMemoryFileName();
+
+            Console(0, ErrorLogLevel.Notice, "Loading debug settings file from {0}", fileName);
+
+            using (var sw = new StreamWriter(fileName))
             {
                 var json = JsonConvert.SerializeObject(_contexts);
                 sw.Write(json);
@@ -525,8 +551,13 @@ namespace PepperDash.Core
         /// </summary>
         static string GetMemoryFileName()
         {
-            CheckForMigration();
-            return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
+            {
+                CheckForMigration();
+                return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            }
+
+            return string.Format("{0}{1}user{1}debugSettings{1}{2}.json",Directory.GetApplicationRootDirectory(), Path.DirectorySeparatorChar, InitialParametersClass.RoomId);
         }
 
         private static void CheckForMigration()
@@ -537,6 +568,11 @@ namespace PepperDash.Core
             //check for file at old path
             if (!File.Exists(oldFilePath))
             {
+                Console(0, ErrorLogLevel.Notice,
+                    String.Format(
+                        @"Debug settings file migration not necessary. Using file at \user\debugSettings\program{0}",
+                        InitialParametersClass.ApplicationNumber));
+
                 return;
             }
 

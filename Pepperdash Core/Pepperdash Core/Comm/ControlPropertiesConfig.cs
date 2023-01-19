@@ -71,6 +71,11 @@ namespace PepperDash.Core
         public string DeviceReadyResponsePattern { get; set; }
 
         /// <summary>
+        /// Used when communcating to programs running in VC-4
+        /// </summary>
+        public string RoomId { get; set; }
+
+        /// <summary>
         /// Constructor
         /// </summary>
         public ControlPropertiesConfig()
