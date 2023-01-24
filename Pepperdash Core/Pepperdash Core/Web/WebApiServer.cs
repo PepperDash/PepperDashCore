@@ -5,6 +5,9 @@ using PepperDash.Core.Web.RequestHandlers;
 
 namespace PepperDash.Core.Web
 {
+	/// <summary>
+	/// Web API server
+	/// </summary>
 	public class WebApiServer : IKeyName
 	{
 		private const string SplusKey = "Uninitialized Web API Server";
@@ -18,7 +21,14 @@ namespace PepperDash.Core.Web
 		private HttpCwsServer _server;
 		private readonly CCriticalSection _serverLock = new CCriticalSection();
 
+		/// <summary>
+		/// Web API server key
+		/// </summary>
 		public string Key { get; private set; }
+
+		/// <summary>
+		/// Web API server name
+		/// </summary>
 		public string Name { get; private set; }
 
 		/// <summary>
