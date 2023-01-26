@@ -46,7 +46,7 @@ namespace PepperDash.Core.Web
 		/// </summary>
 		public WebApiServer()
 			: this(SplusKey, DefaultName, null)
-		{			
+		{
 		}
 
 		/// <summary>
@@ -70,6 +70,8 @@ namespace PepperDash.Core.Web
 			Key = key;
 			Name = string.IsNullOrEmpty(name) ? DefaultName : name;
 			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;
+
+			if (_server == null) _server = new HttpCwsServer(BasePath);
 
 			CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 			CrestronEnvironment.EthernetEventHandler += CrestronEnvironment_EthernetEventHandler;
@@ -112,7 +114,7 @@ namespace PepperDash.Core.Web
 		public void Initialize(string key, string basePath)
 		{
 			Key = key;
-			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;			
+			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;
 		}
 
 		/// <summary>
@@ -127,7 +129,7 @@ namespace PepperDash.Core.Web
 			}
 
 			_server.Routes.Add(route);
-			
+
 		}
 
 		/// <summary>
@@ -154,18 +156,19 @@ namespace PepperDash.Core.Web
 			{
 				_serverLock.Enter();
 
-				if (_server != null)
+				if (_server == null)
+				{
+					Debug.Console(DebugInfo, this, "Server is null, unable to start");
+					return;
+				}
+
+				if (IsRegistered)
 				{
 					Debug.Console(DebugInfo, this, "Server has already been started");
 					return;
 				}
 
-				Debug.Console(DebugInfo, this, "Starting server");
-
-				_server = new HttpCwsServer(BasePath)
-				{
-					HttpRequestHandler = new DefaultRequestRequestHandler()
-				};
+				Debug.Console(DebugInfo, this, "Starting server");				
 
 				IsRegistered = _server.Register();
 			}
@@ -193,13 +196,13 @@ namespace PepperDash.Core.Web
 
 				if (_server == null)
 				{
-					Debug.Console(DebugInfo, this, "Server has already been stopped");
+					Debug.Console(DebugInfo, this, "Server is null or has already been stopped");
 					return;
 				}
 
 				IsRegistered = _server.Unregister() == false;
 				_server.Dispose();
-				_server = null;				
+				_server = null;
 			}
 			catch (Exception ex)
 			{
@@ -212,7 +215,7 @@ namespace PepperDash.Core.Web
 			{
 				_serverLock.Leave();
 			}
-		}		
+		}
 
 		/// <summary>
 		/// Received request handler
@@ -255,6 +258,6 @@ UserHostName: {9}",
 				if (ex.InnerException != null)
 					Debug.Console(DebugVerbose, this, "ReceivedRequestEventHandler Exception InnerException: {0}", ex.InnerException);
 			}
-		}		
+		}
 	}
 }
