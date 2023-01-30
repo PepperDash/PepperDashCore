@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.WebScripting;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core.Web.RequestHandlers;
 
 namespace PepperDash.Core.Web
@@ -18,8 +22,8 @@ namespace PepperDash.Core.Web
 		private const uint DebugInfo = 1;
 		private const uint DebugVerbose = 2;
 
-		private HttpCwsServer _server;
 		private readonly CCriticalSection _serverLock = new CCriticalSection();
+		private HttpCwsServer _server;
 
 		/// <summary>
 		/// Web API server key
@@ -42,6 +46,28 @@ namespace PepperDash.Core.Web
 		public bool IsRegistered { get; private set; }
 
 		/// <summary>
+		/// Http request handler
+		/// </summary>
+		//public IHttpCwsHandler HttpRequestHandler
+		//{
+		//    get { return _server.HttpRequestHandler; }
+		//    set
+		//    {
+		//        if (_server == null) return;
+		//        _server.HttpRequestHandler = value;
+		//    }
+		//}
+
+		/// <summary>
+		/// Received request event handler
+		/// </summary>
+		//public event EventHandler<HttpCwsRequestEventArgs> ReceivedRequestEvent
+		//{
+		//    add { _server.ReceivedRequestEvent += new HttpCwsRequestEventHandler(value); }
+		//    remove { _server.ReceivedRequestEvent -= new HttpCwsRequestEventHandler(value); }
+		//}
+
+		/// <summary>
 		/// Constructor for S+.  Make sure to set necessary properties using init method
 		/// </summary>
 		public WebApiServer()
@@ -60,18 +86,21 @@ namespace PepperDash.Core.Web
 		}
 
 		/// <summary>
-		/// 
+		/// Constructor
 		/// </summary>
 		/// <param name="key"></param>
 		/// <param name="name"></param>
 		/// <param name="basePath"></param>
-		public WebApiServer(string key, string name, string basePath)
+		public WebApiServer(string key, string name, string basePath)			
 		{
 			Key = key;
 			Name = string.IsNullOrEmpty(name) ? DefaultName : name;
 			BasePath = string.IsNullOrEmpty(basePath) ? DefaultBasePath : basePath;
 
 			if (_server == null) _server = new HttpCwsServer(BasePath);
+
+			_server.setProcessName(Key);
+			_server.HttpRequestHandler = new DefaultRequestRequestHandler();
 
 			CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 			CrestronEnvironment.EthernetEventHandler += CrestronEnvironment_EthernetEventHandler;
@@ -85,7 +114,7 @@ namespace PepperDash.Core.Web
 		{
 			if (programEventType != eProgramStatusEventType.Stopping) return;
 
-			Debug.Console(DebugInfo, this, "Program stopping. Disabling Server");
+			Debug.Console(DebugInfo, this, "Program stopping. stopping server");
 
 			Stop();
 		}
@@ -148,6 +177,14 @@ namespace PepperDash.Core.Web
 		}
 
 		/// <summary>
+		/// Returns a list of the current routes
+		/// </summary>
+		public HttpCwsRouteCollection GetRouteCollection()
+		{
+			return _server.Routes;
+		}
+
+		/// <summary>
 		/// Starts CWS instance
 		/// </summary>
 		public void Start()
@@ -168,9 +205,9 @@ namespace PepperDash.Core.Web
 					return;
 				}
 
-				Debug.Console(DebugInfo, this, "Starting server");				
-
 				IsRegistered = _server.Register();
+
+				Debug.Console(DebugInfo, this, "Starting server, registration {0}", IsRegistered ? "was successful" : "failed");
 			}
 			catch (Exception ex)
 			{
@@ -201,6 +238,9 @@ namespace PepperDash.Core.Web
 				}
 
 				IsRegistered = _server.Unregister() == false;
+
+				Debug.Console(DebugInfo, this, "Stopping server, unregistration {0}", IsRegistered ? "failed" : "was successful");
+
 				_server.Dispose();
 				_server = null;
 			}
@@ -229,27 +269,8 @@ namespace PepperDash.Core.Web
 		{
 			try
 			{
-				Debug.Console(DebugInfo, this, @"RecieveRequestEventHandler 
-Method: {0}
-Path: {1}
-PathInfo: {2}
-PhysicalPath: {3}
-ContentType: {4}
-RawUrl: {5}
-Url: {6}
-UserAgent: {7}
-UserHostAddress: {8}
-UserHostName: {9}",
-	args.Context.Request.HttpMethod,
-	args.Context.Request.Path,
-	args.Context.Request.PathInfo,
-	args.Context.Request.PhysicalPath,
-	args.Context.Request.ContentType,
-	args.Context.Request.RawUrl,
-	args.Context.Request.Url,
-	args.Context.Request.UserAgent,
-	args.Context.Request.UserHostAddress,
-	args.Context.Request.UserHostName);
+				var j = JsonConvert.SerializeObject(args.Context, Formatting.Indented);
+				Debug.Console(DebugVerbose, this, "RecieveRequestEventHandler Context:\x0d\x0a{0}", j);
 			}
 			catch (Exception ex)
 			{

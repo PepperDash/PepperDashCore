@@ -14,7 +14,7 @@ namespace PepperDash.Core.Web.RequestHandlers
 		protected override void HandleConnect(HttpCwsContext context)
 		{
 			context.Response.StatusCode = 501;
-			context.Response.StatusDescription = "Not Implemented";
+			context.Response.StatusDescription = "Not Implemented";			
 			context.Response.End();
 		}
 
