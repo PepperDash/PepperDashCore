@@ -186,7 +186,7 @@ namespace PepperDash.Core
             {
                 if (string.IsNullOrEmpty(levelString.Trim()))
                 {
-                    CrestronConsole.PrintLine("AppDebug level = {0}", Level);
+                    CrestronConsole.ConsoleCommandResponse("AppDebug level = {0}", Level);
                     return;
                 }
 
@@ -194,7 +194,7 @@ namespace PepperDash.Core
             }
             catch
             {
-                CrestronConsole.PrintLine("Usage: appdebug:P [0-2]");
+                CrestronConsole.ConsoleCommandResponse("Usage: appdebug:P [0-2]");
             }
         }
 
@@ -208,7 +208,7 @@ namespace PepperDash.Core
             {
                 if (string.IsNullOrEmpty(stateString.Trim()))
                 {
-                    CrestronConsole.PrintLine("DoNotLoadOnNextBoot = {0}", DoNotLoadOnNextBoot);
+                    CrestronConsole.ConsoleCommandResponse("DoNotLoadOnNextBoot = {0}", DoNotLoadOnNextBoot);
                     return;
                 }
 
@@ -216,7 +216,7 @@ namespace PepperDash.Core
             }
             catch
             {
-                CrestronConsole.PrintLine("Usage: donotloadonnextboot:P [true/false]");
+                CrestronConsole.ConsoleCommandResponse("Usage: donotloadonnextboot:P [true/false]");
             }
         }
 
@@ -312,7 +312,7 @@ namespace PepperDash.Core
                 _contexts.GetOrCreateItem("DEFAULT").Level = level;
                 SaveMemoryOnTimeout();
 
-                CrestronConsole.PrintLine("[Application {0}], Debug level set to {1}",
+                CrestronConsole.ConsoleCommandResponse("[Application {0}], Debug level set to {1}",
                     InitialParametersClass.ApplicationNumber, Level);
 
                 //var err = CrestronDataStoreStatic.SetLocalUintValue("DebugLevel", level);
@@ -353,7 +353,7 @@ namespace PepperDash.Core
             _contexts.GetOrCreateItem("DEFAULT").DoNotLoadOnNextBoot = state;
             SaveMemoryOnTimeout();
 
-            CrestronConsole.PrintLine("[Application {0}], Do Not Start on Next Boot set to {1}",
+            CrestronConsole.ConsoleCommandResponse("[Application {0}], Do Not Start on Next Boot set to {1}",
                 InitialParametersClass.ApplicationNumber, DoNotLoadOnNextBoot);
         }
 

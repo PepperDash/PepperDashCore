@@ -101,7 +101,7 @@ namespace PepperDash.Core
             {
                 if (string.IsNullOrEmpty(levelString.Trim()))
                 {
-                    CrestronConsole.PrintLine("AppDebug level = {0}", SaveData.Level);
+                    CrestronConsole.ConsoleCommandResponse("AppDebug level = {0}", SaveData.Level);
                     return;
                 }
 
