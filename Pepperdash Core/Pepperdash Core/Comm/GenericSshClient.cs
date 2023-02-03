@@ -66,7 +66,7 @@ namespace PepperDash.Core
 		{ 
 			// returns false if no client or not connected
             get { return Client != null && ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
-		}
+		}        
 
 		/// <summary>
 		/// S+ helper for IsConnected
@@ -331,8 +331,7 @@ namespace PepperDash.Core
             KillStream();
 
             if (Client != null)
-            {
-                IsConnecting = false;
+            {                
                 Client.Disconnect();
                 Client = null;
                 ClientStatus = status;
