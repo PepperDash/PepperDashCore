@@ -12,7 +12,7 @@ env:
   # solution path doesn't need slashes unless there it is multiple folders deep
   # solution name does not include extension. .sln is assumed
   SOLUTION_PATH: Pepperdash Core
-  SOLUTION_FILE: PepperDash Core
+  SOLUTION_FILE: PepperDash Core 4-series
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
   # Defaults to debug for build type
@@ -20,163 +20,22 @@ env:
   # Defaults to main as the release branch.  Change as necessary
   RELEASE_BRANCH: main
 jobs:
-  Build_Project:
-    runs-on: windows-2019
-    steps:
-      # First we checkout the source repo
-      - name: Checkout repo
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      # And any submodules
-      - name: Checkout submodules
-        shell: bash
-        run: |
-          git config --global url."https://github.com/".insteadOf "git@github.com:"
-          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
-          git submodule sync --recursive
-          git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
-        # Fetch all tags
-      - name: Fetch tags
-        run: git fetch --tags
-      # Generate the appropriate version number
-      - name: Set Version Number
-        shell: powershell
-        run: |
-          $version = ./.github/scripts/GenerateVersionNumber.ps1
-          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      # Use the version number to set the version of the assemblies
-      - name: Update AssemblyInfo.cs
-        shell: powershell
-        run: |
-          Write-Output ${{ env.VERSION }}
-          ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
-      # Login to Docker
-      - name: Login to Docker
-        uses: azure/docker-login@v1
-        with:
-          username: ${{ secrets.dockerhub_user }}
-          password: ${{ secrets.dockerhub_password }}
-      # Build the solutions in the docker image
-      - name: Build Solution
-        shell: powershell
-        run: |
-          Invoke-Expression "docker run --rm --mount type=bind,source=""$($Env:GITHUB_WORKSPACE)"",target=""c:/project"" pepperdash/sspbuilder c:\cihelpers\vsidebuild.exe -Solution ""c:\project\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln"" -BuildSolutionConfiguration $($ENV:BUILD_TYPE)"
-      - name: Zip Build Output
-        shell: powershell
-        run: ./.github/scripts/ZipBuildOutput.ps1
-      # Write the version to a file to be consumed by the push jobs
-      - name: Write Version
-        run: Write-Output "$($Env:VERSION)" | Out-File -FilePath "$($Env:GITHUB_HOME)\output\version.txt"
-      # Upload the build output as an artifact
-      - name: Upload Build Output
-        uses: actions/upload-artifact@v1
-        with:
-          name: Build
-          path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-      # Upload the Version file as an artifact
-      - name: Upload version.txt
-        uses: actions/upload-artifact@v1
-        with:
-          name: Version
-          path: ${{env.GITHUB_HOME}}\output\version.txt
-      # Create the release on the source repo
-      - name: Create tag for non-rc builds
-        if: contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta')
-        run: |
-          git tag $($Env:VERSION)
-          git push --tags origin
-      - name: Create Release
-        id: create_release
-        # using contributor's version to allow for pointing at the right commit
-        if: contains(env.VERSION,'-rc-') || contains(env.VERSION,'-hotfix-')
-        uses: fleskesvor/create-release@feature/support-target-commitish
-        with:
-          tag_name: ${{ env.VERSION  }}
-          release_name: ${{ env.VERSION }}
-          prerelease: ${{contains('debug', env.BUILD_TYPE)}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Upload the build package to the release
-      - name: Upload Release Package
-        if: contains(env.VERSION,'-rc-') || contains(env.VERSION,'-hotfix-')
-        id: upload_release
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-          asset_name: ${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
-  Push_Nuget_Package:
-    needs: Build_Project
-    runs-on: windows-latest
-    steps:
-      - name: Download Build Version Info
-        uses: actions/download-artifact@v1
-        with:
-          name: Version
-      - name: Set Version Number
-        shell: powershell
-        run: |
-          Get-ChildItem "./Version"
-          $version = Get-Content -Path ./Version/version.txt
-          Write-Host "Version: $version"
-          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          Remove-Item -Path ./Version/version.txt
-          Remove-Item -Path ./Version
-      - name: Download Build output
-        uses: actions/download-artifact@v1
-        with:
-          name: Build
-          path: ./
-      - name: Unzip Build file
-        run: |
-          Get-ChildItem .\*.zip | Expand-Archive -DestinationPath .\
-          Remove-Item -Path .\*.zip
-      - name: Copy Files to root & delete output directory
-        run: |
-          Remove-Item -Path .\* -Include @("*.cpz","*.md","*.cplz","*.json","*.dll","*.clz")  
-          Get-ChildItem -Path .\output\* | Copy-Item -Destination .\
-          Remove-Item -Path .\output -Recurse
-      - name: Add nuget.exe
-        uses: nuget/setup-nuget@v1
-      - name: Add Github Packages source
-        run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
-      - name: Add nuget.org API Key
-        run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}
-      - name: Create nuget package
-        run: nuget pack "./PepperDash_Core.nuspec" -version ${{ env.VERSION }}
-      - name: Publish nuget package to Github registry
-        run: nuget push **/*.nupkg -source github
-      - name: Publish nuget package to nuget.org
-        run: nuget push **/*.nupkg -Source https://api.nuget.org/v3/index.json
   Build_Project_4-Series:
     runs-on: windows-latest
-    steps:
-      # First we checkout the source repo
-      - name: Checkout repo
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
+    steps:      
+      - uses: actions/checkout@v3
       # Fetch all tags
       - name: Fetch tags
         run: git fetch --tags
       # Generate the appropriate version number
       - name: Set Version Number
+        id: setVersion
         shell: powershell
         run: |
           $version = ./.github/scripts/GenerateVersionNumber.ps1
-          echo "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      # Use the version number to set the version of the assemblies
-      - name: Update AssemblyInfo.cs
-        shell: powershell
-        run: |
-          Write-Output ${{ env.VERSION }}
-          ./.github/scripts/UpdateAssemblyVersion.ps1 ${{ env.VERSION }}
-      - name: Setup MS-Build
-        uses: microsoft/setup-msbuild@v1
+          echo "version=$version" | $GITHUB_OUTPUT      
+      - name: Setup MS Build
+        uses: microsoft/setup-msbuild@v1.1
       - name: restore Nuget Packages
         run: nuget restore ./$($Env:SOLUTION_PATH)/$($Env:SOLUTION_FILE)
         env:
@@ -185,92 +44,24 @@ jobs:
       - name: Build Solution
         shell: powershell
         run: |
-          msbuild "./$($Env:SOLUTION_PATH)/$($Env:SOLUTION_FILE) 4-Series.sln" /p:platform="Any CPU" /p:configuration="Debug"
-      # Zip up the output files as needed
-      - name: Zip Build Output
-        shell: powershell
-        run: |
-          $destination = "$($Env:GITHUB_HOME)\output"
-          New-Item -ItemType Directory -Force -Path ($destination)
-          Get-ChildItem ($destination)
-          $exclusions = @("packages", "3-series")
-          # Trying to get any .json schema files (not currently working)
-          # Gets any files with the listed extensions.
-          Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz", "*.cplz", "*.nuspec" | ForEach-Object {
-            $allowed = $true;
-            # Exclude any files in submodules
-            foreach ($exclude in $exclusions) {
-              if ((Split-Path $_.FullName -Parent).contains("$($exclude)")) {
-                $allowed = $false;
-                break;
-              }
-            }
-            if ($allowed) {
-              Write-Host "allowing $($_)"
-              $_;
-            }
-          } | Copy-Item -Destination ($destination) -Force
-          Write-Host "Getting matching files..."
-          # Get any files from the output folder that match the following extensions
-          Get-ChildItem -Path $destination | Where-Object {($_.Extension -eq ".clz") -or ($_.Extension -eq ".cpz" -or ($_.Extension -eq ".cplz"))} | ForEach-Object { 
-            # Replace the extensions with dll and xml and create an array 
-            $filenames = @($($_ -replace "cpz|clz|cplz", "dll"), $($_ -replace "cpz|clz|cplz", "xml"))
-            Write-Host "Filenames:"
-            Write-Host $filenames
-            if ($filenames.length -gt 0) {
-              # Attempt to get the files and return them to the output directory
-              Get-ChildItem -Recurse -Path "$($Env:GITHUB_WORKSPACE)" -include $filenames | Copy-Item -Destination ($destination) -Force
-            }
-          }
-          Get-ChildItem -Path $destination\*.cplz | Rename-Item -NewName { "$($_.BaseName)-4s-$($Env:VERSION)$($_.Extension)" }
-          Compress-Archive -Path $destination -DestinationPath "$($Env:GITHUB_WORKSPACE)\$($Env:SOLUTION_FILE)-4s-$($Env:VERSION).zip" -Force
-          Write-Host "Output Contents post Zip"
-          Get-ChildItem -Path $destination
-      # Write the version to a file to be consumed by the push jobs
-      - name: Write Version
-        run: Write-Output "$($Env:VERSION)" | Out-File -FilePath "$($Env:GITHUB_HOME)\output\version.txt"
-      # Upload output files
-      - name: Upload Build Output
-        uses: actions/upload-artifact@v1
-        with:
-          name: ${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
-          path: ./${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
-      # Upload the Version file as an artifact
-      - name: Upload version.txt
-        uses: actions/upload-artifact@v1
-        with:
-          name: Version
-          path: ${{env.GITHUB_HOME}}\output\version.txt
+          msbuild "./$($Env:SOLUTION_PATH)/$($Env:SOLUTION_FILE) 4-Series.sln" -p:Platform="Any CPU" -p:Configuration="Debug -p:VersionPrefix=$(steps.setVersion.outputs.version)"
       - name: Create tag for non-rc builds
         if: contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta')
         run: |
-          git tag $($Env:VERSION)-4-Series
+          git tag $($Env:VERSION)
           git push --tags origin
       # Create the release on the source repo
       - name: Create Release
         id: create_release
-        if: contains(env.VERSION,'-rc-') || contains(env.VERSION,'-hotfix-')
+        if: contains(steps.setVersion.outputs.version,'-rc-') || contains(steps.setVersion.outputs.version,'-hotfix-')
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ env.VERSION  }}-4-Series
-          release_name: ${{ env.VERSION }}-4-Series
+          tag_name: ${{ env.VERSION  }}
+          release_name: ${{ env.VERSION }}
           prerelease: ${{contains('debug', env.BUILD_TYPE)}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # Upload the build package to the release
-      - name: Upload Release Package
-        id: upload_release
-        if: contains(env.VERSION,'-rc-') || contains(env.VERSION,'-hotfix-')
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
-          asset_name: ${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
-          asset_content_type: application/zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Add nuget.exe
-        uses: nuget/setup-nuget@v1
       - name: Add Github Packages source
         run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
       - name: Add nuget.org API Key
