@@ -30,10 +30,10 @@ jobs:
       # Generate the appropriate version number
       - name: Set Version Number
         id: setVersion
-        shell: powershell
+        shell: pwsh
         run: |
           $version = ./.github/scripts/GenerateVersionNumber.ps1
-          echo "version=$version" | $GITHUB_OUTPUT      
+          echo "version=$version" >> $env:GITHUB_OUTPUT      
       - name: Setup MS Build
         uses: microsoft/setup-msbuild@v1.1
       - name: restore Nuget Packages
