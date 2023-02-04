@@ -42,7 +42,7 @@ jobs:
           SOLUTION_FILE: PepperDash Core 4-Series.sln
       # Build the solutions in the docker image
       - name: Build Solution        
-        run: msbuild "./$($Env:SOLUTION_PATH)/$($Env:SOLUTION_FILE).sln" -p:Platform="Any CPU" -p:Configuration="Debug -p:VersionPrefix=${{steps.setVersion.outputs.version}}"
+        run: msbuild .\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln /p:Platform="Any CPU" /p:Configuration="Debug" /p:Version="${{ steps.setVersion.outputs.version }}"
       - name: Create tag for non-rc builds
         if: contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta')
         run: |
@@ -63,10 +63,8 @@ jobs:
       - name: Add Github Packages source
         run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
       - name: Add nuget.org API Key
-        run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}
-      - name: Create nuget package
-        run: nuget pack "./Pepperdash Core/Pepperdash Core/PepperDash_Core_4-Series.csproj.nuspec" -version ${{ env.VERSION }}
+        run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}      
       - name: Publish nuget package to Github registry
-        run: nuget push "./*.nupkg" -Source github
+        run: nuget push "./package/*.nupkg" -Source github
       - name: Publish nuget package to nuget.org
-        run: nuget push "./*.nupkg" -Source https://api.nuget.org/v3/index.json
+        run: nuget push "./package/*.nupkg" -Source https://api.nuget.org/v3/index.json
