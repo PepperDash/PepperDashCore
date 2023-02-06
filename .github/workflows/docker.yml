@@ -52,7 +52,7 @@ jobs:
               $newVersionString = "{0}-{1}-{2}" -f $newVersion, $phase, $Env:GITHUB_RUN_NUMBER
             }  
           }          
-          echo "version=$newVersionString" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append      
+          echo "VERSION=$newVersionString" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append      
       - name: Setup MS Build
         uses: microsoft/setup-msbuild@v1.1
       - name: restore Nuget Packages
@@ -61,20 +61,20 @@ jobs:
           SOLUTION_FILE: PepperDash Core 4-Series.sln
       # Build the solutions in the docker image
       - name: Build Solution        
-        run: msbuild .\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln /p:Platform="Any CPU" /p:Configuration="Debug" /p:Version="${{ steps.setVersion.outputs.version }}"
+        run: msbuild .\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln /p:Platform="Any CPU" /p:Configuration="Debug" /p:Version="${{ env.VERSION }}"
       - name: Create tag for non-rc builds
-        if: contains(steps.setVersion.outputs.version, 'alpha') || contains(steps.setVersion.outputs.version, 'beta')
+        if: contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta')
         run: |
-          git tag ${{ steps.setVersion.outputs.version }}
+          git tag ${{ env.VERSION }}
           git push --tags origin
       # Create the release on the source repo
       - name: Create Release
         id: create_release
-        if: contains(steps.setVersion.outputs.version,'-rc-') || contains(steps.setVersion.outputs.version,'-hotfix-')
+        if: contains(env.VERSION,'-rc-') || contains(env.VERSION,'-hotfix-')
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ steps.setVersion.outputs.version  }}
-          release_name: ${{ steps.setVersion.outputs.version }}
+          tag_name: ${{ env.VERSION  }}
+          release_name: ${{ env.VERSION }}
           prerelease: ${{contains('debug', env.BUILD_TYPE)}}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
