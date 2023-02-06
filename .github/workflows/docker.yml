@@ -32,8 +32,27 @@ jobs:
         id: setVersion
         shell: powershell
         run: |
-          $version = ./.github/scripts/GenerateVersionNumber.ps1
-          echo "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append      
+          $latestVersion = [version]"2.0.0"
+
+          $newVersion = [version]$latestVersion
+          $phase = ""
+          $newVersionString = ""
+
+          switch -regex ($Env:GITHUB_REF) {
+            '^refs\/pull\/*.' {
+              $phase = 'beta';
+              $newVersionString = "{0}-{1}-{2}" -f $newVersion, $phase, $Env:GITHUB_RUN_NUMBER
+            }
+            '^refs\/heads\/feature-2\/*.' {
+              $phase = 'alpha'
+              $newVersionString = "{0}-{1}-{2}" -f $newVersion, $phase, $Env:GITHUB_RUN_NUMBER
+            }
+            'development-2' {
+              $phase = 'beta'
+              $newVersionString = "{0}-{1}-{2}" -f $newVersion, $phase, $Env:GITHUB_RUN_NUMBER
+            }  
+          }          
+          echo "version=$newVersionString" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append      
       - name: Setup MS Build
         uses: microsoft/setup-msbuild@v1.1
       - name: restore Nuget Packages
