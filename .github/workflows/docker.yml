@@ -3,10 +3,10 @@ name: Branch Build Using Docker
 on:
   push:
     branches:
-      - feature/*
-      - hotfix/*
-      - release/*
-      - development
+      - feature-2/*
+      - hotfix-2/*
+      - release-2/*
+      - development-2
 
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
