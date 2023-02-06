@@ -31,6 +31,9 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Crestron.SimplSharp.SDK.Library" Version="2.19.35" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2">
+      <Aliases>Full</Aliases>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Comm\._GenericSshClient.cs" />
