@@ -84,6 +84,6 @@ jobs:
       - name: Add nuget.org API Key
         run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}      
       - name: Publish nuget package to Github registry
-        run: nuget push "./package/*.nupkg" -Source github
+        run: nuget push ".\package\PepperDashCore.${{ steps.setVersion.outputs.version }}.nupkg" -Source github
       - name: Publish nuget package to nuget.org
-        run: nuget push "./package/*.nupkg" -Source https://api.nuget.org/v3/index.json
+        run: nuget push ".\package\PepperDashCore.${{ steps.setVersion.outputs.version }}.nupkg -Source https://api.nuget.org/v3/index.json
