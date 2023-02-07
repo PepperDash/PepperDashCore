@@ -1,11 +1,13 @@
-﻿using System;
+﻿extern alias Full;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronDataStore;
 using Crestron.SimplSharp.CrestronIO;
-using Newtonsoft.Json;
+using Full.Newtonsoft.Json;
 using PepperDash.Core.DebugThings;
 
 
@@ -101,7 +103,7 @@ namespace PepperDash.Core
             {
                 if (string.IsNullOrEmpty(levelString.Trim()))
                 {
-                    CrestronConsole.PrintLine("AppDebug level = {0}", SaveData.Level);
+                    CrestronConsole.ConsoleCommandResponse("AppDebug level = {0}", SaveData.Level);
                     return;
                 }
 
