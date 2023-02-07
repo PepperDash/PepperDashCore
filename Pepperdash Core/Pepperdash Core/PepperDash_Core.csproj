@@ -7,7 +7,7 @@
     <ProjectGuid>{87E29B4C-569B-4368-A4ED-984AC1440C96}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>PepperDash_Core</RootNamespace>
+    <RootNamespace>PepperDash.Core</RootNamespace>
     <AssemblyName>PepperDash_Core</AssemblyName>
     <ProjectTypeGuids>{0B4745B0-194B-4BB6-8E21-E9057CA92500};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <PlatformFamilyName>WindowsCE</PlatformFamilyName>
@@ -51,6 +51,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpCustomAttributesInterface.dll</HintPath>
     </Reference>
+    <Reference Include="SimplSharpCWSHelperInterface, Version=2.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpCWSHelperInterface.dll</HintPath>
+    </Reference>
     <Reference Include="SimplSharpHelperInterface, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1099c178b3b54c3b, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\..\ProgramData\Crestron\SDK\SimplSharpHelperInterface.dll</HintPath>
@@ -89,6 +93,9 @@
     <Compile Include="Comm\TcpServerConfigObject.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />
+    <Compile Include="Web\RequestHandlers\DefaultRequestRequestHandler.cs" />
+    <Compile Include="Web\RequestHandlers\WebApiBaseRequestHandler.cs" />
+    <Compile Include="Web\WebApiServer.cs" />
     <Compile Include="EventArgs.cs" />
     <Compile Include="GenericRESTfulCommunications\Constants.cs" />
     <Compile Include="GenericRESTfulCommunications\GenericRESTfulClient.cs" />
