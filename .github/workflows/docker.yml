@@ -11,8 +11,8 @@ on:
 env:
   # solution path doesn't need slashes unless there it is multiple folders deep
   # solution name does not include extension. .sln is assumed
-  SOLUTION_PATH: Pepperdash Core
-  SOLUTION_FILE: PepperDash Core 4-series
+  SOLUTION_PATH: .
+  SOLUTION_FILE: PepperDash Core
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
   # Defaults to debug for build type
@@ -57,33 +57,29 @@ jobs:
         uses: microsoft/setup-msbuild@v1.1
       - name: restore Nuget Packages
         run: nuget restore ./$($Env:SOLUTION_PATH)/$($Env:SOLUTION_FILE)
-        env:
-          SOLUTION_FILE: PepperDash Core 4-Series.sln
       # Build the solutions in the docker image
       - name: Build Solution        
         run: msbuild .\$($Env:SOLUTION_PATH)\$($Env:SOLUTION_FILE).sln /p:Platform="Any CPU" /p:Configuration="Debug" /p:Version="${{ steps.setVersion.outputs.version }}"
       - name: Create tag for non-rc builds
-        if: contains(steps.setVersion.outputs.version, 'alpha') || contains(steps.setVersion.outputs.version, 'beta')
+        if: contains(steps.setVersion.outputs.version, 'alpha')
         run: |
           git tag ${{ steps.setVersion.outputs.version }}
           git push --tags origin
       # Create the release on the source repo
       - name: Create Release
         id: create_release
-        if: contains(steps.setVersion.outputs.version,'-rc-') || contains(steps.setVersion.outputs.version,'-hotfix-')
-        uses: actions/create-release@v1
+        if: contains(steps.setVersion.outputs.version,'-rc-') ||
+            contains(steps.setVersion.outputs.version,'-hotfix-') ||
+            contains(steps.setVersion.outputs.version, 'beta')
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ steps.setVersion.outputs.version  }}
-          release_name: ${{ steps.setVersion.outputs.version }}
+          artifacts: **\*.clz
+          generateReleaseNotes: true
           prerelease: ${{contains('debug', env.BUILD_TYPE)}}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Upload the build package to the release
-      - name: Add Github Packages source
-        run: nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
-      - name: Add nuget.org API Key
-        run: nuget setApiKey ${{ secrets.NUGET_API_KEY }}      
-      - name: Publish nuget package to Github registry
-        run: nuget push ".\package\PepperDashCore.${{ steps.setVersion.outputs.version }}.nupkg" -Source github
-      - name: Publish nuget package to nuget.org
-        run: nuget push ".\package\PepperDashCore.${{ steps.setVersion.outputs.version }}.nupkg" -Source https://api.nuget.org/v3/index.json
+          tag: ${{ steps.setVersion.outputs.version }}
+      - name: Publish to Nuget
+        run: | 
+          nuget sources add -name github -source https://nuget.pkg.github.com/pepperdash/index.json -username Pepperdash -password ${{ secrets.GITHUB_TOKEN }}
+          nuget setApiKey ${{ secrets.NUGET_API_KEY }}
+          nuget push ".\package\PepperDashCore.${{ steps.setVersion.outputs.version }}.nupkg" -Source github
+          nuget push ".\package\PepperDashCore.${{ steps.setVersion.outputs.version }}.nupkg" -Source https://api.nuget.org/v3/index.json
