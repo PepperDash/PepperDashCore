@@ -44,17 +44,6 @@ jobs:
           generateReleaseNotes: false
           prerelease: false
           tag: ${{ github.event.release.tag_name }}
-      # Upload the build package to the release
-#     - name: Upload Release Package
-#        id: upload_release
-#        uses: actions/upload-release-asset@v1
-#       with:
-#          upload_url: ${{ github.event.release.upload_url }}
-#          asset_path: ./${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
-#          asset_name: ${{ env.SOLUTION_FILE}}-4s-${{ env.VERSION}}.zip
-#          asset_content_type: application/zip
-#        env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Add nuget.exe
         uses: nuget/setup-nuget@v1
       - name: Publish to Nuget
