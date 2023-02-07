@@ -40,7 +40,7 @@ jobs:
         id: create_release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: **\*.clz
+          artifacts: '**\*.clz'
           generateReleaseNotes: false
           prerelease: false
           tag: ${{ github.event.release.tag_name }}
