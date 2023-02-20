@@ -14,8 +14,10 @@ namespace PepperDash.Core.Web.RequestHandlers
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		protected WebApiBaseRequestHandler()
+		protected WebApiBaseRequestHandler(bool enableCors)
 		{
+			EnableCors = enableCors;
+
 			_handlers = new Dictionary<string, Action<HttpCwsContext>>
 			{
 				{"CONNECT", HandleConnect},
@@ -31,13 +33,23 @@ namespace PepperDash.Core.Web.RequestHandlers
 		}
 
 		/// <summary>
+		/// Constructor
+		/// </summary>
+		protected WebApiBaseRequestHandler()
+			: this(false)
+		{
+		}
+
+		protected readonly bool EnableCors;
+
+		/// <summary>
 		/// Handles CONNECT method requests
 		/// </summary>
 		/// <param name="context"></param>
 		protected virtual void HandleConnect(HttpCwsContext context)
 		{
 			context.Response.StatusCode = 501;
-			context.Response.StatusDescription = "Not Implemented";			
+			context.Response.StatusDescription = "Not Implemented";
 			context.Response.End();
 		}
 
@@ -48,7 +60,7 @@ namespace PepperDash.Core.Web.RequestHandlers
 		protected virtual void HandleDelete(HttpCwsContext context)
 		{
 			context.Response.StatusCode = 501;
-			context.Response.StatusDescription = "Not Implemented";			
+			context.Response.StatusDescription = "Not Implemented";
 			context.Response.End();
 		}
 
@@ -142,7 +154,13 @@ namespace PepperDash.Core.Web.RequestHandlers
 				return;
 			}
 
+			if (EnableCors)
+			{
+				context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+				context.Response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+			}
+
 			handler(context);
-		}		
+		}
 	}
 }
