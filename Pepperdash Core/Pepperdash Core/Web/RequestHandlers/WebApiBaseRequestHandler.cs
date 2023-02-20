@@ -10,6 +10,7 @@ namespace PepperDash.Core.Web.RequestHandlers
 	public abstract class WebApiBaseRequestHandler : IHttpCwsHandler
 	{
 		private readonly Dictionary<string, Action<HttpCwsContext>> _handlers;
+		protected readonly bool EnableCors;
 
 		/// <summary>
 		/// Constructor
@@ -38,9 +39,7 @@ namespace PepperDash.Core.Web.RequestHandlers
 		protected WebApiBaseRequestHandler()
 			: this(false)
 		{
-		}
-
-		protected readonly bool EnableCors;
+		}		
 
 		/// <summary>
 		/// Handles CONNECT method requests

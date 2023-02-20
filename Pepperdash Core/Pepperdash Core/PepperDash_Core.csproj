@@ -93,7 +93,7 @@
     <Compile Include="Comm\TcpServerConfigObject.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />
-    <Compile Include="Web\RequestHandlers\DefaultRequestRequestHandler.cs" />
+    <Compile Include="Web\RequestHandlers\DefaultRequestHandler.cs" />
     <Compile Include="Web\RequestHandlers\WebApiBaseRequestHandler.cs" />
     <Compile Include="Web\WebApiServer.cs" />
     <Compile Include="EventArgs.cs" />
