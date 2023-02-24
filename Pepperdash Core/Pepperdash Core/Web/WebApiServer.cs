@@ -100,7 +100,7 @@ namespace PepperDash.Core.Web
 			if (_server == null) _server = new HttpCwsServer(BasePath);
 
 			_server.setProcessName(Key);
-			_server.HttpRequestHandler = new DefaultRequestRequestHandler();
+			_server.HttpRequestHandler = new DefaultRequestHandler();
 
 			CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
 			CrestronEnvironment.EthernetEventHandler += CrestronEnvironment_EthernetEventHandler;
