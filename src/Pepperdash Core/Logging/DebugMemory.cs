@@ -1,9 +1,9 @@
-﻿extern alias Full;
+﻿
 
 using System.Collections.Generic;
 using Crestron.SimplSharp;
 
-using Full.Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace PepperDash.Core.DebugThings
 {

@@ -9,15 +9,15 @@ and in all parts thereof, regardless of the use to which it is being put.  Any u
 of this material by another party without the express written permission of PepperDash Technology Corporation is prohibited.  
 PepperDash Technology Corporation reserves all rights under applicable laws.
 ------------------------------------ */
-extern alias Full;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
-using Full.Newtonsoft.Json;
-using Full.Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core
 {

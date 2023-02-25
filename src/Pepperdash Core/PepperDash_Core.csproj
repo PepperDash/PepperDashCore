@@ -32,7 +32,7 @@
   <ItemGroup>
     <PackageReference Include="Crestron.SimplSharp.SDK.Library" Version="2.19.35" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2">
-      <Aliases>Full</Aliases>
+      <Aliases></Aliases>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
@@ -43,4 +43,11 @@
     <Compile Remove="PasswordManagement\OLD-ARRAY-PasswordClient.cs" />
     <Compile Remove="PasswordManagement\OLD-ARRAY-PasswordManager.cs" />
   </ItemGroup>
+  <Target Name="SimplSharpNewtonsoft" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
+    <ItemGroup>
+      <ReferencePath Condition="'%(FileName)' == 'SimplSharpNewtonsoft'">
+        <Aliases>crestron</Aliases>
+      </ReferencePath>
+    </ItemGroup>
+  </Target>
 </Project>

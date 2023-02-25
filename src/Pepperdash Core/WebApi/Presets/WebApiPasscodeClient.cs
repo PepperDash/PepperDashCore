@@ -1,4 +1,4 @@
-﻿extern alias Full;
+﻿
 
 using System;
 using System.Text;
@@ -7,8 +7,8 @@ using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
-using Full.Newtonsoft.Json;
-using Full.Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 using PepperDash.Core;
 using PepperDash.Core.JsonToSimpl;

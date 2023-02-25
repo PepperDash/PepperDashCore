@@ -1,9 +1,9 @@
-﻿extern alias Full;
+﻿
 
 using System;
 using System.Collections.Generic;
 using Crestron.SimplSharp;
-using Full.Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core.JsonToSimpl
 {
