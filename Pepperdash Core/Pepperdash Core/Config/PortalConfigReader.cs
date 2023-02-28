@@ -37,6 +37,8 @@ namespace PepperDash.Core.Config
 					if(jsonObj["template"] != null && jsonObj["system"] != null)
 					{
 						// it's a double-config, merge it.
+                        Debug.Console(2, "Merging template & system configurations");
+
 						var merged = MergeConfigs(jsonObj);
 						if (jsonObj["system_url"] != null)
 						{
@@ -78,7 +80,7 @@ namespace PepperDash.Core.Config
 
 			// Put together top-level objects
 			if (system["info"] != null)
-				merged.Add("info", Merge(template["info"], system["info"], "infO"));
+				merged.Add("info", Merge(template["info"], system["info"], "info"));
 			else
 				merged.Add("info", template["info"]);
 
@@ -130,34 +132,40 @@ namespace PepperDash.Core.Config
 		/// given by propertyName.  Returns a merge of them. Items in the delta array that do not have
 		/// a matched item in base array will not be merged. Non keyed system items will replace the template items.
 		/// </summary>
-		static JArray MergeArraysOnTopLevelProperty(JArray a1, JArray a2, string propertyName, string path)
+		static JArray MergeArraysOnTopLevelProperty(JArray template, JArray system, string propertyName, string path)
 		{
 			var result = new JArray();
-			if (a2 == null || a2.Count == 0) // If the system array is null or empty, return the template array
-				return a1;
-			else if (a1 != null)
-			{
-                if (a2[0]["key"] == null) // If the first item in the system array has no key, overwrite the template array
-                {                                                       // with the system array
-                    return a2;
-                }
-                else    // The arrays are keyed, merge them by key
+            if (system == null || system.Count == 0) // If the system array is null or empty, return the template array
+            {
+                return template;
+            }
+
+            if (template == null)
+            {
+                return result;
+            }
+			
+            if (system[0]["key"] == null) // If the first item in the system array has no key, overwrite the template array
+            {                                                       // with the system array
+                return system;
+            }
+
+            for (int i = 0; i < template.Count(); i++)
+            {
+                var templateObject = template[i];
+                // Try to get a system device and if found, merge it onto template
+                var systemObject = system.FirstOrDefault(t => t[propertyName].Equals(templateObject[propertyName]));// t.Value<int>("uid") == tmplDev.Value<int>("uid"));
+
+                var objectToAdd = templateObject;
+
+                if (systemObject != null)
                 {
-                    for (int i = 0; i < a1.Count(); i++)
-                    {
-                        var a1Dev = a1[i];
-                        // Try to get a system device and if found, merge it onto template
-                        var a2Match = a2.FirstOrDefault(t => t[propertyName].Equals(a1Dev[propertyName]));// t.Value<int>("uid") == tmplDev.Value<int>("uid"));
-                        if (a2Match != null)
-                        {
-                            var mergedItem = Merge(a1Dev, a2Match, string.Format("{0}[{1}].", path, i));// Merge(JObject.FromObject(a1Dev), JObject.FromObject(a2Match));
-                            result.Add(mergedItem);
-                        }
-                        else
-                            result.Add(a1Dev);
-                    }
+                    objectToAdd = Merge(templateObject, systemObject, string.Format("{0}[{1}].", path, i));// Merge(JObject.FromObject(a1Dev), JObject.FromObject(a2Match));                                                
                 }
-			}
+
+                result.Add(objectToAdd);
+            }               
+			
 			return result;
 		}
 
@@ -176,50 +184,47 @@ namespace PepperDash.Core.Config
         /// <param name="o1"></param>
         /// <param name="o2"></param>
         /// <param name="path"></param>
-		static JObject Merge(JObject o1, JObject o2, string path)
+		static JObject Merge(JObject parent, JObject child, string path)
 		{
-			foreach (var o2Prop in o2)
+			foreach (var childProperty in child)
 			{
-				var propKey = o2Prop.Key;
-				var o1Value = o1[propKey];
-				var o2Value = o2[propKey];
+				var childPropertyKey = childProperty.Key;
+				var parentValue = parent[childPropertyKey];
+				var childValue = child[childPropertyKey];
 
 				// if the property doesn't exist on o1, then add it.
-				if (o1Value == null)
+				if (parentValue == null)
 				{
-					o1.Add(propKey, o2Value);
+					parent.Add(childPropertyKey, childValue);
+                    continue;
 				}
 				// otherwise merge them
-				else
-				{	
-					// Drill down
-					var propPath = String.Format("{0}.{1}", path, propKey);
-					try
-					{
+				
+				// Drill down
+				var propPath = String.Format("{0}.{1}", path, childPropertyKey);
+				try
+				{
 
-						if (o1Value is JArray)
-						{
-							if (o2Value is JArray)
-							{
-								o1Value.Replace(MergeArraysOnTopLevelProperty(o1Value as JArray, o2Value as JArray, "key", propPath));
-							}
-						}
-						else if (o2Prop.Value.HasValues && o1Value.HasValues)
-						{
-							o1Value.Replace(Merge(JObject.FromObject(o1Value), JObject.FromObject(o2Value), propPath));
-						}
-						else
-						{
-							o1Value.Replace(o2Prop.Value);
-						}
+					if (parentValue is JArray && childValue is JArray)
+					{						
+						parentValue.Replace(MergeArraysOnTopLevelProperty(parentValue as JArray, childValue as JArray, "key", propPath));	
+                        continue;
 					}
-					catch (Exception e)
+					
+                    if (childProperty.Value.HasValues && parentValue.HasValues)
 					{
-						Debug.Console(1, Debug.ErrorLogLevel.Warning, "Cannot merge items at path {0}: \r{1}", propPath, e);
+						parentValue.Replace(Merge(parentValue, childValue, propPath));
+                        continue;
 					}
+					
+					parentValue.Replace(childProperty.Value);					
 				}
+				catch (Exception e)
+				{
+					Debug.Console(1, Debug.ErrorLogLevel.Warning, "Cannot merge items at path {0}: \r{1}", propPath, e);
+				}			
 			}
-			return o1;
+			return parent;
 		}
 	}
 }
