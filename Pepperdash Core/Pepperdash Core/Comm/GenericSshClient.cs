@@ -312,17 +312,15 @@ namespace PepperDash.Core
 		/// </summary>
 		public void Disconnect()
 		{
-            try
-            {
-                connectLock.Enter();
-                // Stop trying reconnects, if we are
-                ReconnectTimer.Stop();
-                KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
-            }
-            finally
-            {
-                connectLock.Leave();
-            }
+			ConnectEnabled = false;
+			// Stop trying reconnects, if we are
+			if (ReconnectTimer != null)
+			{
+				ReconnectTimer.Stop();
+				ReconnectTimer = null;
+			}
+
+            KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
 		}
 
         /// <summary>
@@ -331,23 +329,43 @@ namespace PepperDash.Core
         private void KillClient(SocketStatus status)
         {
             KillStream();
-			
+
             if (Client != null)
-            {
-                try
-                {
-                    Client.Disconnect();
-                    Client.Dispose();
-                    Client = null;
-                    ClientStatus = status;
-                    Debug.Console(1, this, "Disconnected client");
-                }
-                catch (Exception ex)
-                {
-                    Debug.Console(1, this, "Exception killing client: {0}", ex.Message);
-                }
+            {                
+                Client.Disconnect();
+                Client = null;
+                ClientStatus = status;
+                Debug.Console(1, this, "Disconnected");
             }
         }
+
+		/// <summary>
+		/// Anything to do with reestablishing connection on failures
+		/// </summary>
+		void HandleConnectionFailure()
+		{
+            KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+
+            Debug.Console(1, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
+		    if (AutoReconnect && ConnectEnabled)
+		    {
+		        Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+		        if (ReconnectTimer == null)
+		        {
+		            ReconnectTimer = new CTimer(o =>
+		            {
+		                Connect();
+		            }, AutoReconnectIntervalMs);
+		            Debug.Console(1, this, "Attempting connection in {0} seconds",
+		                (float) (AutoReconnectIntervalMs/1000));
+		        }
+		        else
+		        {
+		            Debug.Console(1, this, "{0} second reconnect cycle running",
+		                (float) (AutoReconnectIntervalMs/1000));
+		        }
+		    }
+		}
 
         /// <summary>
         /// Kills the stream
