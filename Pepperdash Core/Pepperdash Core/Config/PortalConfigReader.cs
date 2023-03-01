@@ -34,24 +34,29 @@ namespace PepperDash.Core.Config
 				using (StreamReader fs = new StreamReader(filePath))
 				{
 					var jsonObj = JObject.Parse(fs.ReadToEnd());
-					if(jsonObj["template"] != null && jsonObj["system"] != null)
+
+                    if (jsonObj["template"] == null || jsonObj["system"] == null)
+                    {
+                        Debug.Console(2, "Template and/or System objects are null");
+                        return;
+                    }					
+                    
+					// it's a double-config, merge it.
+                    Debug.Console(2, "Merging template & system configurations");
+
+					var merged = MergeConfigs(jsonObj);
+
+					if (jsonObj["system_url"] != null)
 					{
-						// it's a double-config, merge it.
-                        Debug.Console(2, "Merging template & system configurations");
-
-						var merged = MergeConfigs(jsonObj);
-						if (jsonObj["system_url"] != null)
-						{
-							merged["systemUrl"] = jsonObj["system_url"].Value<string>();
-						}
-
-						if (jsonObj["template_url"] != null)
-						{
-							merged["templateUrl"] = jsonObj["template_url"].Value<string>();
-						}
-
-						jsonObj = merged;
+						merged["systemUrl"] = jsonObj["system_url"].Value<string>();
 					}
+
+					if (jsonObj["template_url"] != null)
+					{
+						merged["templateUrl"] = jsonObj["template_url"].Value<string>();
+					}
+
+					jsonObj = merged;
 
 					using (StreamWriter fw = new StreamWriter(savePath))
 					{
@@ -74,35 +79,60 @@ namespace PepperDash.Core.Config
 		/// <returns></returns>
 		public static JObject MergeConfigs(JObject doubleConfig)
 		{
+            Debug.Console(2, "Merging template & system configurations)");
+
 			var system = JObject.FromObject(doubleConfig["system"]);
 			var template = JObject.FromObject(doubleConfig["template"]);
 			var merged = new JObject();
 
 			// Put together top-level objects
-			if (system["info"] != null)
-				merged.Add("info", Merge(template["info"], system["info"], "info"));
-			else
-				merged.Add("info", template["info"]);
+            if (system["info"] != null)
+                merged.Add("info", Merge(template["info"], system["info"], "info"));
+            else
+            {                
+                merged.Add("info", template["info"]);
+            }
+
+            Debug.Console(2, "Merging template & system devices");
 
 			merged.Add("devices", MergeArraysOnTopLevelProperty(template["devices"] as JArray,
 				system["devices"] as JArray, "uid", "devices"));
 
-			if (system["rooms"] == null)
-				merged.Add("rooms", template["rooms"]);
-			else
-				merged.Add("rooms", MergeArraysOnTopLevelProperty(template["rooms"] as JArray,
-					system["rooms"] as JArray, "key", "rooms"));
+            if (system["rooms"] == null)
+            {
+                Debug.Console(2, "Using Template Rooms");
+                merged.Add("rooms", template["rooms"]);
+            }
+            else
+            {
+                Debug.Console(2, "Merging template & system rooms");
+                merged.Add("rooms", MergeArraysOnTopLevelProperty(template["rooms"] as JArray,
+                    system["rooms"] as JArray, "key", "rooms"));
+            }
 
-			if (system["sourceLists"] == null)
-				merged.Add("sourceLists", template["sourceLists"]);
-			else
-				merged.Add("sourceLists", Merge(template["sourceLists"], system["sourceLists"], "sourceLists"));
+            if (system["sourceLists"] == null)
+            {
+                Debug.Console(2, "Using Template source lists");
 
-		    if (system["destinationLists"] == null)
-		        merged.Add("destinationLists", template["destinationLists"]);
-		    else
-		        merged.Add("destinationLists",
-		            Merge(template["destinationLists"], system["destinationLists"], "destinationLists"));
+                merged.Add("sourceLists", template["sourceLists"]);
+            }
+            else
+            {
+                Debug.Console(2, "Merging template & system source lists");
+                merged.Add("sourceLists", Merge(template["sourceLists"], system["sourceLists"], "sourceLists"));
+            }
+
+            if (system["destinationLists"] == null)
+            {
+                Debug.Console(2, "Using Template destination lists");
+                merged.Add("destinationLists", template["destinationLists"]);
+            }
+            else
+            {
+                Debug.Console(2, "Merging template & system destination lists");
+                merged.Add("destinationLists",
+                    Merge(template["destinationLists"], system["destinationLists"], "destinationLists"));
+            }
 
 			// Template tie lines take precedence.  Config tool doesn't do them at system
 			// level anyway...
@@ -134,19 +164,25 @@ namespace PepperDash.Core.Config
 		/// </summary>
 		static JArray MergeArraysOnTopLevelProperty(JArray template, JArray system, string propertyName, string path)
 		{
+            Debug.Console(2, "Merging arrays using property {0} as match value. Writing at path {1}", propertyName, path);
+
 			var result = new JArray();
+
             if (system == null || system.Count == 0) // If the system array is null or empty, return the template array
             {
+                Debug.Console(2, "Return template array, system array not found");
                 return template;
             }
 
             if (template == null)
             {
+                Debug.Console(2, "Returnign empty array. Template array is null");
                 return result;
             }
 			
             if (system[0]["key"] == null) // If the first item in the system array has no key, overwrite the template array
             {                                                       // with the system array
+                Debug.Console(2, "Overwriting template with system array");
                 return system;
             }
 
@@ -158,10 +194,16 @@ namespace PepperDash.Core.Config
 
                 var objectToAdd = templateObject;
 
-                if (systemObject != null)
+                if (systemObject == null)
                 {
-                    objectToAdd = Merge(templateObject, systemObject, string.Format("{0}[{1}].", path, i));// Merge(JObject.FromObject(a1Dev), JObject.FromObject(a2Match));                                                
+                    Debug.Console(2, "Using template object");
+                    result.Add(objectToAdd);
+                    continue;
                 }
+
+                Debug.Console(2, "Merging template & system object");
+
+                objectToAdd = Merge(templateObject, systemObject, string.Format("{0}[{1}].", path, i));// Merge(JObject.FromObject(a1Dev), JObject.FromObject(a2Match));                                                                
 
                 result.Add(objectToAdd);
             }               
@@ -179,22 +221,26 @@ namespace PepperDash.Core.Config
 		}
 
 		/// <summary>
-		/// Merge o2 onto o1
+		/// Merge child onto parent
 		/// </summary>
-        /// <param name="o1"></param>
-        /// <param name="o2"></param>
+        /// <param name="parent"></param>
+        /// <param name="child"></param>
         /// <param name="path"></param>
 		static JObject Merge(JObject parent, JObject child, string path)
 		{
 			foreach (var childProperty in child)
-			{
+			{               
 				var childPropertyKey = childProperty.Key;
 				var parentValue = parent[childPropertyKey];
 				var childValue = child[childPropertyKey];
 
-				// if the property doesn't exist on o1, then add it.
+                Debug.Console(2, "Checking property {0} on child. Parent: {1} Child: {2}", childProperty.Key, parentValue, childValue);
+
+				// if the property doesn't exist on parent, then add it.
 				if (parentValue == null)
 				{
+                    Debug.Console(2, "Property {0} doesn't exist on parent. Adding to parent", childPropertyKey);
+
 					parent.Add(childPropertyKey, childValue);
                     continue;
 				}
@@ -202,21 +248,31 @@ namespace PepperDash.Core.Config
 				
 				// Drill down
 				var propPath = String.Format("{0}.{1}", path, childPropertyKey);
+
 				try
 				{
 
 					if (parentValue is JArray && childValue is JArray)
-					{						
-						parentValue.Replace(MergeArraysOnTopLevelProperty(parentValue as JArray, childValue as JArray, "key", propPath));	
+					{
+                        Debug.Console(2, "Value is array. Merging array");
+
+                        // assuming keyed array here...might not be a valid assumption...
+                        var mergedArray = MergeArraysOnTopLevelProperty(parentValue as JArray, childValue as JArray, "key", propPath);
+
+						parentValue.Replace(mergedArray);	
                         continue;
 					}
 					
                     if (childProperty.Value.HasValues && parentValue.HasValues)
 					{
-						parentValue.Replace(Merge(parentValue, childValue, propPath));
+                        Debug.Console(2, "Value is object. Merging objects");
+
+                        var mergedValue = Merge(parentValue, childValue, propPath);
+						parentValue.Replace(mergedValue);
                         continue;
 					}
-					
+
+                    Debug.Console(2, "Replacing parent value with child value");
 					parentValue.Replace(childProperty.Value);					
 				}
 				catch (Exception e)
