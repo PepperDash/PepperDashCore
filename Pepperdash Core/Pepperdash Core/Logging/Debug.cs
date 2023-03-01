@@ -572,6 +572,7 @@ namespace PepperDash.Core
                     String.Format(
                         @"Debug settings file migration not necessary. Using file at \user\debugSettings\program{0}",
                         InitialParametersClass.ApplicationNumber));
+
                 return;
             }
 
