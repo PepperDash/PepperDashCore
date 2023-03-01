@@ -331,8 +331,7 @@ namespace PepperDash.Core
             KillStream();
 
             if (Client != null)
-            {
-                IsConnecting = false;
+            {                
                 Client.Disconnect();
                 Client = null;
                 ClientStatus = status;
