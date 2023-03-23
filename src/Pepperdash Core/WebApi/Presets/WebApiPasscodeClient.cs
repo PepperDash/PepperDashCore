@@ -1,17 +1,15 @@
 ﻿
 
-using System;
-using System.Text;
 using Crestron.SimplSharp;                          				// For Basic SIMPL# Classes
 using Crestron.SimplSharp.CrestronIO;
-using Crestron.SimplSharp.Net;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-
-using PepperDash.Core;
+using PepperDash.Core.Interfaces;
 using PepperDash.Core.JsonToSimpl;
+using PepperDash.Core.Logging;
+using System;
 
 
 namespace PepperDash.Core.WebApi.Presets
@@ -20,7 +18,7 @@ namespace PepperDash.Core.WebApi.Presets
     /// Passcode client for the WebApi
     /// </summary>
 	public class WebApiPasscodeClient : IKeyed
-	{
+    {
         /// <summary>
         /// Notifies when user received
         /// </summary>
@@ -36,29 +34,29 @@ namespace PepperDash.Core.WebApi.Presets
         /// </summary>
 		public string Key { get; private set; }
 
-		//string JsonMasterKey;
+        //string JsonMasterKey;
 
-		/// <summary>
-		/// An embedded JsonToSimpl master object.
-		/// </summary>
-		JsonToSimplGenericMaster J2SMaster;
+        /// <summary>
+        /// An embedded JsonToSimpl master object.
+        /// </summary>
+        JsonToSimplGenericMaster J2SMaster;
 
-		string UrlBase;
+        string UrlBase;
 
-		string DefaultPresetJsonFilePath;
+        string DefaultPresetJsonFilePath;
 
-		User CurrentUser;
+        User CurrentUser;
 
-		Preset CurrentPreset;
+        Preset CurrentPreset;
 
 
-		/// <summary>
-		/// SIMPL+ can only execute the default constructor. If you have variables that require initialization, please
-		/// use an Initialize method
-		/// </summary>
-		public WebApiPasscodeClient()
-		{
-		}
+        /// <summary>
+        /// SIMPL+ can only execute the default constructor. If you have variables that require initialization, please
+        /// use an Initialize method
+        /// </summary>
+        public WebApiPasscodeClient()
+        {
+        }
 
         /// <summary>
         /// Initializes the instance
@@ -68,23 +66,23 @@ namespace PepperDash.Core.WebApi.Presets
         /// <param name="urlBase"></param>
         /// <param name="defaultPresetJsonFilePath"></param>
 		public void Initialize(string key, string jsonMasterKey, string urlBase, string defaultPresetJsonFilePath)
-		{
-			Key = key;
-			//JsonMasterKey = jsonMasterKey;
-			UrlBase = urlBase;
-			DefaultPresetJsonFilePath = defaultPresetJsonFilePath;
+        {
+            Key = key;
+            //JsonMasterKey = jsonMasterKey;
+            UrlBase = urlBase;
+            DefaultPresetJsonFilePath = defaultPresetJsonFilePath;
 
-			J2SMaster = new JsonToSimplGenericMaster();
-			J2SMaster.SaveCallback = this.SaveCallback;
-			J2SMaster.Initialize(jsonMasterKey);
-		}
+            J2SMaster = new JsonToSimplGenericMaster();
+            J2SMaster.SaveCallback = this.SaveCallback;
+            J2SMaster.Initialize(jsonMasterKey);
+        }
 
         /// <summary>
         /// Gets the user for a passcode
         /// </summary>
         /// <param name="passcode"></param>
 		public void GetUserForPasscode(string passcode)
-		{
+        {
             // Bullshit duplicate code here... These two cases should be the same 
             // except for https/http and the certificate ignores 
             if (!UrlBase.StartsWith("https"))
@@ -113,32 +111,32 @@ namespace PepperDash.Core.WebApi.Presets
             }
             else
                 if (handler != null)
-                    UserReceived(this, new UserReceivedEventArgs(null, false));
-		}
+                UserReceived(this, new UserReceivedEventArgs(null, false));
+        }
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="roomTypeId"></param>
-		/// <param name="presetNumber"></param>
-		public void GetPresetForThisUser(int roomTypeId, int presetNumber)
-		{
-			if (CurrentUser == null)
-			{
-				CrestronConsole.PrintLine("GetPresetForThisUser no user loaded");
-				return;
-			}
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="roomTypeId"></param>
+        /// <param name="presetNumber"></param>
+        public void GetPresetForThisUser(int roomTypeId, int presetNumber)
+        {
+            if (CurrentUser == null)
+            {
+                CrestronConsole.PrintLine("GetPresetForThisUser no user loaded");
+                return;
+            }
 
-			var msg = new UserAndRoomMessage
-			{
-				UserId = CurrentUser.Id,
-				RoomTypeId = roomTypeId,
-				PresetNumber = presetNumber
-			};
+            var msg = new UserAndRoomMessage
+            {
+                UserId = CurrentUser.Id,
+                RoomTypeId = roomTypeId,
+                PresetNumber = presetNumber
+            };
 
             var handler = PresetReceived;
-			try
-			{
+            try
+            {
                 if (!UrlBase.StartsWith("https"))
                     return;
                 var req = new HttpsClientRequest();
@@ -179,101 +177,101 @@ namespace PepperDash.Core.WebApi.Presets
                     if (handler != null)
                         PresetReceived(this, new PresetReceivedEventArgs(null, false));
                 }
-			}
-			catch (HttpException e)
-			{
-				var resp = e.Response;
-				Debug.Console(1, this, "No preset received (code {0}). Loading default template", resp.Code);
-				LoadDefaultPresetData();
+            }
+            catch (HttpException e)
+            {
+                var resp = e.Response;
+                Debug.Console(1, this, "No preset received (code {0}). Loading default template", resp.Code);
+                LoadDefaultPresetData();
                 if (handler != null)
                     PresetReceived(this, new PresetReceivedEventArgs(null, false));
-			}
-		}
+            }
+        }
 
-		void LoadDefaultPresetData()
-		{
-			CurrentPreset = null;
-			if (!File.Exists(DefaultPresetJsonFilePath))
-			{
-				Debug.Console(0, this, "Cannot load default preset file. Saving will not work");
-				return;
-			}
-			using (StreamReader sr = new StreamReader(DefaultPresetJsonFilePath))
-			{
-				try
-				{
-					var data = sr.ReadToEnd();
-					J2SMaster.SetJsonWithoutEvaluating(data);
-					CurrentPreset = new Preset() { Data = data, UserId = CurrentUser.Id };
-				}
-				catch (Exception e)
-				{
-					Debug.Console(0, this, "Error reading default preset JSON: \r{0}", e);
-				}
-			}
-		}
+        void LoadDefaultPresetData()
+        {
+            CurrentPreset = null;
+            if (!File.Exists(DefaultPresetJsonFilePath))
+            {
+                Debug.Console(0, this, "Cannot load default preset file. Saving will not work");
+                return;
+            }
+            using (StreamReader sr = new StreamReader(DefaultPresetJsonFilePath))
+            {
+                try
+                {
+                    var data = sr.ReadToEnd();
+                    J2SMaster.SetJsonWithoutEvaluating(data);
+                    CurrentPreset = new Preset() { Data = data, UserId = CurrentUser.Id };
+                }
+                catch (Exception e)
+                {
+                    Debug.Console(0, this, "Error reading default preset JSON: \r{0}", e);
+                }
+            }
+        }
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="roomTypeId"></param>
-		/// <param name="presetNumber"></param>
-		public void SavePresetForThisUser(int roomTypeId, int presetNumber)
-		{
-			if (CurrentPreset == null)
-				LoadDefaultPresetData();
-				//return;
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="roomTypeId"></param>
+        /// <param name="presetNumber"></param>
+        public void SavePresetForThisUser(int roomTypeId, int presetNumber)
+        {
+            if (CurrentPreset == null)
+                LoadDefaultPresetData();
+            //return;
 
-			//// A new preset needs to have its numbers set
-			//if (CurrentPreset.IsNewPreset)
-			//{
-			CurrentPreset.UserId = CurrentUser.Id;
-			CurrentPreset.RoomTypeId = roomTypeId;
-			CurrentPreset.PresetNumber = presetNumber;
-			//}
-			J2SMaster.Save(); // Will trigger callback when ready
-		}
+            //// A new preset needs to have its numbers set
+            //if (CurrentPreset.IsNewPreset)
+            //{
+            CurrentPreset.UserId = CurrentUser.Id;
+            CurrentPreset.RoomTypeId = roomTypeId;
+            CurrentPreset.PresetNumber = presetNumber;
+            //}
+            J2SMaster.Save(); // Will trigger callback when ready
+        }
 
-		/// <summary>
-		/// After save operation on JSON master happens, send it to server
-		/// </summary>
-		/// <param name="json"></param>
-		void SaveCallback(string json)
-		{
-			CurrentPreset.Data = json;
+        /// <summary>
+        /// After save operation on JSON master happens, send it to server
+        /// </summary>
+        /// <param name="json"></param>
+        void SaveCallback(string json)
+        {
+            CurrentPreset.Data = json;
 
             if (!UrlBase.StartsWith("https"))
                 return;
-			var req = new HttpsClientRequest();
-			req.RequestType = Crestron.SimplSharp.Net.Https.RequestType.Post;
-			req.Url = new UrlParser(string.Format("{0}/api/presets/addorchange", UrlBase));
-			req.Header.AddHeader(new HttpsHeader("Content-Type", "application/json"));
-			req.Header.AddHeader(new HttpsHeader("Accept", "application/json"));
-			req.ContentString = JsonConvert.SerializeObject(CurrentPreset);
+            var req = new HttpsClientRequest();
+            req.RequestType = Crestron.SimplSharp.Net.Https.RequestType.Post;
+            req.Url = new UrlParser(string.Format("{0}/api/presets/addorchange", UrlBase));
+            req.Header.AddHeader(new HttpsHeader("Content-Type", "application/json"));
+            req.Header.AddHeader(new HttpsHeader("Accept", "application/json"));
+            req.ContentString = JsonConvert.SerializeObject(CurrentPreset);
 
-			var client = new HttpsClient();
+            var client = new HttpsClient();
             client.HostVerification = false;
             client.PeerVerification = false;
-			try
-			{
-				var resp = client.Dispatch(req);
+            try
+            {
+                var resp = client.Dispatch(req);
 
-				// 201=created
-				// 204=empty content
-				if (resp.Code == 201)
-					CrestronConsole.PrintLine("Preset added");
-				else if (resp.Code == 204)
-					CrestronConsole.PrintLine("Preset updated");
-				else if (resp.Code == 209)
-					CrestronConsole.PrintLine("Preset already exists. Cannot save as new.");
-				else
-					CrestronConsole.PrintLine("Preset save failed: {0}\r", resp.Code, resp.ContentString);
-			}
-			catch (HttpException e)
-			{
+                // 201=created
+                // 204=empty content
+                if (resp.Code == 201)
+                    CrestronConsole.PrintLine("Preset added");
+                else if (resp.Code == 204)
+                    CrestronConsole.PrintLine("Preset updated");
+                else if (resp.Code == 209)
+                    CrestronConsole.PrintLine("Preset already exists. Cannot save as new.");
+                else
+                    CrestronConsole.PrintLine("Preset save failed: {0}\r", resp.Code, resp.ContentString);
+            }
+            catch (HttpException e)
+            {
 
-				CrestronConsole.PrintLine("Preset save exception {0}", e.Response.Code);
-			}
-		}
-	}
+                CrestronConsole.PrintLine("Preset save exception {0}", e.Response.Code);
+            }
+        }
+    }
 }

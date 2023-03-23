@@ -1,17 +1,14 @@
 ﻿
 
+using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronIO;
+using Newtonsoft.Json;
+using PepperDash.Core.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using Crestron.SimplSharp.CrestronDataStore;
-using Crestron.SimplSharp.CrestronIO;
-using Newtonsoft.Json;
-using PepperDash.Core.DebugThings;
 
-
-namespace PepperDash.Core
+namespace PepperDash.Core.Logging
 {
     /// <summary>
     /// Represents a debugging context

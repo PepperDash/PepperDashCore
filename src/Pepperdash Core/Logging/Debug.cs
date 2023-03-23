@@ -1,16 +1,15 @@
 ﻿
+using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronIO;
+using Crestron.SimplSharp.CrestronLogger;
+using Crestron.SimplSharp.Reflection;
+using Newtonsoft.Json;
+using PepperDash.Core.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Crestron.SimplSharp;
-using Crestron.SimplSharp.Reflection;
-using Crestron.SimplSharp.CrestronLogger;
-using Crestron.SimplSharp.CrestronIO;
-using Newtonsoft.Json;
-using PepperDash.Core.DebugThings;
 
-
-namespace PepperDash.Core
+namespace PepperDash.Core.Logging
 {
     /// <summary>
     /// Contains debug commands for use in various situations
@@ -51,19 +50,19 @@ namespace PepperDash.Core
         /// <summary>
         /// Version for the currently loaded PepperDashCore dll
         /// </summary>
-        public static string PepperDashCoreVersion { get; private set; } 
+        public static string PepperDashCoreVersion { get; private set; }
 
         private static CTimer _saveTimer;
 
-		/// <summary>
-		/// When true, the IncludedExcludedKeys dict will contain keys to include. 
-		/// When false (default), IncludedExcludedKeys will contain keys to exclude.
-		/// </summary>
-		private static bool _excludeAllMode;
+        /// <summary>
+        /// When true, the IncludedExcludedKeys dict will contain keys to include. 
+        /// When false (default), IncludedExcludedKeys will contain keys to exclude.
+        /// </summary>
+        private static bool _excludeAllMode;
 
-		//static bool ExcludeNoKeyMessages;
+        //static bool ExcludeNoKeyMessages;
 
-		private static readonly Dictionary<string, object> IncludedExcludedKeys;
+        private static readonly Dictionary<string, object> IncludedExcludedKeys;
 
         static Debug()
         {
@@ -85,26 +84,26 @@ namespace PepperDash.Core
 
             LogError(ErrorLogLevel.Notice, msg);
 
-			IncludedExcludedKeys = new Dictionary<string, object>();
+            IncludedExcludedKeys = new Dictionary<string, object>();
 
             //CrestronDataStoreStatic.InitCrestronDataStore();
             if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
             {
                 // Add command to console
-                CrestronConsole.AddNewConsoleCommand(SetDoNotLoadOnNextBootFromConsole, "donotloadonnextboot", 
+                CrestronConsole.AddNewConsoleCommand(SetDoNotLoadOnNextBootFromConsole, "donotloadonnextboot",
                     "donotloadonnextboot:P [true/false]: Should the application load on next boot", ConsoleAccessLevelEnum.AccessOperator);
 
                 CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
                     "appdebug:P [0-2]: Sets the application's console debug message level",
                     ConsoleAccessLevelEnum.AccessOperator);
                 CrestronConsole.AddNewConsoleCommand(ShowDebugLog, "appdebuglog",
-                    "appdebuglog:P [all] Use \"all\" for full log.", 
+                    "appdebuglog:P [all] Use \"all\" for full log.",
                     ConsoleAccessLevelEnum.AccessOperator);
                 CrestronConsole.AddNewConsoleCommand(s => CrestronLogger.Clear(false), "appdebugclear",
-                    "appdebugclear:P Clears the current custom log", 
+                    "appdebugclear:P Clears the current custom log",
                     ConsoleAccessLevelEnum.AccessOperator);
-				CrestronConsole.AddNewConsoleCommand(SetDebugFilterFromConsole, "appdebugfilter",
-					"appdebugfilter [params]", ConsoleAccessLevelEnum.AccessOperator);
+                CrestronConsole.AddNewConsoleCommand(SetDebugFilterFromConsole, "appdebugfilter",
+                    "appdebugfilter [params]", ConsoleAccessLevelEnum.AccessOperator);
             }
 
             CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
@@ -115,7 +114,7 @@ namespace PepperDash.Core
             Level = context.Level;
             DoNotLoadOnNextBoot = context.DoNotLoadOnNextBoot;
 
-            if(DoNotLoadOnNextBoot)
+            if (DoNotLoadOnNextBoot)
                 CrestronConsole.PrintLine(string.Format("Program {0} will not load config after next boot.  Use console command go:{0} to load the config manually", InitialParametersClass.ApplicationNumber));
 
             try
@@ -140,7 +139,7 @@ namespace PepperDash.Core
             var assembly = Assembly.GetExecutingAssembly();
             var ver =
                 assembly
-                    .GetCustomAttributes(typeof (AssemblyInformationalVersionAttribute), false);
+                    .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
 
             if (ver != null && ver.Length > 0)
             {
@@ -213,7 +212,7 @@ namespace PepperDash.Core
                     return;
                 }
 
-                SetDoNotLoadOnNextBoot(Boolean.Parse(stateString));
+                SetDoNotLoadOnNextBoot(bool.Parse(stateString));
             }
             catch
             {
@@ -226,79 +225,79 @@ namespace PepperDash.Core
         /// </summary>
         /// <param name="items"></param>
 		public static void SetDebugFilterFromConsole(string items)
-		{
-			var str = items.Trim();
-			if (str == "?")
-			{
-				CrestronConsole.ConsoleCommandResponse("Usage:\r APPDEBUGFILTER key1 key2 key3....\r " +
-					"+all: at beginning puts filter into 'default include' mode\r" +
-					"      All keys that follow will be excluded from output.\r" +
-					"-all: at beginning puts filter into 'default excluse all' mode.\r" +
-					"      All keys that follow will be the only keys that are shown\r" +
-					"+nokey: Enables messages with no key (default)\r" +
-					"-nokey: Disables messages with no key.\r" +
-					"(nokey settings are independent of all other settings)");
-				return;
-			}
-			var keys = Regex.Split(str, @"\s*");
-			foreach (var keyToken in keys)
-			{
-				var lkey = keyToken.ToLower();
-				if (lkey == "+all")
-				{
-					IncludedExcludedKeys.Clear();
-					_excludeAllMode = false;
-				}
-				else if (lkey == "-all")
-				{
-					IncludedExcludedKeys.Clear();
-					_excludeAllMode = true;
-				}
-				//else if (lkey == "+nokey")
-				//{
-				//    ExcludeNoKeyMessages = false;
-				//}
-				//else if (lkey == "-nokey")
-				//{
-				//    ExcludeNoKeyMessages = true;
-				//}
-				else
-				{
-					string key;
-					if (lkey.StartsWith("-"))
-					{
-						key = lkey.Substring(1);
-						// if in exclude all mode, we need to remove this from the inclusions
-						if (_excludeAllMode)
-						{
-							if (IncludedExcludedKeys.ContainsKey(key))
-								IncludedExcludedKeys.Remove(key);
-						}
-						// otherwise include all mode, add to the exclusions
-						else
-						{
-							IncludedExcludedKeys[key] = new object();
-						}
-					}
-					else if (lkey.StartsWith("+"))
-					{
-						key = lkey.Substring(1);
-						// if in exclude all mode, we need to add this as inclusion
-						if (_excludeAllMode)
-						{
+        {
+            var str = items.Trim();
+            if (str == "?")
+            {
+                CrestronConsole.ConsoleCommandResponse("Usage:\r APPDEBUGFILTER key1 key2 key3....\r " +
+                    "+all: at beginning puts filter into 'default include' mode\r" +
+                    "      All keys that follow will be excluded from output.\r" +
+                    "-all: at beginning puts filter into 'default excluse all' mode.\r" +
+                    "      All keys that follow will be the only keys that are shown\r" +
+                    "+nokey: Enables messages with no key (default)\r" +
+                    "-nokey: Disables messages with no key.\r" +
+                    "(nokey settings are independent of all other settings)");
+                return;
+            }
+            var keys = Regex.Split(str, @"\s*");
+            foreach (var keyToken in keys)
+            {
+                var lkey = keyToken.ToLower();
+                if (lkey == "+all")
+                {
+                    IncludedExcludedKeys.Clear();
+                    _excludeAllMode = false;
+                }
+                else if (lkey == "-all")
+                {
+                    IncludedExcludedKeys.Clear();
+                    _excludeAllMode = true;
+                }
+                //else if (lkey == "+nokey")
+                //{
+                //    ExcludeNoKeyMessages = false;
+                //}
+                //else if (lkey == "-nokey")
+                //{
+                //    ExcludeNoKeyMessages = true;
+                //}
+                else
+                {
+                    string key;
+                    if (lkey.StartsWith("-"))
+                    {
+                        key = lkey.Substring(1);
+                        // if in exclude all mode, we need to remove this from the inclusions
+                        if (_excludeAllMode)
+                        {
+                            if (IncludedExcludedKeys.ContainsKey(key))
+                                IncludedExcludedKeys.Remove(key);
+                        }
+                        // otherwise include all mode, add to the exclusions
+                        else
+                        {
+                            IncludedExcludedKeys[key] = new object();
+                        }
+                    }
+                    else if (lkey.StartsWith("+"))
+                    {
+                        key = lkey.Substring(1);
+                        // if in exclude all mode, we need to add this as inclusion
+                        if (_excludeAllMode)
+                        {
 
-							IncludedExcludedKeys[key] = new object();
-						}
-						// otherwise include all mode, remove this from exclusions
-						else
-						{
-							if (IncludedExcludedKeys.ContainsKey(key))
-								IncludedExcludedKeys.Remove(key);
-						}
-					}
-				}
-			}
-		}
+                            IncludedExcludedKeys[key] = new object();
+                        }
+                        // otherwise include all mode, remove this from exclusions
+                        else
+                        {
+                            if (IncludedExcludedKeys.ContainsKey(key))
+                                IncludedExcludedKeys.Remove(key);
+                        }
+                    }
+                }
+            }
+        }
 
 
         /// <summary>
@@ -342,7 +341,7 @@ namespace PepperDash.Core
         public static object GetDeviceDebugSettingsForKey(string deviceKey)
         {
             return _contexts.GetDebugSettingsForKey(deviceKey);
-        }  
+        }
 
         /// <summary>
         /// Sets the flag to prevent application starting on next boot
@@ -385,7 +384,7 @@ namespace PepperDash.Core
                 return;
             }
 
-            if(Level < level) 
+            if (Level < level)
             {
                 return;
             }
@@ -421,9 +420,9 @@ namespace PepperDash.Core
             }
         }
 
-		/// <summary>
-		/// Logs to Console when at-level, and all messages to error log
-		/// </summary>
+        /// <summary>
+        /// Logs to Console when at-level, and all messages to error log
+        /// </summary>
         public static void Console(uint level, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
@@ -432,10 +431,10 @@ namespace PepperDash.Core
             {
                 LogError(errorLogLevel, str);
             }
-			if (Level >= level)
-			{
-				Console(level, str);
-			}
+            if (Level >= level)
+            {
+                Console(level, str);
+            }
         }
 
         /// <summary>
@@ -558,19 +557,19 @@ namespace PepperDash.Core
                 return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
             }
 
-            return string.Format("{0}{1}user{1}debugSettings{1}{2}.json",Directory.GetApplicationRootDirectory(), Path.DirectorySeparatorChar, InitialParametersClass.RoomId);
+            return string.Format("{0}{1}user{1}debugSettings{1}{2}.json", Directory.GetApplicationRootDirectory(), Path.DirectorySeparatorChar, InitialParametersClass.RoomId);
         }
 
         private static void CheckForMigration()
         {
-            var oldFilePath = String.Format(@"\nvram\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
-            var newFilePath = String.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            var oldFilePath = string.Format(@"\nvram\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            var newFilePath = string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
 
             //check for file at old path
             if (!File.Exists(oldFilePath))
             {
                 Console(0, ErrorLogLevel.Notice,
-                    String.Format(
+                    string.Format(
                         @"Debug settings file migration not necessary. Using file at \user\debugSettings\program{0}",
                         InitialParametersClass.ApplicationNumber));
 
@@ -584,7 +583,7 @@ namespace PepperDash.Core
             }
 
             Console(0, ErrorLogLevel.Notice,
-                String.Format(
+                string.Format(
                     @"File found at \nvram\debugSettings\program{0}. Migrating to \user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber));
 
             //Copy file from old path to new path, then delete it. This will overwrite the existing file
@@ -608,15 +607,15 @@ namespace PepperDash.Core
             /// <summary>
             /// Error
             /// </summary>
-            Error, 
+            Error,
             /// <summary>
             /// Warning
             /// </summary>
-            Warning, 
+            Warning,
             /// <summary>
             /// Notice
             /// </summary>
-            Notice, 
+            Notice,
             /// <summary>
             /// None
             /// </summary>

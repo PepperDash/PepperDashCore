@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
+﻿using Crestron.SimplSharp;
+using PepperDash.Core.Interfaces;
+using PepperDash.Core.Logging;
+using System;
 
-namespace PepperDash.Core
+namespace PepperDash.Core.Comm
 {
     /// <summary>
     /// Allows for two simultaneous TCP clients to connect to a redundant pair of QSC Core DSPs and manages 

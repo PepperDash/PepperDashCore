@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronSockets;
+using PepperDash.Core.Logging;
+using System;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
-using Crestron.SimplSharp;
-using Crestron.SimplSharp.CrestronSockets;
 
-namespace PepperDash.Core
+namespace PepperDash.Core.Comm
 {
     /// <summary>
     /// A class to handle secure TCP/IP communications with a server
@@ -47,7 +46,7 @@ namespace PepperDash.Core
         /// It is not recommended to use both the TextReceived event and the TextReceivedQueueInvoke event. 
         /// </summary>
         public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceivedQueueInvoke;
-        
+
         /// <summary>
         /// For a client with a pre shared key, this will fire after the communication is established and the key exchange is complete. If you require
         /// a key and subscribe to the socket change event and try to send data on a connection the data sent will interfere with the key exchange and disconnect.
@@ -261,7 +260,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Simpl+ Heartbeat Analog value in seconds
         /// </summary>
-        public ushort HeartbeatRequiredIntervalInSeconds { set { HeartbeatInterval = (value * 1000); } }
+        public ushort HeartbeatRequiredIntervalInSeconds { set { HeartbeatInterval = value * 1000; } }
 
         CTimer HeartbeatSendTimer;
         CTimer HeartbeatAckTimer;
@@ -424,7 +423,7 @@ namespace PepperDash.Core
         {
             if (_client != null)
             {
-                _client.SocketStatusChange -= this.Client_SocketStatusChange;
+                _client.SocketStatusChange -= Client_SocketStatusChange;
                 DisconnectClient();
             }
             return true;
@@ -483,7 +482,7 @@ namespace PepperDash.Core
                 _client = new SecureTCPClient(Hostname, Port, BufferSize);
                 _client.SocketStatusChange += Client_SocketStatusChange;
                 if (HeartbeatEnabled)
-                    _client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
+                    _client.SocketSendOrReceiveTimeOutInMs = HeartbeatInterval * 5;
                 _client.AddressClientConnectedTo = Hostname;
                 _client.PortNumber = Port;
                 // SecureClient = c;
@@ -608,7 +607,7 @@ namespace PepperDash.Core
             ConnectFailTimer.Dispose();
             ConnectFailTimer = null;
         }
-       
+
         #region Methods
 
         /// <summary>
@@ -744,11 +743,11 @@ namespace PepperDash.Core
                 if (HeartbeatSendTimer == null)
                 {
 
-                    HeartbeatSendTimer = new CTimer(this.SendHeartbeat, null, HeartbeatInterval, HeartbeatInterval);
+                    HeartbeatSendTimer = new CTimer(SendHeartbeat, null, HeartbeatInterval, HeartbeatInterval);
                 }
                 if (HeartbeatAckTimer == null)
                 {
-                    HeartbeatAckTimer = new CTimer(HeartbeatAckTimerFail, null, (HeartbeatInterval * 2), (HeartbeatInterval * 2));
+                    HeartbeatAckTimer = new CTimer(HeartbeatAckTimerFail, null, HeartbeatInterval * 2, HeartbeatInterval * 2);
                 }
             }
 
@@ -772,7 +771,7 @@ namespace PepperDash.Core
         }
         void SendHeartbeat(object notused)
         {
-            this.SendText(HeartbeatString);
+            SendText(HeartbeatString);
             Debug.Console(2, this, "Sending Heartbeat");
 
         }
@@ -796,7 +795,7 @@ namespace PepperDash.Core
                             }
                             else
                             {
-                                HeartbeatAckTimer = new CTimer(HeartbeatAckTimerFail, null, (HeartbeatInterval * 2), (HeartbeatInterval * 2));
+                                HeartbeatAckTimer = new CTimer(HeartbeatAckTimerFail, null, HeartbeatInterval * 2, HeartbeatInterval * 2);
                             }
                             Debug.Console(2, this, "Heartbeat Received: {0}, from Server", HeartbeatString);
                             return remainingText;
@@ -861,7 +860,7 @@ namespace PepperDash.Core
                             // HOW IN THE HELL DO WE CATCH AN EXCEPTION IN SENDING?????
                             if (n <= 0)
                             {
-                                Debug.Console(1, Debug.ErrorLogLevel.Warning, "[{0}] Sent zero bytes. Was there an error?", this.Key);
+                                Debug.Console(1, Debug.ErrorLogLevel.Warning, "[{0}] Sent zero bytes. Was there an error?", Key);
                             }
                         });
                     }
@@ -906,7 +905,7 @@ namespace PepperDash.Core
             }
             try
             {
-                Debug.Console(2, this, "Socket status change: {0} ({1})", client.ClientStatus, (ushort)(client.ClientStatus));
+                Debug.Console(2, this, "Socket status change: {0} ({1})", client.ClientStatus, (ushort)client.ClientStatus);
 
                 OnConnectionChange();
                 // The client could be null or disposed by this time...
@@ -940,12 +939,12 @@ namespace PepperDash.Core
         void OnClientReadyForcommunications(bool isReady)
         {
             IsReadyForCommunication = isReady;
-            if (IsReadyForCommunication) 
+            if (IsReadyForCommunication)
                 HeartbeatStart();
 
             var handler = ClientReadyForCommunications;
             if (handler == null) return;
-            
+
             handler(this, new GenericTcpServerClientReadyForcommunicationsEventArgs(IsReadyForCommunication));
         }
         #endregion

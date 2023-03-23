@@ -1,6 +1,6 @@
 using System;
 
-namespace PepperDash.Core.Intersystem.Serialization
+namespace PepperDash.Core.XSigUtility.Serialization
 {
     /// <summary>
     /// Class to handle this specific exception type

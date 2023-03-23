@@ -1,25 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
 
 namespace PepperDash.Core.WebApi.Presets
 {
-	/// <summary>
-	/// 
-	/// </summary>
-	public class User
-	{
+    /// <summary>
+    /// 
+    /// </summary>
+    public class User
+    {
         /// <summary>
         /// 
         /// </summary>
 		public int Id { get; set; }
-		
+
         /// <summary>
         /// 
         /// </summary>
-		public string ExternalId { get; set; }
+        public string ExternalId { get; set; }
 
         /// <summary>
         /// 
@@ -30,14 +26,14 @@ namespace PepperDash.Core.WebApi.Presets
         /// 
         /// </summary>
 		public string LastName { get; set; }
-	}
+    }
 
 
-	/// <summary>
-	/// 
-	/// </summary>
-	public class UserReceivedEventArgs : EventArgs
-	{
+    /// <summary>
+    /// 
+    /// </summary>
+    public class UserReceivedEventArgs : EventArgs
+    {
         /// <summary>
         /// True when user is found
         /// </summary>
@@ -53,10 +49,10 @@ namespace PepperDash.Core.WebApi.Presets
         /// </summary>
 		public User User { get; private set; }
 
-		/// <summary>
-		/// For Simpl+
-		/// </summary>
-		public UserReceivedEventArgs() { }
+        /// <summary>
+        /// For Simpl+
+        /// </summary>
+        public UserReceivedEventArgs() { }
 
         /// <summary>
         /// Constructor
@@ -64,17 +60,17 @@ namespace PepperDash.Core.WebApi.Presets
         /// <param name="user"></param>
         /// <param name="success"></param>
 		public UserReceivedEventArgs(User user, bool success)
-		{
+        {
             LookupSuccess = success;
-			User = user;
-		}
-	}
+            User = user;
+        }
+    }
 
-	/// <summary>
-	/// 
-	/// </summary>
-	public class UserAndRoomMessage
-	{
+    /// <summary>
+    /// 
+    /// </summary>
+    public class UserAndRoomMessage
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -89,5 +85,5 @@ namespace PepperDash.Core.WebApi.Presets
         /// 
         /// </summary>
 		public int PresetNumber { get; set; }
-	}
+    }
 }

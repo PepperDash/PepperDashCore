@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
+﻿using System.Text;
 
-namespace PepperDash.Core
+namespace PepperDash.Core.Conversion
 {
     public class EncodingHelper
     {

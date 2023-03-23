@@ -8,15 +8,10 @@ and in all parts thereof, regardless of the use to which it is being put.  Any u
 of this material by another party without the express written permission of PepperDash Technology Corporation is prohibited.  
 PepperDash Technology Corporation reserves all rights under applicable laws.
 ------------------------------------ */
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
+using System;
 
-
-namespace PepperDash.Core
+namespace PepperDash.Core.Comm
 {
     /// <summary>
     /// Delegate for notifying of socket status changes
@@ -28,7 +23,7 @@ namespace PepperDash.Core
     /// EventArgs class for socket status changes
     /// </summary>
 	public class GenericSocketStatusChageEventArgs : EventArgs
-	{
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -39,13 +34,13 @@ namespace PepperDash.Core
         /// </summary>
         /// <param name="client"></param>
 		public GenericSocketStatusChageEventArgs(ISocketStatus client)
-		{
-			Client = client;
-		}
-		/// <summary>
-		/// S+ Constructor
-		/// </summary>
-		public GenericSocketStatusChageEventArgs() { }
+        {
+            Client = client;
+        }
+        /// <summary>
+        /// S+ Constructor
+        /// </summary>
+        public GenericSocketStatusChageEventArgs() { }
     }
 
     /// <summary>
@@ -72,10 +67,10 @@ namespace PepperDash.Core
         {
             State = state;
         }
-		/// <summary>
-		/// S+ Constructor
-		/// </summary>
-		public GenericTcpServerStateChangedEventArgs() { }
+        /// <summary>
+        /// S+ Constructor
+        /// </summary>
+        public GenericTcpServerStateChangedEventArgs() { }
     }
 
     /// <summary>
@@ -126,10 +121,10 @@ namespace PepperDash.Core
             ReceivedFromClientIndex = clientIndex;
             ClientStatus = clientStatus;
         }
-		/// <summary>
-		/// S+ Constructor
-		/// </summary>
-		public GenericTcpServerSocketStatusChangeEventArgs() { }
+        /// <summary>
+        /// S+ Constructor
+        /// </summary>
+        public GenericTcpServerSocketStatusChangeEventArgs() { }
     }
 
     /// <summary>
@@ -146,12 +141,12 @@ namespace PepperDash.Core
         /// 
         /// </summary>
 		public ushort ReceivedFromClientIndexShort
-		{
-			get
-			{
-				return (ushort)ReceivedFromClientIndex;
-			}
-		}
+        {
+            get
+            {
+                return (ushort)ReceivedFromClientIndex;
+            }
+        }
 
         /// <summary>
         /// 
@@ -177,10 +172,10 @@ namespace PepperDash.Core
             Text = text;
             ReceivedFromClientIndex = clientIndex;
         }
-		/// <summary>
-		/// S+ Constructor
-		/// </summary>
-		public GenericTcpServerCommMethodReceiveTextArgs() { }
+        /// <summary>
+        /// S+ Constructor
+        /// </summary>
+        public GenericTcpServerCommMethodReceiveTextArgs() { }
     }
 
     /// <summary>
@@ -201,10 +196,10 @@ namespace PepperDash.Core
         {
             IsReady = isReady;
         }
-		/// <summary>
-		/// S+ Constructor
-		/// </summary>
-		public GenericTcpServerClientReadyForcommunicationsEventArgs() { }
+        /// <summary>
+        /// S+ Constructor
+        /// </summary>
+        public GenericTcpServerClientReadyForcommunicationsEventArgs() { }
     }
 
     /// <summary>
@@ -246,6 +241,6 @@ namespace PepperDash.Core
 
     }
 
-   
+
 
 }

@@ -1,7 +1,7 @@
+using PepperDash.Core.XSigUtility.Tokens;
 using System.Collections.Generic;
-using PepperDash.Core.Intersystem.Tokens;
 
-namespace PepperDash.Core.Intersystem.Serialization
+namespace PepperDash.Core.XSigUtility.Serialization
 {
     /// <summary>
     /// Interface to determine XSig serialization for an object.

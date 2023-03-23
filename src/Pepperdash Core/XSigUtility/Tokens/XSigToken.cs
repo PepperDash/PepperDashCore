@@ -1,4 +1,4 @@
-namespace PepperDash.Core.Intersystem.Tokens
+namespace PepperDash.Core.XSigUtility.Tokens
 {
     /// <summary>
     /// Represents the base class for all XSig datatypes.

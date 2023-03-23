@@ -1,14 +1,4 @@
-﻿
-
-using System;
-//using System.IO;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using Crestron.SimplSharp.CrestronIO;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿//using System.IO;
 
 namespace PepperDash.Core.JsonToSimpl
 {
@@ -16,13 +6,13 @@ namespace PepperDash.Core.JsonToSimpl
     /// 
     /// </summary>
 	public class JsonToSimplFixedPathObject : JsonToSimplChildObjectBase
-	{
+    {
         /// <summary>
         /// Constructor
         /// </summary>
 		public JsonToSimplFixedPathObject()
-		{
-			this.LinkedToObject = true;
-		}
-	}
+        {
+            this.LinkedToObject = true;
+        }
+    }
 }

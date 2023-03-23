@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
 
 namespace PepperDash.Core.JsonStandardObjects
 {
-	/*
+    /*
 	Convert JSON snippt to C#: http://json2csharp.com/#
 	
 	JSON Snippet:
@@ -47,11 +44,11 @@ namespace PepperDash.Core.JsonStandardObjects
 		]
 	}
 	*/
-	/// <summary>
-	/// Device communication parameter class
-	/// </summary>
-	public class ComParamsConfig
-	{
+    /// <summary>
+    /// Device communication parameter class
+    /// </summary>
+    public class ComParamsConfig
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -85,11 +82,11 @@ namespace PepperDash.Core.JsonStandardObjects
         /// </summary>
 		public int pacing { get; set; }
 
-		// convert properties for simpl
+        // convert properties for simpl
         /// <summary>
         /// 
         /// </summary>
-		public ushort simplBaudRate { get { return Convert.ToUInt16(baudRate); } }
+        public ushort simplBaudRate { get { return Convert.ToUInt16(baudRate); } }
         /// <summary>
         /// 
         /// </summary>
@@ -103,20 +100,20 @@ namespace PepperDash.Core.JsonStandardObjects
         /// </summary>
 		public ushort simplPacing { get { return Convert.ToUInt16(pacing); } }
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		public ComParamsConfig()
-		{
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public ComParamsConfig()
+        {
 
-		}
-	}
+        }
+    }
 
-	/// <summary>
-	/// Device TCP/SSH properties class
-	/// </summary>
-	public class TcpSshPropertiesConfig
-	{
+    /// <summary>
+    /// Device TCP/SSH properties class
+    /// </summary>
+    public class TcpSshPropertiesConfig
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -142,11 +139,11 @@ namespace PepperDash.Core.JsonStandardObjects
         /// </summary>
 		public int autoReconnectIntervalMs { get; set; }
 
-		// convert properties for simpl
+        // convert properties for simpl
         /// <summary>
         /// 
         /// </summary>
-		public ushort simplPort { get { return Convert.ToUInt16(port); } }
+        public ushort simplPort { get { return Convert.ToUInt16(port); } }
         /// <summary>
         /// 
         /// </summary>
@@ -156,20 +153,20 @@ namespace PepperDash.Core.JsonStandardObjects
         /// </summary>
 		public ushort simplAutoReconnectIntervalMs { get { return Convert.ToUInt16(autoReconnectIntervalMs); } }
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		public TcpSshPropertiesConfig()
-		{
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public TcpSshPropertiesConfig()
+        {
 
-		}
-	}
+        }
+    }
 
-	/// <summary>
-	/// Device control class
-	/// </summary>
-	public class ControlConfig
-	{
+    /// <summary>
+    /// Device control class
+    /// </summary>
+    public class ControlConfig
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -191,27 +188,27 @@ namespace PepperDash.Core.JsonStandardObjects
         /// </summary>
 		public TcpSshPropertiesConfig tcpSshProperties { get; set; }
 
-		// convert properties for simpl
+        // convert properties for simpl
         /// <summary>
         /// 
         /// </summary>
-		public ushort simplControlPortNumber { get { return Convert.ToUInt16(controlPortNumber); } }
+        public ushort simplControlPortNumber { get { return Convert.ToUInt16(controlPortNumber); } }
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		public ControlConfig()
-		{
-			comParams = new ComParamsConfig();
-			tcpSshProperties = new TcpSshPropertiesConfig();
-		}
-	}
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public ControlConfig()
+        {
+            comParams = new ComParamsConfig();
+            tcpSshProperties = new TcpSshPropertiesConfig();
+        }
+    }
 
-	/// <summary>
-	/// Device properties class
-	/// </summary>
-	public class PropertiesConfig
-	{
+    /// <summary>
+    /// Device properties class
+    /// </summary>
+    public class PropertiesConfig
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -225,33 +222,33 @@ namespace PepperDash.Core.JsonStandardObjects
         /// </summary>
 		public ControlConfig control { get; set; }
 
-		// convert properties for simpl
+        // convert properties for simpl
         /// <summary>
         /// 
         /// </summary>
-		public ushort simplDeviceId { get { return Convert.ToUInt16(deviceId); } }
+        public ushort simplDeviceId { get { return Convert.ToUInt16(deviceId); } }
         /// <summary>
         /// 
         /// </summary>
 		public ushort simplEnabled { get { return (ushort)(enabled ? 1 : 0); } }
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		public PropertiesConfig()
-		{
-			control = new ControlConfig();
-		}
-	}
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public PropertiesConfig()
+        {
+            control = new ControlConfig();
+        }
+    }
 
-	/// <summary>
-	/// Root device class
-	/// </summary>
-	public class RootObject
-	{
+    /// <summary>
+    /// Root device class
+    /// </summary>
+    public class RootObject
+    {
         /// <summary>
         /// The collection of devices
         /// </summary>
 		public List<DeviceConfig> devices { get; set; }
-	}
+    }
 }

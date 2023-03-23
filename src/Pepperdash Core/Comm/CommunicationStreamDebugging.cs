@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-using PepperDash.Core;
+﻿using Crestron.SimplSharp;
+using PepperDash.Core.Logging;
+using System;
 
-namespace PepperDash.Core
+namespace PepperDash.Core.Comm
 {
     /// <summary>
     /// Controls the ability to disable/enable debugging of TX/RX data sent to/from a device with a built in timer to disable
@@ -37,14 +34,14 @@ namespace PepperDash.Core
         {
             get
             {
-                return _DebugTimeoutInMs/60000;
+                return _DebugTimeoutInMs / 60000;
             }
         }
 
         /// <summary>
         /// Indicates that receive stream debugging is enabled
         /// </summary>
-        public bool RxStreamDebuggingIsEnabled{ get; private set; }
+        public bool RxStreamDebuggingIsEnabled { get; private set; }
 
         /// <summary>
         /// Indicates that transmit stream debugging is enabled
@@ -102,7 +99,7 @@ namespace PepperDash.Core
                 TxStreamDebuggingIsEnabled = true;
 
             Debug.SetDeviceDebugSettings(ParentDeviceKey, setting);
-        
+
         }
 
         /// <summary>
@@ -144,7 +141,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Debug received data
         /// </summary>
-        Rx = 1, 
+        Rx = 1,
         /// <summary>
         /// Debug transmitted data
         /// </summary>

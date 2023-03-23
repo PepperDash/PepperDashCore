@@ -10,15 +10,14 @@ of this material by another party without the express written permission of Pepp
 PepperDash Technology Corporation reserves all rights under applicable laws.
 ------------------------------------ */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
+using PepperDash.Core.Logging;
+using System;
+using System.Linq;
+using System.Text;
 
-namespace PepperDash.Core
+namespace PepperDash.Core.Comm
 {
     /// <summary>
     /// Generic TCP/IP client for server
@@ -361,8 +360,8 @@ namespace PepperDash.Core
 
                 Client = new TCPClient(Hostname, Port, BufferSize);
                 Client.SocketStatusChange += Client_SocketStatusChange;
-                if(HeartbeatEnabled)
-                    Client.SocketSendOrReceiveTimeOutInMs = (HeartbeatInterval * 5);
+                if (HeartbeatEnabled)
+                    Client.SocketSendOrReceiveTimeOutInMs = HeartbeatInterval * 5;
                 Client.AddressClientConnectedTo = Hostname;
                 Client.PortNumber = Port;
                 // SecureClient = c;
@@ -385,7 +384,7 @@ namespace PepperDash.Core
                     }
                 }, 30000);
 
-                Debug.Console(2, this,  "Making Connection Count:{0}", ConnectionCount);
+                Debug.Console(2, this, "Making Connection Count:{0}", ConnectionCount);
                 Client.ConnectToServerAsync(o =>
                 {
                     Debug.Console(2, this, "ConnectToServerAsync Count:{0} Ran!", ConnectionCount);
@@ -563,15 +562,15 @@ namespace PepperDash.Core
         {
             if (HeartbeatEnabled)
             {
-                Debug.Console(2, this,  "Starting Heartbeat");
+                Debug.Console(2, this, "Starting Heartbeat");
                 if (HeartbeatSendTimer == null)
                 {
 
-                    HeartbeatSendTimer = new CTimer(this.SendHeartbeat, null, HeartbeatInterval, HeartbeatInterval);
+                    HeartbeatSendTimer = new CTimer(SendHeartbeat, null, HeartbeatInterval, HeartbeatInterval);
                 }
                 if (HeartbeatAckTimer == null)
                 {
-                    HeartbeatAckTimer = new CTimer(HeartbeatAckTimerFail, null, (HeartbeatInterval * 2), (HeartbeatInterval * 2));
+                    HeartbeatAckTimer = new CTimer(HeartbeatAckTimerFail, null, HeartbeatInterval * 2, HeartbeatInterval * 2);
                 }
             }
 
@@ -581,7 +580,7 @@ namespace PepperDash.Core
 
             if (HeartbeatSendTimer != null)
             {
-                Debug.Console(2, this,  "Stoping Heartbeat Send");
+                Debug.Console(2, this, "Stoping Heartbeat Send");
                 HeartbeatSendTimer.Stop();
                 HeartbeatSendTimer = null;
             }
@@ -595,7 +594,7 @@ namespace PepperDash.Core
         }
         void SendHeartbeat(object notused)
         {
-            this.SendText(HeartbeatString);
+            SendText(HeartbeatString);
             Debug.Console(2, this, "Sending Heartbeat");
 
         }
@@ -619,12 +618,12 @@ namespace PepperDash.Core
                             }
                             else
                             {
-                                HeartbeatAckTimer = new CTimer(HeartbeatAckTimerFail, null, (HeartbeatInterval * 2), (HeartbeatInterval * 2));
+                                HeartbeatAckTimer = new CTimer(HeartbeatAckTimerFail, null, HeartbeatInterval * 2, HeartbeatInterval * 2);
                             }
                             Debug.Console(2, this, "Heartbeat Received: {0}, from Server", HeartbeatString);
                             return remainingText;
                         }
-                    }                    
+                    }
                 }
             }
             catch (Exception ex)
@@ -684,7 +683,7 @@ namespace PepperDash.Core
                             // HOW IN THE HELL DO WE CATCH AN EXCEPTION IN SENDING?????
                             if (n <= 0)
                             {
-                                Debug.Console(1, Debug.ErrorLogLevel.Warning, "[{0}] Sent zero bytes. Was there an error?", this.Key);
+                                Debug.Console(1, Debug.ErrorLogLevel.Warning, "[{0}] Sent zero bytes. Was there an error?", Key);
                             }
                         });
                     }
@@ -729,10 +728,10 @@ namespace PepperDash.Core
             }
             try
             {
-                Debug.Console(2, this, "Socket status change: {0} ({1})", client.ClientStatus, (ushort)(client.ClientStatus));
+                Debug.Console(2, this, "Socket status change: {0} ({1})", client.ClientStatus, (ushort)client.ClientStatus);
 
                 OnConnectionChange();
-                
+
                 // The client could be null or disposed by this time...
                 if (Client == null || Client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
                 {
@@ -763,12 +762,12 @@ namespace PepperDash.Core
         void OnClientReadyForcommunications(bool isReady)
         {
             IsReadyForCommunication = isReady;
-            if (this.IsReadyForCommunication) { HeartbeatStart(); }
+            if (IsReadyForCommunication) { HeartbeatStart(); }
             var handler = ClientReadyForCommunications;
             if (handler != null)
                 handler(this, new GenericTcpServerClientReadyForcommunicationsEventArgs(IsReadyForCommunication));
         }
         #endregion
     }
-    
+
 }

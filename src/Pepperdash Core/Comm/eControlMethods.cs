@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-
-namespace PepperDash.Core
+﻿namespace PepperDash.Core.Comm
 {
     /// <summary>
     /// Crestron Control Methods for a comm object

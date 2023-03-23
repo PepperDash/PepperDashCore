@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-
-namespace PepperDash.Core.JsonToSimpl
+﻿namespace PepperDash.Core.JsonToSimpl
 {
-	/// <summary>
-	/// Constants for Simpl modules
-	/// </summary>
-	public class JsonToSimplConstants
-	{
+    /// <summary>
+    /// Constants for Simpl modules
+    /// </summary>
+    public class JsonToSimplConstants
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -38,12 +32,12 @@ namespace PepperDash.Core.JsonToSimpl
         /// <summary>
         /// 
         /// </summary>
-		public const ushort UshortValueChange = 101;        
-		
+		public const ushort UshortValueChange = 101;
+
         /// <summary>
         /// 
         /// </summary>
-		public const ushort StringValueChange = 201;
+        public const ushort StringValueChange = 201;
         /// <summary>
         /// 
         /// </summary>
@@ -76,18 +70,18 @@ namespace PepperDash.Core.JsonToSimpl
         /// Reports the room name change
         /// </summary>
         public const ushort RoomNameChange = 208;
-	}
+    }
 
-	/// <summary>
-	/// S+ values delegate
-	/// </summary>
-	public delegate void SPlusValuesDelegate();
+    /// <summary>
+    /// S+ values delegate
+    /// </summary>
+    public delegate void SPlusValuesDelegate();
 
-	/// <summary>
-	/// S+ values wrapper
-	/// </summary>
-	public class SPlusValueWrapper
-	{
+    /// <summary>
+    /// S+ values wrapper
+    /// </summary>
+    public class SPlusValueWrapper
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -108,7 +102,7 @@ namespace PepperDash.Core.JsonToSimpl
         /// <summary>
         /// 
         /// </summary>
-		public SPlusValueWrapper() {}
+		public SPlusValueWrapper() { }
 
         /// <summary>
         /// 
@@ -116,28 +110,28 @@ namespace PepperDash.Core.JsonToSimpl
         /// <param name="type"></param>
         /// <param name="index"></param>
 		public SPlusValueWrapper(SPlusType type, ushort index)
-		{
-			ValueType = type;
-			Index = index;
-		}
-	}
+        {
+            ValueType = type;
+            Index = index;
+        }
+    }
 
-	/// <summary>
-	/// S+ types enum
-	/// </summary>
-	public enum SPlusType
-	{
+    /// <summary>
+    /// S+ types enum
+    /// </summary>
+    public enum SPlusType
+    {
         /// <summary>
         /// Digital
         /// </summary>
-		Digital, 
+		Digital,
         /// <summary>
         /// Analog
         /// </summary>
-        Analog, 
+        Analog,
         /// <summary>
         /// String
         /// </summary>
         String
-	}
+    }
 }

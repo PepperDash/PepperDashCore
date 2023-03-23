@@ -1,6 +1,6 @@
 using System;
 
-namespace PepperDash.Core.Intersystem.Tokens
+namespace PepperDash.Core.XSigUtility.Tokens
 {
     /// <summary>
     /// Represents an XSigAnalogToken
@@ -47,8 +47,8 @@ namespace PepperDash.Core.Intersystem.Tokens
         public override byte[] GetBytes()
         {
             return new[] {
-                (byte)(0xC0 | ((Value & 0xC000) >> 10) | (Index - 1 >> 7)),
-                (byte)((Index - 1) & 0x7F),
+                (byte)(0xC0 | (Value & 0xC000) >> 10 | Index - 1 >> 7),
+                (byte)(Index - 1 & 0x7F),
                 (byte)((Value & 0x3F80) >> 7),
                 (byte)(Value & 0x7F)
             };

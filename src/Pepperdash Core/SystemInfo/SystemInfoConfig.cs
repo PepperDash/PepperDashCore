@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-
-namespace PepperDash.Core.SystemInfo
+﻿namespace PepperDash.Core.SystemInfo
 {
-	/// <summary>
-	/// Processor info class
-	/// </summary>
-	public class ProcessorInfo
-	{
+    /// <summary>
+    /// Processor info class
+    /// </summary>
+    public class ProcessorInfo
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -52,20 +46,20 @@ namespace PepperDash.Core.SystemInfo
         /// </summary>
 		public string ProgramIdTag { get; set; }
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		public ProcessorInfo()
-		{
-			
-		}
-	}
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public ProcessorInfo()
+        {
 
-	/// <summary>
-	/// Ethernet info class
-	/// </summary>
-	public class EthernetInfo
-	{
+        }
+    }
+
+    /// <summary>
+    /// Ethernet info class
+    /// </summary>
+    public class EthernetInfo
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -107,20 +101,20 @@ namespace PepperDash.Core.SystemInfo
         /// </summary>
 		public string Domain { get; set; }
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		public EthernetInfo()
-		{
-			
-		}
-	}
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public EthernetInfo()
+        {
 
-	/// <summary>
-	/// Control subnet info class
-	/// </summary>
-	public class ControlSubnetInfo
-	{
+        }
+    }
+
+    /// <summary>
+    /// Control subnet info class
+    /// </summary>
+    public class ControlSubnetInfo
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -146,20 +140,20 @@ namespace PepperDash.Core.SystemInfo
         /// </summary>
 		public string RouterPrefix { get; set; }
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		public ControlSubnetInfo()
-		{
-		
-		}
-	}
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public ControlSubnetInfo()
+        {
 
-	/// <summary>
-	/// Program info class
-	/// </summary>
-	public class ProgramInfo
-	{
+        }
+    }
+
+    /// <summary>
+    /// Program info class
+    /// </summary>
+    public class ProgramInfo
+    {
         /// <summary>
         /// 
         /// </summary>
@@ -193,12 +187,12 @@ namespace PepperDash.Core.SystemInfo
         /// </summary>
 		public string Programmer { get; set; }
 
-		/// <summary>
-		/// Constructor
-		/// </summary>
-		public ProgramInfo()
-		{
-			
-		}
-	}
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public ProgramInfo()
+        {
+
+        }
+    }
 }

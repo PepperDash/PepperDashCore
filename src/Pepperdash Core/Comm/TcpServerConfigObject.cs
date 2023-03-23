@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-
-namespace PepperDash.Core
+﻿namespace PepperDash.Core.Comm
 {
     /// <summary>
     /// Tcp Server Config object with properties for a tcp server with shared key and heartbeat capabilities

@@ -1,12 +1,6 @@
 ﻿
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Crestron.SimplSharp;
-
-using Newtonsoft.Json;
 
 
 namespace PepperDash.Core.WebApi.Presets
@@ -15,7 +9,7 @@ namespace PepperDash.Core.WebApi.Presets
     /// Represents a preset
     /// </summary>
 	public class Preset
-	{
+    {
         /// <summary>
         /// ID of preset
         /// </summary>
@@ -50,23 +44,23 @@ namespace PepperDash.Core.WebApi.Presets
         /// Constructor
         /// </summary>
 		public Preset()
-		{
-			PresetName = "";
-			PresetNumber = 1;
-			Data = "{}";
-		}
-	}
+        {
+            PresetName = "";
+            PresetNumber = 1;
+            Data = "{}";
+        }
+    }
 
-	/// <summary>
-	/// 
-	/// </summary>
-	public class PresetReceivedEventArgs : EventArgs
-	{
+    /// <summary>
+    /// 
+    /// </summary>
+    public class PresetReceivedEventArgs : EventArgs
+    {
         /// <summary>
         /// True when the preset is found
         /// </summary>
         public bool LookupSuccess { get; private set; }
-        
+
         /// <summary>
         /// S+ helper
         /// </summary>
@@ -77,10 +71,10 @@ namespace PepperDash.Core.WebApi.Presets
         /// </summary>
         public Preset Preset { get; private set; }
 
-		/// <summary>
-		/// For Simpl+
-		/// </summary>
-		public PresetReceivedEventArgs() { }
+        /// <summary>
+        /// For Simpl+
+        /// </summary>
+        public PresetReceivedEventArgs() { }
 
         /// <summary>
         /// Constructor
@@ -88,9 +82,9 @@ namespace PepperDash.Core.WebApi.Presets
         /// <param name="preset"></param>
         /// <param name="success"></param>
 		public PresetReceivedEventArgs(Preset preset, bool success)
-		{
+        {
             LookupSuccess = success;
-			Preset = preset;
-		}
-	}
+            Preset = preset;
+        }
+    }
 }
