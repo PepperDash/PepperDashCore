@@ -13,6 +13,7 @@ PepperDash Technology Corporation reserves all rights under applicable laws.
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
 using PepperDash.Core.Logging;
+using PepperDash.Core.Net.Interfaces;
 using System;
 using System.Linq;
 using System.Text;
@@ -20,9 +21,9 @@ using System.Text;
 namespace PepperDash.Core.Comm
 {
     /// <summary>
-    /// Generic TCP/IP client for server
+    /// Generic secure TCP/IP client for server
     /// </summary>
-    public class GenericTcpIpClient_ForServer : Device, IAutoReconnect
+    public class GenericSecureTcpIpClient_ForServer : Device, IAutoReconnect
     {
         /// <summary>
         /// Band aid delegate for choked server
@@ -37,6 +38,17 @@ namespace PepperDash.Core.Comm
         /// Notifies of text received
         /// </summary>
         public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceived;
+
+        /// <summary>
+        /// Notifies of auto reconnect sequence triggered
+        /// </summary>
+        public event EventHandler AutoReconnectTriggered;
+
+        /// <summary>
+        /// Event for Receiving text. Once subscribed to this event the receive callback will start a thread that dequeues the messages and invokes the event on a new thread. 
+        /// It is not recommended to use both the TextReceived event and the TextReceivedQueueInvoke event. 
+        /// </summary>
+        public event EventHandler<GenericTcpServerCommMethodReceiveTextArgs> TextReceivedQueueInvoke;
 
         /// <summary>
         /// Notifies of socket status change
@@ -215,7 +227,6 @@ namespace PepperDash.Core.Comm
         /// 
         /// </summary>
         public bool HeartbeatEnabled { get; set; }
-
         /// <summary>
         /// 
         /// </summary>
@@ -228,12 +239,18 @@ namespace PepperDash.Core.Comm
         /// <summary>
         /// 
         /// </summary>
-        public string HeartbeatString = "heartbeat";
+        public string HeartbeatString { get; set; }
+        //public int HeartbeatInterval = 50000;
 
         /// <summary>
-        /// 
+        /// Milliseconds before server expects another heartbeat. Set by property HeartbeatRequiredIntervalInSeconds which is driven from S+
         /// </summary>
-        public int HeartbeatInterval = 50000;
+        public int HeartbeatInterval { get; set; }
+
+        /// <summary>
+        /// Simpl+ Heartbeat Analog value in seconds
+        /// </summary>
+        public ushort HeartbeatRequiredIntervalInSeconds { set { HeartbeatInterval = value * 1000; } }
 
         CTimer HeartbeatSendTimer;
         CTimer HeartbeatAckTimer;
@@ -246,9 +263,27 @@ namespace PepperDash.Core.Comm
         /// <summary>
         /// Internal secure client
         /// </summary>
-        TCPClient Client;
+        SecureTCPClient Client;
 
         bool ProgramIsStopping;
+
+        /// <summary>
+        /// Queue lock
+        /// </summary>
+        CCriticalSection DequeueLock = new CCriticalSection();
+
+        /// <summary>
+        /// Receive Queue size. Defaults to 20. Will set to 20 if QueueSize property is less than 20. Use constructor or set queue size property before
+        /// calling initialize. 
+        /// </summary>
+        public int ReceiveQueueSize { get; set; }
+
+        /// <summary>
+        /// Queue to temporarily store received messages with the source IP and Port info. Defaults to size 20. Use constructor or set queue size property before
+        /// calling initialize. 
+        /// </summary>
+        private CrestronQueue<GenericTcpServerCommMethodReceiveTextArgs> MessageQueue;
+
 
         #endregion
 
@@ -261,7 +296,7 @@ namespace PepperDash.Core.Comm
         /// <param name="address"></param>
         /// <param name="port"></param>
         /// <param name="bufferSize"></param>
-        public GenericTcpIpClient_ForServer(string key, string address, int port, int bufferSize)
+        public GenericSecureTcpIpClient_ForServer(string key, string address, int port, int bufferSize)
             : base(key)
         {
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
@@ -275,13 +310,26 @@ namespace PepperDash.Core.Comm
         /// <summary>
         /// Constructor for S+
         /// </summary>
-        public GenericTcpIpClient_ForServer()
-            : base("Uninitialized DynamicTcpClient")
+        public GenericSecureTcpIpClient_ForServer()
+            : base("Uninitialized Secure Tcp Client For Server")
         {
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
             AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
         }
+
+        /// <summary>
+        /// Contstructor that sets all properties by calling the initialize method with a config object. 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="clientConfigObject"></param>
+        public GenericSecureTcpIpClient_ForServer(string key, TcpClientConfigObject clientConfigObject)
+            : base(key)
+        {
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            Initialize(clientConfigObject);
+        }
+
         #endregion
 
         #region Methods
@@ -292,6 +340,43 @@ namespace PepperDash.Core.Comm
         public void Initialize(string key)
         {
             Key = key;
+        }
+
+        /// <summary>
+        /// Initialize called by the constructor that accepts a client config object. Can be called later to reset properties of client. 
+        /// </summary>
+        /// <param name="clientConfigObject"></param>
+        public void Initialize(TcpClientConfigObject clientConfigObject)
+        {
+            try
+            {
+                if (clientConfigObject != null)
+                {
+                    var TcpSshProperties = clientConfigObject.Control.TcpSshProperties;
+                    Hostname = TcpSshProperties.Address;
+                    AutoReconnect = TcpSshProperties.AutoReconnect;
+                    AutoReconnectIntervalMs = TcpSshProperties.AutoReconnectIntervalMs > 1000 ?
+                        TcpSshProperties.AutoReconnectIntervalMs : 5000;
+                    SharedKey = clientConfigObject.SharedKey;
+                    SharedKeyRequired = clientConfigObject.SharedKeyRequired;
+                    HeartbeatEnabled = clientConfigObject.HeartbeatRequired;
+                    HeartbeatRequiredIntervalInSeconds = clientConfigObject.HeartbeatRequiredIntervalInSeconds > 0 ?
+                        clientConfigObject.HeartbeatRequiredIntervalInSeconds : (ushort)15;
+                    HeartbeatString = string.IsNullOrEmpty(clientConfigObject.HeartbeatStringToMatch) ? "heartbeat" : clientConfigObject.HeartbeatStringToMatch;
+                    Port = TcpSshProperties.Port;
+                    BufferSize = TcpSshProperties.BufferSize > 2000 ? TcpSshProperties.BufferSize : 2000;
+                    ReceiveQueueSize = clientConfigObject.ReceiveQueueSize > 20 ? clientConfigObject.ReceiveQueueSize : 20;
+                    MessageQueue = new CrestronQueue<GenericTcpServerCommMethodReceiveTextArgs>(ReceiveQueueSize);
+                }
+                else
+                {
+                    ErrorLog.Error("Could not initialize client with key: {0}", Key);
+                }
+            }
+            catch
+            {
+                ErrorLog.Error("Could not initialize client with key: {0}", Key);
+            }
         }
 
         /// <summary>
@@ -358,7 +443,7 @@ namespace PepperDash.Core.Comm
                 }
                 DisconnectCalledByUser = false;
 
-                Client = new TCPClient(Hostname, Port, BufferSize);
+                Client = new SecureTCPClient(Hostname, Port, BufferSize);
                 Client.SocketStatusChange += Client_SocketStatusChange;
                 if (HeartbeatEnabled)
                     Client.SocketSendOrReceiveTimeOutInMs = HeartbeatInterval * 5;
@@ -505,6 +590,8 @@ namespace PepperDash.Core.Comm
                     RetryTimer.Stop();
                     RetryTimer = null;
                 }
+                if (AutoReconnectTriggered != null)
+                    AutoReconnectTriggered(this, new EventArgs());
                 RetryTimer = new CTimer(o => Connect(), rndTime);
             }
         }
@@ -514,12 +601,12 @@ namespace PepperDash.Core.Comm
         /// </summary>
         /// <param name="client"></param>
         /// <param name="numBytes"></param>
-        void Receive(TCPClient client, int numBytes)
+        void Receive(SecureTCPClient client, int numBytes)
         {
             if (numBytes > 0)
             {
                 string str = string.Empty;
-
+                var handler = TextReceivedQueueInvoke;
                 try
                 {
                     var bytes = client.IncomingDataBuffer.Take(numBytes).ToArray();
@@ -527,6 +614,7 @@ namespace PepperDash.Core.Comm
                     Debug.Console(2, this, "Client Received:\r--------\r{0}\r--------", str);
                     if (!string.IsNullOrEmpty(checkHeartbeat(str)))
                     {
+
                         if (SharedKeyRequired && str == "SharedKey:")
                         {
                             Debug.Console(2, this, "Server asking for shared key, sending");
@@ -535,6 +623,8 @@ namespace PepperDash.Core.Comm
                         else if (SharedKeyRequired && str == "Shared Key Match")
                         {
                             StopWaitForSharedKeyTimer();
+
+
                             Debug.Console(2, this, "Shared key confirmed. Ready for communication");
                             OnClientReadyForcommunications(true); // Successful key exchange
                         }
@@ -546,6 +636,10 @@ namespace PepperDash.Core.Comm
                             var textHandler = TextReceived;
                             if (textHandler != null)
                                 textHandler(this, new GenericTcpServerCommMethodReceiveTextArgs(str));
+                            if (handler != null)
+                            {
+                                MessageQueue.TryToEnqueue(new GenericTcpServerCommMethodReceiveTextArgs(str));
+                            }
                         }
                     }
                 }
@@ -553,9 +647,51 @@ namespace PepperDash.Core.Comm
                 {
                     Debug.Console(1, this, "Error receiving data: {1}. Error: {0}", ex.Message, str);
                 }
+                if (client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
+                    client.ReceiveDataAsync(Receive);
+
+                //Check to see if there is a subscription to the TextReceivedQueueInvoke event. If there is start the dequeue thread. 
+                if (handler != null)
+                {
+                    var gotLock = DequeueLock.TryEnter();
+                    if (gotLock)
+                        CrestronInvoke.BeginInvoke((o) => DequeueEvent());
+                }
             }
-            if (client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
-                client.ReceiveDataAsync(Receive);
+            else //JAG added this as I believe the error return is 0 bytes like the server. See help when hover on ReceiveAsync
+            {
+                client.DisconnectFromServer();
+            }
+        }
+
+        /// <summary>
+        /// This method gets spooled up in its own thread an protected by a CCriticalSection to prevent multiple threads from running concurrently.
+        /// It will dequeue items as they are enqueued automatically.
+        /// </summary>
+        void DequeueEvent()
+        {
+            try
+            {
+                while (true)
+                {
+                    // Pull from Queue and fire an event. Block indefinitely until an item can be removed, similar to a Gather.
+                    var message = MessageQueue.Dequeue();
+                    var handler = TextReceivedQueueInvoke;
+                    if (handler != null)
+                    {
+                        handler(this, message);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Console(0, "DequeueEvent error: {0}\r", e);
+            }
+            // Make sure to leave the CCritical section in case an exception above stops this thread, or we won't be able to restart it.
+            if (DequeueLock != null)
+            {
+                DequeueLock.Leave();
+            }
         }
 
         void HeartbeatStart()
@@ -719,7 +855,7 @@ namespace PepperDash.Core.Comm
         /// </summary>
         /// <param name="client"></param>
         /// <param name="clientSocketStatus"></param>
-        void Client_SocketStatusChange(TCPClient client, SocketStatus clientSocketStatus)
+        void Client_SocketStatusChange(SecureTCPClient client, SocketStatus clientSocketStatus)
         {
             if (ProgramIsStopping)
             {
@@ -731,7 +867,6 @@ namespace PepperDash.Core.Comm
                 Debug.Console(2, this, "Socket status change: {0} ({1})", client.ClientStatus, (ushort)client.ClientStatus);
 
                 OnConnectionChange();
-
                 // The client could be null or disposed by this time...
                 if (Client == null || Client.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
                 {

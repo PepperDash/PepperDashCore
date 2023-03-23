@@ -1,6 +1,7 @@
 ﻿using Crestron.SimplSharp;
 using PepperDash.Core.Interfaces;
 using PepperDash.Core.Logging;
+using PepperDash.Core.Net.Interfaces;
 using System;
 
 namespace PepperDash.Core.Comm

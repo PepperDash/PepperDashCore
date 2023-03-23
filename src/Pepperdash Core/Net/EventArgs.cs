@@ -9,6 +9,7 @@ of this material by another party without the express written permission of Pepp
 PepperDash Technology Corporation reserves all rights under applicable laws.
 ------------------------------------ */
 using Crestron.SimplSharp.CrestronSockets;
+using PepperDash.Core.Net.Interfaces;
 using System;
 
 namespace PepperDash.Core.Comm

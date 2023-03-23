@@ -3,6 +3,8 @@ using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
 using Newtonsoft.Json;
 using PepperDash.Core.Logging;
+using PepperDash.Core.Net;
+using PepperDash.Core.Net.Interfaces;
 using System;
 using System.Linq;
 using System.Text;

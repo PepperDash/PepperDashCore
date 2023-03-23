@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Text.RegularExpressions;
+using PepperDash.Core.Net.Interfaces;
 
 namespace PepperDash.Core.Comm
 {

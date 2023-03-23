@@ -36,9 +36,9 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="Comm\._GenericSshClient.cs" />
-    <Compile Remove="Comm\._GenericTcpIpClient.cs" />
-    <Compile Remove="Comm\DynamicTCPServer.cs" />
+    <Compile Remove="Net\._GenericSshClient.cs" />
+    <Compile Remove="Net\._GenericTcpIpClient.cs" />
+    <Compile Remove="Net\DynamicTCPServer.cs" />
     <Compile Remove="PasswordManagement\OLD-ARRAY-Config.cs" />
     <Compile Remove="PasswordManagement\OLD-ARRAY-PasswordClient.cs" />
     <Compile Remove="PasswordManagement\OLD-ARRAY-PasswordManager.cs" />

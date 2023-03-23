@@ -3,6 +3,8 @@ using Crestron.SimplSharp.CrestronSockets;
 using Crestron.SimplSharp.Ssh;
 using Crestron.SimplSharp.Ssh.Common;
 using PepperDash.Core.Logging;
+using PepperDash.Core.Net;
+using PepperDash.Core.Net.Interfaces;
 using System;
 using System.Text;
 

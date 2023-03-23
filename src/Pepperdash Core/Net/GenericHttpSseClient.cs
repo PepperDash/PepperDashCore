@@ -2,6 +2,8 @@
 using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.Net.Http;
 using PepperDash.Core.Logging;
+using PepperDash.Core.Net;
+using PepperDash.Core.Net.Interfaces;
 using System;
 using System.Text;
 
