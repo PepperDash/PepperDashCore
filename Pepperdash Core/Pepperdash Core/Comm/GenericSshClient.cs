@@ -229,7 +229,10 @@ namespace PepperDash.Core
                     Debug.Console(1, this, "Attempting connect");
 
                     // Cancel reconnect if running.
-                    ReconnectTimer.Stop();
+					if (ReconnectTimer != null)
+					{
+						ReconnectTimer.Stop();
+					}
 
                     // Cleanup the old client if it already exists
                     if (Client != null)
