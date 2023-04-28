@@ -550,6 +550,11 @@ namespace PepperDash.Core
 		public int AutoReconnectIntervalMs { get; set; }
 
         /// <summary>
+        /// Used to set TerminalMode.Echo to 0
+        /// </summary>
+        public bool DisableEcho { get; set; }
+
+        /// <summary>
         /// Default constructor
         /// </summary>
 		public TcpSshPropertiesConfig()
