@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
@@ -33,6 +34,8 @@ namespace PepperDash.Core
 		/// Event when the connection status changes.
 		/// </summary>
 		public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
+
+        private Dictionary<TerminalModes, uint> _terminalModes = new Dictionary<TerminalModes, uint>(); 
 
         ///// <summary>
         ///// 
@@ -137,29 +140,53 @@ namespace PepperDash.Core
 
         private bool DisconnectLogged = false;
 
-		/// <summary>
-		/// Typical constructor.
-		/// </summary>
-		public GenericSshClient(string key, string hostname, int port, string username, string password) :
-			base(key)
-		{
+        /// <summary>
+        /// Typical constructor.
+        /// </summary>
+        public GenericSshClient(string key, string hostname, int port, string username, string password) :
+            base(key)
+        {
             StreamDebugging = new CommunicationStreamDebugging(key);
-			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
-			Key = key;
-			Hostname = hostname;
-			Port = port;
-			Username = username;
-			Password = password; 
-			AutoReconnectIntervalMs = 5000;
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            Key = key;
+            Hostname = hostname;
+            Port = port;
+            Username = username;
+            Password = password;
+            AutoReconnectIntervalMs = 5000;
 
             ReconnectTimer = new CTimer(o =>
-	            {
-                    if (ConnectEnabled)
-                    {
-                        Connect();
-                    }
-	            }, Timeout.Infinite);
-		}
+            {
+                if (ConnectEnabled)
+                {
+                    Connect();
+                }
+            }, Timeout.Infinite);
+        }
+        /// <summary>
+        /// Constructor With Terminal Option \"Echo Off\".
+        /// </summary>
+        public GenericSshClient(string key, string hostname, int port, string username, string password, bool disableEcho) :
+            base(key)
+        {
+            StreamDebugging = new CommunicationStreamDebugging(key);
+            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            Key = key;
+            Hostname = hostname;
+            Port = port;
+            Username = username;
+            Password = password;
+            AutoReconnectIntervalMs = 5000;
+            if(disableEcho) _terminalModes.Add(TerminalModes.ECHO, 0);
+
+            ReconnectTimer = new CTimer(o =>
+            {
+                if (ConnectEnabled)
+                {
+                    Connect();
+                }
+            }, Timeout.Infinite);
+        }
 
 		/// <summary>
 		/// S+ Constructor - Must set all properties before calling Connect
@@ -258,7 +285,7 @@ namespace PepperDash.Core
                     try
                     {
                         Client.Connect();
-                        TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
+                        TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534, _terminalModes);
                         TheStream.DataReceived += Stream_DataReceived;
                         Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connected");
                         ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
