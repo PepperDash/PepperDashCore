@@ -508,16 +508,16 @@ namespace PepperDash.Core
 		    }
 		    catch (ObjectDisposedException ex)
             {
-                Debug.Console(0, this, "Exception: {0}", ex.Message);
-                Debug.Console(0, this, "Stack Trace: {0}", ex.StackTrace);
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
 
 		        KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
                 ReconnectTimer.Reset();
 		    }
 			catch (Exception ex)
 			{
-                Debug.Console(0, this, "Exception: {0}", ex.Message);
-                Debug.Console(0, this, "Stack Trace: {0}", ex.StackTrace);
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
 
 				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed");
 			}
@@ -546,16 +546,16 @@ namespace PepperDash.Core
             }
             catch (ObjectDisposedException ex)
             {
-                Debug.Console(0, this, "Exception: {0}", ex.Message);
-                Debug.Console(0, this, "Stack Trace: {0}", ex.StackTrace);
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
 
                 KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
                 ReconnectTimer.Reset();
             }
             catch (Exception ex)
             {
-                Debug.Console(0, this, "Exception: {0}", ex.Message);
-                Debug.Console(0, this, "Stack Trace: {0}", ex.StackTrace);
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
 
 				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed");
 			}
