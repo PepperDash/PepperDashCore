@@ -8,15 +8,47 @@ using Crestron.SimplSharp.CrestronLogger;
 using Crestron.SimplSharp.CrestronIO;
 using Full.Newtonsoft.Json;
 using PepperDash.Core.DebugThings;
-
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Serilog.Formatting.Display;
+using System.Runtime.Serialization;
 
 namespace PepperDash.Core
 {
+    public enum eDebugLevel
+    {
+        Information = 0,
+        Warning = 1,
+        Error = 2,
+        Fatal = 3,
+        Debug = 4,
+        Verbose = 5,
+    }
+
     /// <summary>
     /// Contains debug commands for use in various situations
     /// </summary>
     public static class Debug
     {
+        private static Dictionary<int, Action<string>> _logActions = new Dictionary<int, Action<string>>()
+        {
+            {0, (s) => _logger.Information(s) },
+            {1, (s) => _logger.Warning(s) },
+            {2, (s) => _logger.Error(s) },
+            {3, (s) => _logger.Fatal(s) },
+            {4, (s) => _logger.Debug(s) },
+            {5, (s) => _logger.Verbose(s) },
+        };
+
+        private static Logger _logger;
+
+        private static LoggingLevelSwitch _consoleLoggingLevelSwitch;
+
+        private static LoggingLevelSwitch _websocketLoggingLevelSwitch;
+
+        private static DebugWebsocketSink _websocketSink;
+
         /// <summary>
         /// Describes the folder location where a given program stores it's debug level memory. By default, the
         /// file written will be named appNdebug where N is 1-10.
@@ -67,6 +99,19 @@ namespace PepperDash.Core
 
         static Debug()
         {
+            _consoleLoggingLevelSwitch = new LoggingLevelSwitch();
+            _websocketLoggingLevelSwitch = new LoggingLevelSwitch();
+
+            // Instantiate the root logger
+            _logger = new LoggerConfiguration()
+                .WriteTo.Logger(lc => lc
+                .WriteTo.Console(levelSwitch: _consoleLoggingLevelSwitch))
+                 .WriteTo.Sink(new DebugWebsocketSink(), levelSwitch: _websocketLoggingLevelSwitch)
+                .WriteTo.File(@"\user\debug\global-log-{Date}.txt"
+                    , rollingInterval: RollingInterval.Day
+                    , restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
+                .CreateLogger();
+
             // Get the assembly version and print it to console and the log
             GetVersion();
 
@@ -165,6 +210,7 @@ namespace PepperDash.Core
         /// <param name="programEventType"></param>
         static void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
         {
+
             if (programEventType == eProgramStatusEventType.Stopping)
             {
                 if (_saveTimer != null)
@@ -197,6 +243,16 @@ namespace PepperDash.Core
             {
                 CrestronConsole.ConsoleCommandResponse("Usage: appdebug:P [0-2]");
             }
+        }
+
+        public static void SetConsoleDebugLevel(LogEventLevel level)
+        {
+            _consoleLoggingLevelSwitch.MinimumLevel = level;
+        }
+
+        public static void SetWebSocketDebugLevel(LogEventLevel level)
+        {
+
         }
 
         /// <summary>
@@ -233,7 +289,7 @@ namespace PepperDash.Core
 				CrestronConsole.ConsoleCommandResponse("Usage:\r APPDEBUGFILTER key1 key2 key3....\r " +
 					"+all: at beginning puts filter into 'default include' mode\r" +
 					"      All keys that follow will be excluded from output.\r" +
-					"-all: at beginning puts filter into 'default excluse all' mode.\r" +
+					"-all: at beginning puts filter into 'default exclude all' mode.\r" +
 					"      All keys that follow will be the only keys that are shown\r" +
 					"+nokey: Enables messages with no key (default)\r" +
 					"-nokey: Disables messages with no key.\r" +
@@ -368,6 +424,12 @@ namespace PepperDash.Core
                 CrestronConsole.ConsoleCommandResponse(l + CrestronEnvironment.NewLine);
         }
 
+
+        private static void Log(uint level, string format, params object[] items)
+        {
+
+        }
+
         /// <summary>
         /// Prints message to console if current debug level is equal to or higher than the level of this message.
         /// Uses CrestronConsole.PrintLine.
@@ -410,6 +472,10 @@ namespace PepperDash.Core
         public static void Console(uint level, IKeyed dev, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
+            var logDevice = dev as IKeyNameWithLogging;
+
+            
+
             var str = string.Format("[{0}] {1}", dev.Key, string.Format(format, items));
             if (errorLogLevel != ErrorLogLevel.None)
             {

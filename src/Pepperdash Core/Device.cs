@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Serilog;
+using Serilog.Core;
+using Serilog.Sinks.SystemConsole;
 
 namespace PepperDash.Core
 {
@@ -8,8 +11,12 @@ namespace PepperDash.Core
 	/// <summary>
 	/// The core event and status-bearing class that most if not all device and connectors can derive from.
 	/// </summary>
-	public class Device : IKeyName
+	public class Device : IKeyNameWithLogging
 	{
+		public ILogger Logger { get; private set; }
+
+        private static LoggingLevelSwitch _loggingLevelSwitch;
+
         /// <summary>
         /// Unique Key
         /// </summary>
@@ -52,6 +59,9 @@ namespace PepperDash.Core
 			if (key.Contains('.')) Debug.Console(0, this, "WARNING: Device name's should not include '.'");
 			Name = "";
 
+			_loggingLevelSwitch = new LoggingLevelSwitch();
+
+			Logger = Serilog.Log.ForContext("Key", Key);
 		}
 
         /// <summary>
