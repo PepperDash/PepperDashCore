@@ -29,14 +29,4 @@ namespace PepperDash.Core
 		string Name { get; }
     }
 
-    /// <summary>
-    /// Logging interface for IKeyName
-    /// </summary>
-    public interface IKeyNameWithLogging : IKeyName
-    {
-        /// <summary>
-        /// Logger for the device
-        /// </summary>
-        ILogger Logger { get; }
-    }
 }

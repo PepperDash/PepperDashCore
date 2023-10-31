@@ -11,11 +11,8 @@ namespace PepperDash.Core
 	/// <summary>
 	/// The core event and status-bearing class that most if not all device and connectors can derive from.
 	/// </summary>
-	public class Device : IKeyNameWithLogging
+	public class Device : IKeyName
 	{
-		public ILogger Logger { get; private set; }
-
-        private static LoggingLevelSwitch _loggingLevelSwitch;
 
         /// <summary>
         /// Unique Key
@@ -58,10 +55,6 @@ namespace PepperDash.Core
 			Key = key;
 			if (key.Contains('.')) Debug.Console(0, this, "WARNING: Device name's should not include '.'");
 			Name = "";
-
-			_loggingLevelSwitch = new LoggingLevelSwitch();
-
-			Logger = Serilog.Log.ForContext("Key", Key);
 		}
 
         /// <summary>

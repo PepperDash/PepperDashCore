@@ -31,15 +31,15 @@ namespace PepperDash.Core
     /// </summary>
     public static class Debug
     {
-        private static Dictionary<int, Action<string>> _logActions = new Dictionary<int, Action<string>>()
-        {
-            {0, (s) => _logger.Information(s) },
-            {1, (s) => _logger.Warning(s) },
-            {2, (s) => _logger.Error(s) },
-            {3, (s) => _logger.Fatal(s) },
-            {4, (s) => _logger.Debug(s) },
-            {5, (s) => _logger.Verbose(s) },
-        };
+        //private static Dictionary<int, Action<string>> _logActions = new Dictionary<int, Action<string>>()
+        //{
+        //    {0, (s) => _logger.Information(s) },
+        //    {1, (s) => _logger.Warning(s) },
+        //    {2, (s) => _logger.Error(s) },
+        //    {3, (s) => _logger.Fatal(s) },
+        //    {4, (s) => _logger.Debug(s) },
+        //    {5, (s) => _logger.Verbose(s) },
+        //};
 
         private static Logger _logger;
 
@@ -48,6 +48,11 @@ namespace PepperDash.Core
         private static LoggingLevelSwitch _websocketLoggingLevelSwitch;
 
         private static DebugWebsocketSink _websocketSink;
+
+        public static DebugWebsocketSink WebsocketSink
+        {
+            get { return _websocketSink; }
+        }
 
         /// <summary>
         /// Describes the folder location where a given program stores it's debug level memory. By default, the
@@ -447,13 +452,10 @@ namespace PepperDash.Core
                 return;
             }
 
-            if(Level < level) 
-            {
-                return;
-            }
+            _logger.Write((LogEventLevel)level, format, items);
 
-            CrestronConsole.PrintLine("[{0}]App {1}:{2}", DateTime.Now.ToString("HH:mm:ss.fff"), InitialParametersClass.ApplicationNumber,
-                string.Format(format, items));
+            //CrestronConsole.PrintLine("[{0}]App {1}:{2}", DateTime.Now.ToString("HH:mm:ss.fff"), InitialParametersClass.ApplicationNumber,
+            //    string.Format(format, items));
         }
 
         /// <summary>
@@ -461,8 +463,12 @@ namespace PepperDash.Core
         /// </summary>
         public static void Console(uint level, IKeyed dev, string format, params object[] items)
         {
-            if (Level >= level)
-                Console(level, "[{0}] {1}", dev.Key, string.Format(format, items));
+            var log = _logger.ForContext("Key", dev.Key);
+
+            log.Write((LogEventLevel)level, format, items);
+
+            //if (Level >= level)
+            //    Console(level, "[{0}] {1}", dev.Key, string.Format(format, items));
         }
 
         /// <summary>
@@ -472,19 +478,22 @@ namespace PepperDash.Core
         public static void Console(uint level, IKeyed dev, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
-            var logDevice = dev as IKeyNameWithLogging;
-
-            
 
             var str = string.Format("[{0}] {1}", dev.Key, string.Format(format, items));
             if (errorLogLevel != ErrorLogLevel.None)
             {
                 LogError(errorLogLevel, str);
             }
-            if (Level >= level)
-            {
-                Console(level, str);
-            }
+
+            var log = _logger.ForContext("Key", dev.Key);
+
+
+            log.Write((LogEventLevel)level, format, items);
+
+            //if (Level >= level)
+            //{
+            //    Console(level, str);
+            //}
         }
 
 		/// <summary>
