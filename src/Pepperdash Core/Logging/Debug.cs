@@ -218,7 +218,7 @@ namespace PepperDash.Core
 
             if (programEventType == eProgramStatusEventType.Stopping)
             {
-                _logger.CloseAndFlush();
+                //_logger.CloseAndFlush();
 
                 if (_saveTimer != null)
                 {
