@@ -11,8 +11,6 @@ using PepperDash.Core.DebugThings;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
-using Serilog.Formatting.Display;
-using System.Runtime.Serialization;
 
 namespace PepperDash.Core
 {
@@ -85,6 +83,8 @@ namespace PepperDash.Core
 
         private const int SaveTimeoutMs = 30000;
 
+        private static bool _runningOnAppliance = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance;
+
         /// <summary>
         /// Version for the currently loaded PepperDashCore dll
         /// </summary>
@@ -104,7 +104,7 @@ namespace PepperDash.Core
 
         static Debug()
         {
-            _consoleLoggingLevelSwitch = new LoggingLevelSwitch();
+            _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
             _websocketLoggingLevelSwitch = new LoggingLevelSwitch();
 
             // Instantiate the root logger
@@ -218,6 +218,8 @@ namespace PepperDash.Core
 
             if (programEventType == eProgramStatusEventType.Stopping)
             {
+                _logger.CloseAndFlush();
+
                 if (_saveTimer != null)
                 {
                     _saveTimer.Stop();
@@ -430,11 +432,6 @@ namespace PepperDash.Core
         }
 
 
-        private static void Log(uint level, string format, params object[] items)
-        {
-
-        }
-
         /// <summary>
         /// Prints message to console if current debug level is equal to or higher than the level of this message.
         /// Uses CrestronConsole.PrintLine.
@@ -454,8 +451,13 @@ namespace PepperDash.Core
 
             _logger.Write((LogEventLevel)level, format, items);
 
-            //CrestronConsole.PrintLine("[{0}]App {1}:{2}", DateTime.Now.ToString("HH:mm:ss.fff"), InitialParametersClass.ApplicationNumber,
-            //    string.Format(format, items));
+            if (_runningOnAppliance)
+            {
+                CrestronConsole.PrintLine("[{0}]App {1} Lvl {2}:{3}", DateTime.Now.ToString("HH:mm:ss.fff"),
+                    InitialParametersClass.ApplicationNumber,
+                    level,
+                    string.Format(format, items));
+            }
         }
 
         /// <summary>
@@ -467,8 +469,8 @@ namespace PepperDash.Core
 
             log.Write((LogEventLevel)level, format, items);
 
-            //if (Level >= level)
-            //    Console(level, "[{0}] {1}", dev.Key, string.Format(format, items));
+            if (Level >= level)
+                Console(level, "[{0}] {1}", dev.Key, string.Format(format, items));
         }
 
         /// <summary>
@@ -490,10 +492,10 @@ namespace PepperDash.Core
 
             log.Write((LogEventLevel)level, format, items);
 
-            //if (Level >= level)
-            //{
-            //    Console(level, str);
-            //}
+            if (Level >= level)
+            {
+                Console(level, str);
+            }
         }
 
 		/// <summary>
@@ -546,7 +548,7 @@ namespace PepperDash.Core
         public static void LogError(ErrorLogLevel errorLogLevel, string str)
         {
 
-            var msg = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ? string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str) : string.Format("Room {0}:{1}", InitialParametersClass.RoomId, str);
+            var msg = _runningOnAppliance ? string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str) : string.Format("Room {0}:{1}", InitialParametersClass.RoomId, str);
             switch (errorLogLevel)
             {
                 case ErrorLogLevel.Error:
