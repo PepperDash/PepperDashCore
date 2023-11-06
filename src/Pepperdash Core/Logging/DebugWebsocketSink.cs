@@ -13,20 +13,33 @@ namespace PepperDash.Core
 {
     public class DebugWebsocketSink : ILogEventSink
     {
-        public WebSocketServer WSSV { get; private set; }
+        private  WebSocketServer _wssv { get; private set; }
 
         private readonly IFormatProvider _formatProvider;
 
         public DebugWebsocketSink()
         {
-            WSSV = new WebSocketServer();
+            _wssv = new WebSocketServer();
 
         }
 
         public void Emit(LogEvent logEvent)
         {
+            if (_wssv == null || !_wssv.IsListening) return;
+
             var message = logEvent.RenderMessage(_formatProvider);
-            WSSV.WebSocketServices.Broadcast(message);
+            _wssv.WebSocketServices.Broadcast(message);
+        }
+
+        public void StartServerAndSetPort(int port)
+        {
+            _wssv = new WebSocketServer(port);
+            _wssv.Start();
+        }
+
+        public void StopServer()
+        {             
+            _wssv.Stop();
         }
     }
 

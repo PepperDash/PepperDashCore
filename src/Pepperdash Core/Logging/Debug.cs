@@ -109,9 +109,9 @@ namespace PepperDash.Core
 
             // Instantiate the root logger
             _logger = new LoggerConfiguration()
-                .WriteTo.Logger(lc => lc
-                .WriteTo.Console(levelSwitch: _consoleLoggingLevelSwitch))
-                 .WriteTo.Sink(new DebugWebsocketSink(), levelSwitch: _websocketLoggingLevelSwitch)
+                //.WriteTo.Logger(lc => lc
+                //.WriteTo.Console(levelSwitch: _consoleLoggingLevelSwitch))
+                .WriteTo.Sink(new DebugWebsocketSink(), levelSwitch: _websocketLoggingLevelSwitch)
                 .WriteTo.File(@"\user\debug\global-log-{Date}.txt"
                     , rollingInterval: RollingInterval.Day
                     , restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
@@ -218,7 +218,7 @@ namespace PepperDash.Core
 
             if (programEventType == eProgramStatusEventType.Stopping)
             {
-                //_logger.CloseAndFlush();
+                Log.CloseAndFlush();
 
                 if (_saveTimer != null)
                 {
@@ -370,9 +370,12 @@ namespace PepperDash.Core
         /// <param name="level"> Valid values 0 (no debug), 1 (critical), 2 (all messages)</param>
         public static void SetDebugLevel(int level)
         {
-            if (level <= 2)
+            _consoleLoggingLevelSwitch.MinimumLevel = (LogEventLevel)level;
+
+            if (level <= 5)
             {
                 Level = level;
+
                 _contexts.GetOrCreateItem("DEFAULT").Level = level;
                 SaveMemoryOnTimeout();
 
