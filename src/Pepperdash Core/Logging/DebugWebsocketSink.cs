@@ -15,6 +15,10 @@ namespace PepperDash.Core
     {
         private WebSocketServer _wssv;
 
+        public int Port { get { return _wssv.Port; } }
+
+        public bool IsListening { get { return _wssv.IsListening; } }
+
         private readonly IFormatProvider _formatProvider;
 
         public DebugWebsocketSink()
@@ -33,6 +37,7 @@ namespace PepperDash.Core
 
         public void StartServerAndSetPort(int port)
         {
+            Port = port;
             _wssv = new WebSocketServer(port);
             _wssv.Start();
         }
