@@ -37,7 +37,6 @@ namespace PepperDash.Core
 
         public void StartServerAndSetPort(int port)
         {
-            Port = port;
             _wssv = new WebSocketServer(port);
             _wssv.Start();
         }
