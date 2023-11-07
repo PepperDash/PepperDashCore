@@ -50,12 +50,14 @@ namespace PepperDash.Core
 
         public void StartServerAndSetPort(int port)
         {
+            Debug.Console(0, "Starting Websocket Server on port: {0}", port);
             _wssv = new WebSocketServer(port);
             _wssv.Start();
         }
 
         public void StopServer()
-        {             
+        {
+            Debug.Console(0, "Stopping Websocket Server");
             _wssv.Stop();
         }
     }
