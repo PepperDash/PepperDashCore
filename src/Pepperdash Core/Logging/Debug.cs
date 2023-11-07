@@ -111,7 +111,7 @@ namespace PepperDash.Core
             _logger = new LoggerConfiguration()
                 //.WriteTo.Logger(lc => lc
                 //.WriteTo.Console(levelSwitch: _consoleLoggingLevelSwitch))
-                .WriteTo.Sink(new DebugWebsocketSink(), levelSwitch: _websocketLoggingLevelSwitch)
+                .WriteTo.Sink(_websocketSink = new DebugWebsocketSink(), levelSwitch: _websocketLoggingLevelSwitch)
                 .WriteTo.File(@"\user\debug\global-log-{Date}.txt"
                     , rollingInterval: RollingInterval.Day
                     , restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
