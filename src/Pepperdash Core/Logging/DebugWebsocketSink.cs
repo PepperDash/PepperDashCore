@@ -13,7 +13,7 @@ namespace PepperDash.Core
 {
     public class DebugWebsocketSink : ILogEventSink
     {
-        private  WebSocketServer _wssv { get; private set; }
+        private WebSocketServer _wssv;
 
         private readonly IFormatProvider _formatProvider;
 
