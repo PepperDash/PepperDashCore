@@ -9,39 +9,43 @@ using Serilog.Events;
 using Serilog.Configuration;
 using WebSocketSharp.Server;
 using Crestron.SimplSharp;
-using System.Net.Http;
-using System.Text.RegularExpressions;
 using WebSocketSharp;
+using System.Security.Authentication;
+using WebSocketSharp.Net;
+using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certificate2;
+using System.IO;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace PepperDash.Core
 {
     public class DebugWebsocketSink : ILogEventSink
     {
-        private HttpServer _server;
-
+        private HttpServer _httpsServer;
+        
         private string _path = "/join";
+        private const string _certificateName = "selfCres";
+        private const string _certificatePassword = "cres12345";
 
         public int Port 
         { get 
             { 
                 
-                if(_server == null) return 0;
-                return _server.Port;
+                if(_httpsServer == null) return 0;
+                return _httpsServer.Port;
             } 
         }
 
-        public bool IsListening 
-        { get 
-            { 
-                if (_server == null) return false;
-                return _server.IsListening; 
-            } 
-        }
+        public bool IsRunning { get => _httpsServer?.IsListening ?? false; }
+        
 
         private readonly IFormatProvider _formatProvider;
 
         public DebugWebsocketSink()
         {
+
+            if (!File.Exists($"\\user\\{_certificateName}.pfx"))
+                CreateCert(null);
+
             CrestronEnvironment.ProgramStatusEventHandler += type =>
             {
                 if (type == eProgramStatusEventType.Stopping)
@@ -51,26 +55,133 @@ namespace PepperDash.Core
             };
         }
 
+        private void CreateCert(string[] args)
+        {
+            try
+            {
+                Debug.Console(0,$"CreateCert Creating Utility");
+                //var utility = new CertificateUtility();
+                var utility = new BouncyCertificate();
+                Debug.Console(0, $"CreateCert Calling CreateCert");
+                //utility.CreateCert();
+                var ipAddress = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0);
+                var hostName = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_HOSTNAME, 0);
+                var domainName = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_DOMAIN_NAME, 0);
+
+                Debug.Console(0, $"DomainName: {domainName} | HostName: {hostName} | {hostName}.{domainName}@{ipAddress}");
+
+                var certificate = utility.CreateSelfSignedCertificate($"CN={hostName}.{domainName}", new[] { $"{hostName}.{domainName}", ipAddress }, new[] { KeyPurposeID.IdKPServerAuth, KeyPurposeID.IdKPClientAuth });
+                //Crestron fails to let us do this...perhaps it should be done through their Dll's but haven't tested
+                //Debug.Print($"CreateCert Storing Certificate To My.LocalMachine");
+                //utility.AddCertToStore(certificate, StoreName.My, StoreLocation.LocalMachine);
+                Debug.Console(0, $"CreateCert Saving Cert to \\user\\");
+                utility.CertificatePassword = _certificatePassword;
+                utility.WriteCertificate(certificate, @"\user\", _certificateName);
+                Debug.Console(0, $"CreateCert Ending CreateCert");
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, $"WSS CreateCert Failed\r\n{ex.Message}\r\n{ex.StackTrace}");
+            }
+        }
+
         public void Emit(LogEvent logEvent)
         {
-            if (_server == null || !_server.IsListening) return;
+            if (_httpsServer == null || !_httpsServer.IsListening) return;
 
             var message = logEvent.RenderMessage(_formatProvider);
-            _server.WebSocketServices.Broadcast(message);
+            _httpsServer.WebSocketServices.Broadcast(message);
         }
 
         public void StartServerAndSetPort(int port)
         {
             Debug.Console(0, "Starting Websocket Server on port: {0}", port);
-            _server = new HttpServer(port);
-            _server.AddWebSocketService<DebugClient>(_path);
-            _server.Start();
+
+
+            Start(port, $"\\user\\{_certificateName}.pfx", _certificatePassword, @"\html\wss");
+        }
+
+        private void Start(int port, string certPath = "", string certPassword = "", string rootPath = @"\html")
+        {
+            try
+            {
+                _httpsServer = new HttpServer(port, true)
+                {
+                    RootPath = rootPath
+                };
+
+                if (!string.IsNullOrWhiteSpace(certPath))
+                {
+                    Debug.Console(0, "Assigning SSL Configuration");
+                    _httpsServer.SslConfiguration = new ServerSslConfiguration(new X509Certificate2(certPath, certPassword))
+                    {
+                        ClientCertificateRequired = false,
+                        CheckCertificateRevocation = false,
+                        EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls,
+                        //this is just to test, you might want to actually validate
+                        ClientCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
+                        {
+                            Debug.Console(0, "HTTPS ClientCerticateValidation Callback triggered");
+                            return true;
+                        }
+                    };
+                }
+                Debug.Console(0, "Adding Debug Client Service");
+                _httpsServer.AddWebSocketService<DebugClient>("/echo");
+                Debug.Console(0, "Assigning Log Info");
+                _httpsServer.Log.Level = LogLevel.Trace;
+                _httpsServer.Log.Output = delegate
+                {
+                    //Debug.Print(DebugLevel.WebSocket, "{1} {0}\rCaller:{2}\rMessage:{3}\rs:{4}", d.Level.ToString(), d.Date.ToString(), d.Caller.ToString(), d.Message, s);
+                };
+                Debug.Console(0, "Starting");
+
+                //_httpsServer.OnGet += (sender, e) =>
+                //{
+                //    Debug.Console(0, $"OnGet requesting {e.Request}");
+                //    var req = e.Request;
+                //    var res = e.Response;
+
+                //    var path = req.RawUrl;
+
+                //    if (path == "/")
+                //        path += "index.html";
+
+                //    var localPath = Path.Combine(rootPath, path.Substring(1));
+
+                //    byte[] contents;
+                //    if (File.Exists(localPath))
+                //        contents = File.ReadAllBytes(localPath);
+                //    else
+                //    {
+                //        e.Response.StatusCode = 404;
+                //        contents = Encoding.UTF8.GetBytes("Path not found " + e.Request.RawUrl);
+                //    }
+
+                //    var extention = Path.GetExtension(path);
+                //    if (!_contentTypes.TryGetValue(extention, out var contentType))
+                //        contentType = "text/html";
+
+                //    res.ContentLength64 = contents.LongLength;
+
+                //    res.Close(contents, true);
+                //};
+
+                _httpsServer.Start();
+                Debug.Console(0, "Ready");
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, "WebSocket Failed to start {0}", ex.Message);
+            }
         }
 
         public void StopServer()
         {
             Debug.Console(0, "Stopping Websocket Server");
-            _server.Stop();
+            _httpsServer?.Stop();
+
+            _httpsServer = null;
         }
     }
 
@@ -115,39 +226,7 @@ namespace PepperDash.Core
             var url = Context.WebSocket.Url;
             Debug.Console(2, Debug.ErrorLogLevel.Notice, "New WebSocket Connection from: {0}", url);
 
-            //var match = Regex.Match(url.AbsoluteUri, "(?:ws|wss):\\/\\/.*(?:\\/mc\\/api\\/ui\\/join\\/)(.*)");
-
-            //if (match.Success)
-            //{
-            //    var clientId = match.Groups[1].Value;
-
-            //    // Inform controller of client joining
-            //    if (Controller != null)
-            //    {
-            //        var clientJoined = new MobileControlResponseMessage
-            //        {
-            //            Type = "/system/roomKey",
-            //            ClientId = clientId,
-            //            Content = RoomKey,
-            //        };
-
-            //        Controller.SendMessageObjectToDirectClient(clientJoined);
-
-            //        var bridge = Controller.GetRoomBridge(RoomKey);
-
-            //        SendUserCodeToClient(bridge, clientId);
-
-            //        bridge.UserCodeChanged += (sender, args) => SendUserCodeToClient((MobileControlEssentialsRoomBridge)sender, clientId);
-            //    }
-            //    else
-            //    {
-            //        Debug.Console(2, "WebSocket UiClient Controller is null");
-            //    }
-            //}
-
             _connectionTime = DateTime.Now;
-
-            // TODO: Future: Check token to see if there's already an open session using that token and reject/close the session 
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -165,7 +244,7 @@ namespace PepperDash.Core
 
         }
 
-        protected override void OnError(ErrorEventArgs e)
+        protected override void OnError(WebSocketSharp.ErrorEventArgs e)
         {
             base.OnError(e);
 
