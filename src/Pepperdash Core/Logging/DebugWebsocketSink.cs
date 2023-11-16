@@ -59,29 +59,35 @@ namespace PepperDash.Core
         {
             try
             {
-                Debug.Console(0,"CreateCert Creating Utility");
+                //Debug.Console(0,"CreateCert Creating Utility");
+                CrestronConsole.PrintLine("CreateCert Creating Utility");
                 //var utility = new CertificateUtility();
                 var utility = new BouncyCertificate();
-                Debug.Console(0, "CreateCert Calling CreateCert");
+                //Debug.Console(0, "CreateCert Calling CreateCert");
+                CrestronConsole.PrintLine("CreateCert Calling CreateCert");
                 //utility.CreateCert();
                 var ipAddress = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0);
                 var hostName = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_HOSTNAME, 0);
                 var domainName = CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_DOMAIN_NAME, 0);
 
-                Debug.Console(0, "DomainName: {0} | HostName: {1} | {1}.{0}@{2}", domainName, hostName, ipAddress);
+                //Debug.Console(0, "DomainName: {0} | HostName: {1} | {1}.{0}@{2}", domainName, hostName, ipAddress);
+                CrestronConsole.PrintLine(string.Format("DomainName: {0} | HostName: {1} | {1}.{0}@{2}", domainName, hostName, ipAddress));
 
                 var certificate = utility.CreateSelfSignedCertificate(string.Format("CN={0}.{1}", hostName, domainName), new[] { string.Format("{0}.{1}", hostName, domainName), ipAddress }, new[] { KeyPurposeID.IdKPServerAuth, KeyPurposeID.IdKPClientAuth });
                 //Crestron fails to let us do this...perhaps it should be done through their Dll's but haven't tested
                 //Debug.Print($"CreateCert Storing Certificate To My.LocalMachine");
                 //utility.AddCertToStore(certificate, StoreName.My, StoreLocation.LocalMachine);
-                Debug.Console(0, "CreateCert Saving Cert to \\user\\");
+                //Debug.Console(0, "CreateCert Saving Cert to \\user\\");
+                CrestronConsole.PrintLine("CreateCert Saving Cert to \\user\\");
                 utility.CertificatePassword = _certificatePassword;
                 utility.WriteCertificate(certificate, @"\user\", _certificateName);
-                Debug.Console(0, "CreateCert Ending CreateCert");
+                //Debug.Console(0, "CreateCert Ending CreateCert");
+                CrestronConsole.PrintLine("CreateCert Ending CreateCert");
             }
             catch (Exception ex)
             {
-                Debug.Console(0, "WSS CreateCert Failed\r\n{0}\r\n{1}", ex.Message, ex.StackTrace);
+                //Debug.Console(0, "WSS CreateCert Failed\r\n{0}\r\n{1}", ex.Message, ex.StackTrace);
+                CrestronConsole.PrintLine(string.Format("WSS CreateCert Failed\r\n{0}\r\n{1}", ex.Message, ex.StackTrace));
             }
         }
 
