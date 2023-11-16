@@ -133,7 +133,7 @@ namespace PepperDash.Core
                     };
                 }
                 Debug.Console(0, "Adding Debug Client Service");
-                _httpsServer.AddWebSocketService<DebugClient>("/echo");
+                _httpsServer.AddWebSocketService<DebugClient>("/debug/join");
                 Debug.Console(0, "Assigning Log Info");
                 _httpsServer.Log.Level = LogLevel.Trace;
                 _httpsServer.Log.Output = delegate
