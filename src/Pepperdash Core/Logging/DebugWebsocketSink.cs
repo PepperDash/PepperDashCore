@@ -70,7 +70,7 @@ namespace PepperDash.Core
 
                 Debug.Console(0, "DomainName: {0} | HostName: {1} | {1}.{0}@{2}", domainName, hostName, ipAddress);
 
-                var certificate = utility.CreateSelfSignedCertificate($"CN={hostName}.{domainName}", new[] { $"{hostName}.{domainName}", ipAddress }, new[] { KeyPurposeID.IdKPServerAuth, KeyPurposeID.IdKPClientAuth });
+                var certificate = utility.CreateSelfSignedCertificate(string.Format("CN={0}.{1}", hostName, domainName), new[] { string.Format("{0}.{1}", hostName, domainName), ipAddress }, new[] { KeyPurposeID.IdKPServerAuth, KeyPurposeID.IdKPClientAuth });
                 //Crestron fails to let us do this...perhaps it should be done through their Dll's but haven't tested
                 //Debug.Print($"CreateCert Storing Certificate To My.LocalMachine");
                 //utility.AddCertToStore(certificate, StoreName.My, StoreLocation.LocalMachine);
@@ -81,7 +81,7 @@ namespace PepperDash.Core
             }
             catch (Exception ex)
             {
-                Debug.Console(0, "WSS CreateCert Failed\r\n{ex.Message}\r\n{ex.StackTrace}");
+                Debug.Console(0, "WSS CreateCert Failed\r\n{0}\r\n{1}", ex.Message, ex.StackTrace);
             }
         }
 

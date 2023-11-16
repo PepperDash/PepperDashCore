@@ -316,23 +316,23 @@ namespace PepperDash.Core
             try
             {
                 var pfx = certificate.Export(X509ContentType.Pfx, CertificatePassword);
-                File.WriteAllBytes($"{Path.Combine(outputDirectory, certName)}.pfx", pfx);
+                File.WriteAllBytes(string.Format("{0}.pfx", Path.Combine(outputDirectory, certName)), pfx);
             }
             catch (Exception ex)
             {
-                CrestronConsole.PrintLine($"Failed to write x509 cert pfx\r\n{ex.Message}");
+                CrestronConsole.PrintLine(string.Format("Failed to write x509 cert pfx\r\n{0}", ex.Message));
             }
             // Create Base 64 encoded CER (public key only)
             using (var writer = new StreamWriter($"{Path.Combine(outputDirectory, certName)}.cer", false))
             {
                 try
                 {
-                    var contents = $"-----BEGIN CERTIFICATE-----\r\n{Convert.ToBase64String(certificate.Export(X509ContentType.Cert), Base64FormattingOptions.InsertLineBreaks)}\r\n-----END CERTIFICATE-----";
+                    var contents = string.Format("-----BEGIN CERTIFICATE-----\r\n{0}\r\n-----END CERTIFICATE-----", Convert.ToBase64String(certificate.Export(X509ContentType.Cert), Base64FormattingOptions.InsertLineBreaks));
                     writer.Write(contents);
                 }
                 catch (Exception ex)
                 {
-                    CrestronConsole.PrintLine($"Failed to write x509 cert cer\r\n{ex.Message}");
+                    CrestronConsole.PrintLine(string.Format("Failed to write x509 cert cer\r\n{0}", ex.Message));
                 }
             }
         }
@@ -351,7 +351,7 @@ namespace PepperDash.Core
             }
             catch (Exception ex)
             {
-                CrestronConsole.PrintLine($"AddCertToStore Failed\r\n{ex.Message}\r\n{ex.StackTrace}");
+                CrestronConsole.PrintLine(string.Format("AddCertToStore Failed\r\n{0}\r\n{1}", ex.Message, ex.StackTrace));
             }
 
             return bRet;
