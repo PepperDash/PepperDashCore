@@ -40,7 +40,7 @@ namespace PepperDash.Core
             get
             {
                 if (_httpsServer == null) return "";
-                return $"wss://{_httpsServer.Address}:{_httpsServer.Port}{_httpsServer.WebSocketServices[_path].Path}";
+                return $"wss://{CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0)}:{_httpsServer.Port}{_httpsServer.WebSocketServices[_path].Path}";
             }
         }
 
