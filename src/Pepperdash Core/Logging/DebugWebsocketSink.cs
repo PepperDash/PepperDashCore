@@ -15,6 +15,9 @@ using WebSocketSharp.Net;
 using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certificate2;
 using System.IO;
 using Org.BouncyCastle.Asn1.X509;
+using Serilog.Formatting;
+using Newtonsoft.Json.Linq;
+using Serilog.Formatting.Json;
 
 namespace PepperDash.Core
 {
@@ -47,10 +50,12 @@ namespace PepperDash.Core
         public bool IsRunning { get => _httpsServer?.IsListening ?? false; }
         
 
-        private readonly IFormatProvider _formatProvider;
+        private readonly ITextFormatter _textFormatter;
 
-        public DebugWebsocketSink()
+        public DebugWebsocketSink(ITextFormatter formatProvider)
         {
+
+            _textFormatter = formatProvider ?? new JsonFormatter();
 
             if (!File.Exists($"\\user\\{_certificateName}.pfx"))
                 CreateCert(null);
@@ -104,16 +109,11 @@ namespace PepperDash.Core
         {
             if (_httpsServer == null || !_httpsServer.IsListening) return;
 
-            var message = logEvent.RenderMessage(_formatProvider);
-            _httpsServer.WebSocketServices.Broadcast(message);
+            var sw = new StringWriter();
+            _textFormatter.Format(logEvent, sw);
 
-            foreach(var service in _httpsServer.WebSocketServices.Hosts)
-            {
-                foreach (var session in service.Sessions.Sessions)
-                {
-                    
-                }
-            }
+            _httpsServer.WebSocketServices.Broadcast(sw.ToString());
+
         }
 
         public void StartServerAndSetPort(int port)
@@ -121,10 +121,10 @@ namespace PepperDash.Core
             Debug.Console(0, "Starting Websocket Server on port: {0}", port);
 
 
-            Start(port, $"\\user\\{_certificateName}.pfx", _certificatePassword, @"/");
+            Start(port, $"\\user\\{_certificateName}.pfx", _certificatePassword);
         }
 
-        private void Start(int port, string certPath = "", string certPassword = "", string rootPath = @"/html")
+        private void Start(int port, string certPath = "", string certPassword = "")
         {
             try
             {
@@ -210,9 +210,9 @@ namespace PepperDash.Core
     {
         public static LoggerConfiguration DebugWebsocketSink(
                              this LoggerSinkConfiguration loggerConfiguration,
-                                              IFormatProvider formatProvider = null)
+                                              ITextFormatter formatProvider = null)
         {
-            return loggerConfiguration.Sink(new DebugWebsocketSink());
+            return loggerConfiguration.Sink(new DebugWebsocketSink(formatProvider));
         }
     }
 

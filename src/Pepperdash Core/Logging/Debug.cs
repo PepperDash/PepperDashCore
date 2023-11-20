@@ -11,6 +11,7 @@ using PepperDash.Core.DebugThings;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Formatting.Compact;
 
 namespace PepperDash.Core
 {
@@ -106,7 +107,7 @@ namespace PepperDash.Core
         {
             _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
             _websocketLoggingLevelSwitch = new LoggingLevelSwitch();
-            _websocketSink = new DebugWebsocketSink();
+            _websocketSink = new DebugWebsocketSink(new CompactJsonFormatter());
 
             // Instantiate the root logger
             _logger = new LoggerConfiguration()
