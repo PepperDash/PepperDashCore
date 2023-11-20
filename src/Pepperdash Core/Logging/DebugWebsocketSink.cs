@@ -97,6 +97,14 @@ namespace PepperDash.Core
 
             var message = logEvent.RenderMessage(_formatProvider);
             _httpsServer.WebSocketServices.Broadcast(message);
+
+            foreach(var service in _httpsServer.WebSocketServices.Hosts)
+            {
+                foreach (var session in service.Sessions.Sessions)
+                {
+                    
+                }
+            }
         }
 
         public void StartServerAndSetPort(int port)
@@ -136,9 +144,9 @@ namespace PepperDash.Core
                 _httpsServer.AddWebSocketService<DebugClient>("/debug/join");
                 Debug.Console(0, "Assigning Log Info");
                 _httpsServer.Log.Level = LogLevel.Trace;
-                _httpsServer.Log.Output = delegate
+                _httpsServer.Log.Output = (d, s) =>
                 {
-                    //Debug.Print(DebugLevel.WebSocket, "{1} {0}\rCaller:{2}\rMessage:{3}\rs:{4}", d.Level.ToString(), d.Date.ToString(), d.Caller.ToString(), d.Message, s);
+                    Debug.Console(0, "{1} {0}\rCaller:{2}\rMessage:{3}\rs:{4}", d.Level.ToString(), d.Date.ToString(), d.Caller.ToString(), d.Message, s);
                 };
                 Debug.Console(0, "Starting");
 
@@ -222,7 +230,7 @@ namespace PepperDash.Core
 
         public DebugClient()
         {
-
+            Debug.Console(0, "DebugClient Created");
         }
 
         protected override void OnOpen()
