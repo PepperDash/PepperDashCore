@@ -112,10 +112,10 @@ namespace PepperDash.Core
             Debug.Console(0, "Starting Websocket Server on port: {0}", port);
 
 
-            Start(port, $"\\user\\{_certificateName}.pfx", _certificatePassword, @"\html\wss");
+            Start(port, $"\\user\\{_certificateName}.pfx", _certificatePassword, @"");
         }
 
-        private void Start(int port, string certPath = "", string certPassword = "", string rootPath = @"\html")
+        private void Start(int port, string certPath = "", string certPassword = "", string rootPath = @"/html")
         {
             try
             {
