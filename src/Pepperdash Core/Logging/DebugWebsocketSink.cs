@@ -22,7 +22,7 @@ namespace PepperDash.Core
     {
         private HttpServer _httpsServer;
         
-        private string _path = "/join";
+        private string _path = "/debug/join/";
         private const string _certificateName = "selfCres";
         private const string _certificatePassword = "cres12345";
 
@@ -33,6 +33,15 @@ namespace PepperDash.Core
                 if(_httpsServer == null) return 0;
                 return _httpsServer.Port;
             } 
+        }
+
+        public string Url
+        {
+            get
+            {
+                if (_httpsServer == null) return "";
+                return $"wss://{_httpsServer.Address}:{_httpsServer.Port}{_httpsServer.WebSocketServices[_path].Path}";
+            }
         }
 
         public bool IsRunning { get => _httpsServer?.IsListening ?? false; }
@@ -112,17 +121,15 @@ namespace PepperDash.Core
             Debug.Console(0, "Starting Websocket Server on port: {0}", port);
 
 
-            Start(port, $"\\user\\{_certificateName}.pfx", _certificatePassword, @"");
+            Start(port, $"\\user\\{_certificateName}.pfx", _certificatePassword, @"/");
         }
 
         private void Start(int port, string certPath = "", string certPassword = "", string rootPath = @"/html")
         {
             try
             {
-                _httpsServer = new HttpServer(port, true)
-                {
-                    RootPath = rootPath
-                };
+                _httpsServer = new HttpServer(port, true);
+
 
                 if (!string.IsNullOrWhiteSpace(certPath))
                 {
@@ -141,7 +148,7 @@ namespace PepperDash.Core
                     };
                 }
                 Debug.Console(0, "Adding Debug Client Service");
-                _httpsServer.AddWebSocketService<DebugClient>("/debug/join");
+                _httpsServer.AddWebSocketService<DebugClient>(_path);
                 Debug.Console(0, "Assigning Log Info");
                 _httpsServer.Log.Level = LogLevel.Trace;
                 _httpsServer.Log.Output = (d, s) =>
