@@ -12,6 +12,7 @@ using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
+using Serilog.Formatting.Json;
 
 namespace PepperDash.Core
 {
@@ -107,7 +108,7 @@ namespace PepperDash.Core
         {
             _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
             _websocketLoggingLevelSwitch = new LoggingLevelSwitch();
-            _websocketSink = new DebugWebsocketSink(new CompactJsonFormatter());
+            _websocketSink = new DebugWebsocketSink(new JsonFormatter());
 
             // Instantiate the root logger
             _logger = new LoggerConfiguration()
@@ -470,12 +471,13 @@ namespace PepperDash.Core
         /// </summary>
         public static void Console(uint level, IKeyed dev, string format, params object[] items)
         {
-            var log = _logger.ForContext("Key", dev.Key);
+            var log = _logger.ForContext("key", dev.Key);
+            var message = string.Format(format, items);
 
-            log.Write((LogEventLevel)level, format, items);
+            log.Write((LogEventLevel)level, message);
 
             if (Level >= level)
-                Console(level, "[{0}] {1}", dev.Key, string.Format(format, items));
+                Console(level, "[{0}] {1}", dev.Key, message);
         }
 
         /// <summary>
