@@ -455,7 +455,9 @@ namespace PepperDash.Core
                 return;
             }
 
-            _logger.Write((LogEventLevel)level, format, items);
+            var message = string.Format(format, items);
+
+            _logger.Write((LogEventLevel)level, message);
 
             if (_runningOnAppliance)
             {
@@ -471,7 +473,7 @@ namespace PepperDash.Core
         /// </summary>
         public static void Console(uint level, IKeyed dev, string format, params object[] items)
         {
-            var log = _logger.ForContext("key", dev.Key);
+            var log = _logger.ForContext("Key", dev.Key);
             var message = string.Format(format, items);
 
             log.Write((LogEventLevel)level, message);
@@ -495,9 +497,9 @@ namespace PepperDash.Core
             }
 
             var log = _logger.ForContext("Key", dev.Key);
+            var message = string.Format(format, items);
 
-
-            log.Write((LogEventLevel)level, format, items);
+            log.Write((LogEventLevel)level, message);
 
             if (Level >= level)
             {
