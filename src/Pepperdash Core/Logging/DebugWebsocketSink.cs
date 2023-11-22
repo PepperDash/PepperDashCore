@@ -157,37 +157,6 @@ namespace PepperDash.Core
                 };
                 Debug.Console(0, "Starting");
 
-                //_httpsServer.OnGet += (sender, e) =>
-                //{
-                //    Debug.Console(0, $"OnGet requesting {e.Request}");
-                //    var req = e.Request;
-                //    var res = e.Response;
-
-                //    var path = req.RawUrl;
-
-                //    if (path == "/")
-                //        path += "index.html";
-
-                //    var localPath = Path.Combine(rootPath, path.Substring(1));
-
-                //    byte[] contents;
-                //    if (File.Exists(localPath))
-                //        contents = File.ReadAllBytes(localPath);
-                //    else
-                //    {
-                //        e.Response.StatusCode = 404;
-                //        contents = Encoding.UTF8.GetBytes("Path not found " + e.Request.RawUrl);
-                //    }
-
-                //    var extention = Path.GetExtension(path);
-                //    if (!_contentTypes.TryGetValue(extention, out var contentType))
-                //        contentType = "text/html";
-
-                //    res.ContentLength64 = contents.LongLength;
-
-                //    res.Close(contents, true);
-                //};
-
                 _httpsServer.Start();
                 Debug.Console(0, "Ready");
             }

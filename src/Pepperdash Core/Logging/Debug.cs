@@ -85,7 +85,7 @@ namespace PepperDash.Core
 
         private const int SaveTimeoutMs = 30000;
 
-        private static bool _runningOnAppliance = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance;
+        public static bool IsRunningOnAppliance = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance;
 
         /// <summary>
         /// Version for the currently loaded PepperDashCore dll
@@ -108,12 +108,13 @@ namespace PepperDash.Core
         {
             _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
             _websocketLoggingLevelSwitch = new LoggingLevelSwitch();
-            _websocketSink = new DebugWebsocketSink(new JsonFormatter());
+            _websocketSink = new DebugWebsocketSink(new JsonFormatter(renderMessage: true));
 
             // Instantiate the root logger
             _logger = new LoggerConfiguration()
                 //.WriteTo.Logger(lc => lc
                 //.WriteTo.Console(levelSwitch: _consoleLoggingLevelSwitch))
+                .WriteTo.Sink(new DebugConsoleSink(new JsonFormatter(renderMessage: true)), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
                 .WriteTo.File(@"\user\debug\global-log-{Date}.txt"
                     , rollingInterval: RollingInterval.Day
@@ -438,6 +439,18 @@ namespace PepperDash.Core
         }
 
 
+        private static void LogMessage(uint level, string message)
+        {
+            _logger.Write((LogEventLevel)level, message);
+        }
+
+        private static void LogMessage(uint level, string message, IKeyed keyed)
+        {
+            var log = _logger.ForContext("Key", keyed.Key);
+            log.Write((LogEventLevel)level, message);
+        }
+
+
         /// <summary>
         /// Prints message to console if current debug level is equal to or higher than the level of this message.
         /// Uses CrestronConsole.PrintLine.
@@ -459,13 +472,13 @@ namespace PepperDash.Core
 
             _logger.Write((LogEventLevel)level, message);
 
-            if (_runningOnAppliance)
-            {
-                CrestronConsole.PrintLine("[{0}]App {1} Lvl {2}:{3}", DateTime.Now.ToString("HH:mm:ss.fff"),
-                    InitialParametersClass.ApplicationNumber,
-                    level,
-                    string.Format(format, items));
-            }
+            //if (IsRunningOnAppliance)
+            //{
+            //    CrestronConsole.PrintLine("[{0}]App {1} Lvl {2}:{3}", DateTime.Now.ToString("HH:mm:ss.fff"),
+            //        InitialParametersClass.ApplicationNumber,
+            //        level,
+            //        string.Format(format, items));
+            //}
         }
 
         /// <summary>
@@ -473,13 +486,10 @@ namespace PepperDash.Core
         /// </summary>
         public static void Console(uint level, IKeyed dev, string format, params object[] items)
         {
-            var log = _logger.ForContext("Key", dev.Key);
-            var message = string.Format(format, items);
+            LogMessage(level, string.Format(format, items), dev);
 
-            log.Write((LogEventLevel)level, message);
-
-            if (Level >= level)
-                Console(level, "[{0}] {1}", dev.Key, message);
+            //if (Level >= level)
+            //    Console(level, "[{0}] {1}", dev.Key, message);
         }
 
         /// <summary>
@@ -496,15 +506,17 @@ namespace PepperDash.Core
                 LogError(errorLogLevel, str);
             }
 
-            var log = _logger.ForContext("Key", dev.Key);
-            var message = string.Format(format, items);
+            LogMessage(level, str, dev);
 
-            log.Write((LogEventLevel)level, message);
+            //var log = _logger.ForContext("Key", dev.Key);
+            //var message = string.Format(format, items);
 
-            if (Level >= level)
-            {
-                Console(level, str);
-            }
+            //log.Write((LogEventLevel)level, message);
+
+            //if (Level >= level)
+            //{
+            //    Console(level, str);
+            //}
         }
 
 		/// <summary>
@@ -518,10 +530,12 @@ namespace PepperDash.Core
             {
                 LogError(errorLogLevel, str);
             }
-			if (Level >= level)
-			{
-				Console(level, str);
-			}
+
+            LogMessage(level, str);
+			//if (Level >= level)
+			//{
+			//	Console(level, str);
+			//}
         }
 
         /// <summary>
@@ -532,8 +546,9 @@ namespace PepperDash.Core
         public static void ConsoleWithLog(uint level, string format, params object[] items)
         {
             var str = string.Format(format, items);
-            if (Level >= level)
-                CrestronConsole.PrintLine("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
+            //if (Level >= level)
+            //    CrestronConsole.PrintLine("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
+            LogMessage(level, str);
             CrestronLogger.WriteToLog(str, level);
         }
 
@@ -545,8 +560,9 @@ namespace PepperDash.Core
         public static void ConsoleWithLog(uint level, IKeyed dev, string format, params object[] items)
         {
             var str = string.Format(format, items);
-            if (Level >= level)
-                ConsoleWithLog(level, "[{0}] {1}", dev.Key, str);
+
+            LogMessage(level, str, dev);
+            CrestronLogger.WriteToLog(string.Format("[{0}] {1}", dev.Key, str), level);
         }
 
         /// <summary>
@@ -557,7 +573,7 @@ namespace PepperDash.Core
         public static void LogError(ErrorLogLevel errorLogLevel, string str)
         {
 
-            var msg = _runningOnAppliance ? string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str) : string.Format("Room {0}:{1}", InitialParametersClass.RoomId, str);
+            var msg = IsRunningOnAppliance ? string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str) : string.Format("Room {0}:{1}", InitialParametersClass.RoomId, str);
             switch (errorLogLevel)
             {
                 case ErrorLogLevel.Error:
