@@ -79,7 +79,7 @@ namespace PepperDash.Core
         /// <summary>
         /// When this is true, the configuration file will NOT be loaded until triggered by either a console command or a signal
         /// </summary>
-        public static bool DoNotLoadOnNextBoot { get; private set; }
+        public static bool DoNotLoadConfigOnNextBoot { get; private set; }
 
         private static DebugContextCollection _contexts;
 
@@ -107,6 +107,10 @@ namespace PepperDash.Core
         static Debug()
         {
             _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
+            _consoleLoggingLevelSwitch.MinimumLevelChanged += (sender, args) =>
+            {
+                Debug.Console(0, "Console debug level set to {0}", _consoleLoggingLevelSwitch.MinimumLevel);
+            };
             _websocketLoggingLevelSwitch = new LoggingLevelSwitch();
             _websocketSink = new DebugWebsocketSink(new JsonFormatter(renderMessage: true));
 
@@ -167,9 +171,9 @@ namespace PepperDash.Core
 
             var context = _contexts.GetOrCreateItem("DEFAULT");
             Level = context.Level;
-            DoNotLoadOnNextBoot = context.DoNotLoadOnNextBoot;
+            DoNotLoadConfigOnNextBoot = context.DoNotLoadOnNextBoot;
 
-            if(DoNotLoadOnNextBoot)
+            if(DoNotLoadConfigOnNextBoot)
                 CrestronConsole.PrintLine(string.Format("Program {0} will not load config after next boot.  Use console command go:{0} to load the config manually", InitialParametersClass.ApplicationNumber));
 
             try
@@ -244,7 +248,7 @@ namespace PepperDash.Core
             {
                 if (string.IsNullOrEmpty(levelString.Trim()))
                 {
-                    CrestronConsole.ConsoleCommandResponse("AppDebug level = {0}", Level);
+                    CrestronConsole.ConsoleCommandResponse("AppDebug level = {0}", _consoleLoggingLevelSwitch);
                     return;
                 }
 
@@ -252,7 +256,7 @@ namespace PepperDash.Core
             }
             catch
             {
-                CrestronConsole.ConsoleCommandResponse("Usage: appdebug:P [0-2]");
+                CrestronConsole.ConsoleCommandResponse("Usage: appdebug:P [0-5]");
             }
         }
 
@@ -276,11 +280,11 @@ namespace PepperDash.Core
             {
                 if (string.IsNullOrEmpty(stateString.Trim()))
                 {
-                    CrestronConsole.ConsoleCommandResponse("DoNotLoadOnNextBoot = {0}", DoNotLoadOnNextBoot);
+                    CrestronConsole.ConsoleCommandResponse("DoNotLoadOnNextBoot = {0}", DoNotLoadConfigOnNextBoot);
                     return;
                 }
 
-                SetDoNotLoadOnNextBoot(Boolean.Parse(stateString));
+                SetDoNotLoadConfigOnNextBoot(Boolean.Parse(stateString));
             }
             catch
             {
@@ -376,20 +380,16 @@ namespace PepperDash.Core
         {
             _consoleLoggingLevelSwitch.MinimumLevel = (LogEventLevel)level;
 
-            if (level <= 5)
-            {
-                Level = level;
+            //if (level <= 5)
+            //{
 
-                _contexts.GetOrCreateItem("DEFAULT").Level = level;
-                SaveMemoryOnTimeout();
+            //    CrestronConsole.ConsoleCommandResponse("[Application {0}], Debug level set to {1}",
+            //        InitialParametersClass.ApplicationNumber, _consoleLoggingLevelSwitch.MinimumLevel);
 
-                CrestronConsole.ConsoleCommandResponse("[Application {0}], Debug level set to {1}",
-                    InitialParametersClass.ApplicationNumber, Level);
-
-                //var err = CrestronDataStoreStatic.SetLocalUintValue("DebugLevel", level);
-                //if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
-                //    CrestronConsole.PrintLine("Error saving console debug level setting: {0}", err);
-            }
+            //    //var err = CrestronDataStoreStatic.SetLocalUintValue("DebugLevel", level);
+            //    //if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
+            //    //    CrestronConsole.PrintLine("Error saving console debug level setting: {0}", err);
+            //}
         }
 
         /// <summary>
@@ -418,14 +418,14 @@ namespace PepperDash.Core
         /// Sets the flag to prevent application starting on next boot
         /// </summary>
         /// <param name="state"></param>
-        public static void SetDoNotLoadOnNextBoot(bool state)
+        public static void SetDoNotLoadConfigOnNextBoot(bool state)
         {
-            DoNotLoadOnNextBoot = state;
+            DoNotLoadConfigOnNextBoot = state;
             _contexts.GetOrCreateItem("DEFAULT").DoNotLoadOnNextBoot = state;
             SaveMemoryOnTimeout();
 
-            CrestronConsole.ConsoleCommandResponse("[Application {0}], Do Not Start on Next Boot set to {1}",
-                InitialParametersClass.ApplicationNumber, DoNotLoadOnNextBoot);
+            CrestronConsole.ConsoleCommandResponse("[Application {0}], Do Not Load Config on Next Boot set to {1}",
+                InitialParametersClass.ApplicationNumber, DoNotLoadConfigOnNextBoot);
         }
 
         /// <summary>
@@ -439,15 +439,15 @@ namespace PepperDash.Core
         }
 
 
-        private static void LogMessage(uint level, string message)
+        private static void LogMessage(uint level, string format, params object[] items)
         {
-            _logger.Write((LogEventLevel)level, message);
+            _logger.Write((LogEventLevel)level, format, items);
         }
 
-        private static void LogMessage(uint level, string message, IKeyed keyed)
+        private static void LogMessage(uint level, IKeyed keyed, string format, params object[] items)
         {
             var log = _logger.ForContext("Key", keyed.Key);
-            log.Write((LogEventLevel)level, message);
+            log.Write((LogEventLevel)level, format, items);
         }
 
 
@@ -460,6 +460,9 @@ namespace PepperDash.Core
         /// <param name="items">Object parameters</param>
         public static void Console(uint level, string format, params object[] items)
         {
+
+            LogMessage(level, format, items);
+
             if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
             {
                 var logString = string.Format("[level {0}] {1}", level, string.Format(format, items));
@@ -467,10 +470,6 @@ namespace PepperDash.Core
                 LogError(ErrorLogLevel.Notice, logString);
                 return;
             }
-
-            var message = string.Format(format, items);
-
-            _logger.Write((LogEventLevel)level, message);
 
             //if (IsRunningOnAppliance)
             //{
@@ -486,7 +485,7 @@ namespace PepperDash.Core
         /// </summary>
         public static void Console(uint level, IKeyed dev, string format, params object[] items)
         {
-            LogMessage(level, string.Format(format, items), dev);
+            LogMessage(level, dev, format, items);
 
             //if (Level >= level)
             //    Console(level, "[{0}] {1}", dev.Key, message);
@@ -506,7 +505,7 @@ namespace PepperDash.Core
                 LogError(errorLogLevel, str);
             }
 
-            LogMessage(level, str, dev);
+            LogMessage(level, dev, format, items);
 
             //var log = _logger.ForContext("Key", dev.Key);
             //var message = string.Format(format, items);
@@ -519,9 +518,9 @@ namespace PepperDash.Core
             //}
         }
 
-		/// <summary>
-		/// Logs to Console when at-level, and all messages to error log
-		/// </summary>
+        /// <summary>
+        /// Logs to Console when at-level, and all messages to error log
+        /// </summary>
         public static void Console(uint level, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
@@ -531,7 +530,7 @@ namespace PepperDash.Core
                 LogError(errorLogLevel, str);
             }
 
-            LogMessage(level, str);
+            LogMessage(level, format, items);
 			//if (Level >= level)
 			//{
 			//	Console(level, str);
@@ -545,10 +544,11 @@ namespace PepperDash.Core
         /// </summary>
         public static void ConsoleWithLog(uint level, string format, params object[] items)
         {
+            LogMessage(level, format, items);
+
             var str = string.Format(format, items);
             //if (Level >= level)
             //    CrestronConsole.PrintLine("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
-            LogMessage(level, str);
             CrestronLogger.WriteToLog(str, level);
         }
 
@@ -559,9 +559,9 @@ namespace PepperDash.Core
         /// </summary>
         public static void ConsoleWithLog(uint level, IKeyed dev, string format, params object[] items)
         {
-            var str = string.Format(format, items);
+            LogMessage(level, dev, format, items);
 
-            LogMessage(level, str, dev);
+            var str = string.Format(format, items);
             CrestronLogger.WriteToLog(string.Format("[{0}] {1}", dev.Key, str), level);
         }
 
