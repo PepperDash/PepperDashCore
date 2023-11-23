@@ -22,7 +22,7 @@ namespace PepperDash.Core
         {
             if (!Debug.IsRunningOnAppliance) return;
 
-            CrestronConsole.PrintLine("[{0}]App {1} Lvl {2}:{3}", logEvent.Timestamp,
+            CrestronConsole.PrintLine("[{0}][App {1}][Lvl {2}]: {3}", logEvent.Timestamp,
                 InitialParametersClass.ApplicationNumber,
                 logEvent.Level,
                 logEvent.RenderMessage());

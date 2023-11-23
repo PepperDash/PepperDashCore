@@ -11,7 +11,6 @@ using PepperDash.Core.DebugThings;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
-using Serilog.Formatting.Compact;
 using Serilog.Formatting.Json;
 
 namespace PepperDash.Core
@@ -46,6 +45,11 @@ namespace PepperDash.Core
         private static LoggingLevelSwitch _consoleLoggingLevelSwitch;
 
         private static LoggingLevelSwitch _websocketLoggingLevelSwitch;
+
+        public static LogEventLevel WebsocketMinimumLogLevel
+        {
+            get { return _websocketLoggingLevelSwitch.MinimumLevel; }
+        }
 
         private static DebugWebsocketSink _websocketSink;
 
@@ -265,9 +269,11 @@ namespace PepperDash.Core
             _consoleLoggingLevelSwitch.MinimumLevel = level;
         }
 
-        public static void SetWebSocketDebugLevel(LogEventLevel level)
+        public static void SetWebSocketMinimumDebugLevel(LogEventLevel level)
         {
+            _websocketLoggingLevelSwitch.MinimumLevel = level;
 
+            Console(0, "Websocket debug level set to {0}", _websocketLoggingLevelSwitch.MinimumLevel);
         }
 
         /// <summary>
