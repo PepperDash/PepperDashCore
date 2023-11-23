@@ -214,7 +214,7 @@ namespace PepperDash.Core
             base.OnOpen();
 
             var url = Context.WebSocket.Url;
-            Debug.Console(2, Debug.ErrorLogLevel.Notice, "New WebSocket Connection from: {0}", url);
+            Debug.Console(0, Debug.ErrorLogLevel.Notice, "New WebSocket Connection from: {0}", url);
 
             _connectionTime = DateTime.Now;
         }
@@ -230,7 +230,7 @@ namespace PepperDash.Core
         {
             base.OnClose(e);
 
-            Debug.Console(2, Debug.ErrorLogLevel.Notice, "WebSocket UiClient Closing: {0} reason: {1}", e.Code, e.Reason);
+            Debug.Console(0, Debug.ErrorLogLevel.Notice, "WebSocket UiClient Closing: {0} reason: {1}", e.Code, e.Reason);
 
         }
 
