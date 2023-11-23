@@ -250,9 +250,21 @@ namespace PepperDash.Core
         {
             try
             {
+                if (levelString.Trim() == "?")
+                {
+                    CrestronConsole.ConsoleCommandResponse(
+$@"Used to set the minimum level of debug messages to be printed to the console:
+{eDebugLevel.Information.ToString()} = {eDebugLevel.Information}
+{eDebugLevel.Warning.ToString()} = {eDebugLevel.Warning}
+{eDebugLevel.Error.ToString()} = {eDebugLevel.Error}
+{eDebugLevel.Fatal.ToString()} = {eDebugLevel.Fatal}
+{eDebugLevel.Debug.ToString()} = {eDebugLevel.Debug}
+{eDebugLevel.Verbose.ToString()} = {eDebugLevel.Verbose}");
+                }
+
                 if (string.IsNullOrEmpty(levelString.Trim()))
                 {
-                    CrestronConsole.ConsoleCommandResponse("AppDebug level = {0}", _consoleLoggingLevelSwitch);
+                    CrestronConsole.ConsoleCommandResponse("AppDebug level = {0}", _consoleLoggingLevelSwitch.MinimumLevel);
                     return;
                 }
 

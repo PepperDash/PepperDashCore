@@ -123,7 +123,7 @@ namespace PepperDash.Core.Config
 			else
 				merged.Add("global", template["global"]);
 
-			Debug.Console(2, "MERGED CONFIG RESULT: \x0d\x0a{0}", merged);
+			//Debug.Console(2, "MERGED CONFIG RESULT: \x0d\x0a{0}", merged);
 			return merged;
 		}
 
