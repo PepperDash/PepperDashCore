@@ -134,7 +134,7 @@ namespace PepperDash.Core.JsonToSimpl
 		/// 
 		/// </summary>
 		/// <param name="level"></param>
-		public void setDebugLevel(int level)
+		public void setDebugLevel(uint level)
 		{
 			Debug.SetDebugLevel(level);
 		}
