@@ -465,13 +465,20 @@ $@"Used to set the minimum level of debug messages to be printed to the console:
 
         private static void LogMessage(uint level, string format, params object[] items)
         {
-            _logger.Write((LogEventLevel)level, format, items);
+            if (!_logLevels.ContainsKey(level)) return;
+
+            var logLevel = _logLevels[level];
+            _logger.Write(logLevel, format, items);
         }
 
         private static void LogMessage(uint level, IKeyed keyed, string format, params object[] items)
         {
+            if (!_logLevels.ContainsKey(level)) return;
+
+            var logLevel = _logLevels[level];
+            
             var log = _logger.ForContext("Key", keyed.Key);
-            log.Write((LogEventLevel)level, format, items);
+            log.Write(logLevel, format, items);
         }
 
 
