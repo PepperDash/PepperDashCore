@@ -153,7 +153,34 @@ namespace PepperDash.Core
                 _httpsServer.Log.Level = LogLevel.Trace;
                 _httpsServer.Log.Output = (d, s) =>
                 {
-                    Debug.Console(0, "{1} {0}\rCaller:{2}\rMessage:{3}\rs:{4}", d.Level.ToString(), d.Date.ToString(), d.Caller.ToString(), d.Message, s);
+                    uint level;
+
+                    switch(d.Level)
+                    {
+                        case WebSocketSharp.LogLevel.Fatal:
+                            level = 3;
+                            break;
+                        case WebSocketSharp.LogLevel.Error:
+                            level = 2;
+                            break;
+                        case WebSocketSharp.LogLevel.Warn:
+                            level = 1;
+                            break;
+                        case WebSocketSharp.LogLevel.Info:
+                            level = 0;
+                            break;
+                        case WebSocketSharp.LogLevel.Debug:
+                            level = 4;
+                            break;
+                        case WebSocketSharp.LogLevel.Trace:
+                            level = 5;
+                            break;
+                        default:
+                            level = 4;
+                            break;
+                    }
+                    
+                    Debug.Console(level, "{1} {0}\rCaller:{2}\rMessage:{3}\rs:{4}", d.Level.ToString(), d.Date.ToString(), d.Caller.ToString(), d.Message, s);
                 };
                 Debug.Console(0, "Starting");
 
