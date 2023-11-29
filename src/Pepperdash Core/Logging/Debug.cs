@@ -17,16 +17,6 @@ using System.Linq;
 
 namespace PepperDash.Core
 {
-    public enum eDebugLevel
-    {
-        Information = 0,
-        Warning = 1,
-        Error = 2,
-        Fatal = 3,
-        Debug = 4,
-        Verbose = 5,
-    }
-
     /// <summary>
     /// Contains debug commands for use in various situations
     /// </summary>
@@ -117,13 +107,12 @@ namespace PepperDash.Core
             {
                 Debug.Console(0, "Console debug level set to {0}", _consoleLoggingLevelSwitch.MinimumLevel);
             };
-            _websocketLoggingLevelSwitch = new LoggingLevelSwitch();
+            _websocketLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Verbose);
             _websocketSink = new DebugWebsocketSink(new JsonFormatter(renderMessage: true));
 
             // Instantiate the root logger
             _logger = new LoggerConfiguration()
-                //.WriteTo.Logger(lc => lc
-                //.WriteTo.Console(levelSwitch: _consoleLoggingLevelSwitch))
+                .MinimumLevel.Verbose()
                 .WriteTo.Sink(new DebugConsoleSink(new JsonFormatter(renderMessage: true)), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
                 .WriteTo.File(@"\user\debug\global-log-{Date}.txt"
@@ -254,14 +243,14 @@ namespace PepperDash.Core
             {
                 if (levelString.Trim() == "?")
                 {
-CrestronConsole.ConsoleCommandResponse(
-$@"Used to set the minimum level of debug messages to be printed to the console:
-{eDebugLevel.Information} = 0
-{eDebugLevel.Warning} = 1
-{eDebugLevel.Error} = 2
-{eDebugLevel.Fatal} = 3
-{eDebugLevel.Debug} = 4
-{eDebugLevel.Verbose} = 5");
+                    CrestronConsole.ConsoleCommandResponse(
+                    $@"Used to set the minimum level of debug messages to be printed to the console:
+{_logLevels[0]} = 0
+{_logLevels[1]} = 1
+{_logLevels[2]} = 2
+{_logLevels[3]} = 3
+{_logLevels[4]} = 4
+{_logLevels[5]} = 5");
                     return;
                 }
 
@@ -302,7 +291,6 @@ $@"Used to set the minimum level of debug messages to be printed to the console:
         public static void SetWebSocketMinimumDebugLevel(LogEventLevel level)
         {
             _websocketLoggingLevelSwitch.MinimumLevel = level;
-
             var levelInt = _logLevels.FirstOrDefault((l) => l.Value.Equals(level)).Key;
 
             var err = CrestronDataStoreStatic.SetLocalUintValue("WebsocketDebugLevel", levelInt);
