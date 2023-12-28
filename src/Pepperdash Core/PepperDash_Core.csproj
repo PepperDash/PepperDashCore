@@ -25,11 +25,6 @@
     <DocumentationFile>bin\4Series\$(Configuration)\PepperDashCore.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Net.Http" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Crestron.SimplSharp.SDK.Library" Version="2.20.42" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2">
       <Aliases>Full</Aliases>
