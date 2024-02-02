@@ -26,10 +26,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Crestron.SimplSharp.SDK.Library" Version="2.20.42" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2">
-      <Aliases>Full</Aliases>
-    </PackageReference>
-  </ItemGroup>
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Net.Http" />
   <ItemGroup>
     <Compile Remove="Comm\._GenericSshClient.cs" />
     <Compile Remove="Comm\._GenericTcpIpClient.cs" />

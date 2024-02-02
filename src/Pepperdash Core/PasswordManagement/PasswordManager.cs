@@ -1,14 +1,6 @@
-﻿extern alias Full;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Full.Newtonsoft.Json;
-using Full.Newtonsoft.Json.Linq;
 using Crestron.SimplSharp;
-using PepperDash.Core.JsonToSimpl;
-using PepperDash.Core.JsonStandardObjects;
 
 namespace PepperDash.Core.PasswordManagement
 {
