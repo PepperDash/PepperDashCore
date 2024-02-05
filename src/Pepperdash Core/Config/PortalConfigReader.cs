@@ -79,7 +79,7 @@ namespace PepperDash.Core.Config
 				merged.Add("info", template["info"]);
 
 			merged.Add("devices", MergeArraysOnTopLevelProperty(template["devices"] as JArray,
-				system["devices"] as JArray, "uid", "devices"));
+				system["devices"] as JArray, "key", "devices"));
 
 			if (system["rooms"] == null)
 				merged.Add("rooms", template["rooms"]);
@@ -117,7 +117,7 @@ namespace PepperDash.Core.Config
 			else
 				merged.Add("global", template["global"]);
 
-			Debug.Console(2, "MERGED CONFIG RESULT: \x0d\x0a{0}", merged);
+			//Debug.Console(2, "MERGED CONFIG RESULT: \x0d\x0a{0}", merged);
 			return merged;
 		}
 

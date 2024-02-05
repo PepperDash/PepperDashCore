@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Serilog;
+using Serilog.Core;
+using Serilog.Sinks.SystemConsole;
 
 namespace PepperDash.Core
 {
@@ -10,6 +13,7 @@ namespace PepperDash.Core
 	/// </summary>
 	public class Device : IKeyName
 	{
+
         /// <summary>
         /// Unique Key
         /// </summary>
@@ -51,7 +55,6 @@ namespace PepperDash.Core
 			Key = key;
 			if (key.Contains('.')) Debug.Console(0, this, "WARNING: Device name's should not include '.'");
 			Name = "";
-
 		}
 
         /// <summary>
