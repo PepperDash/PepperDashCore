@@ -1,15 +1,9 @@
-﻿extern alias Full;
-
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
-using System.Text;
-
-using Full.Newtonsoft.Json;
-using Full.Newtonsoft.Json.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
-
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 
 namespace PepperDash.Core.Config

@@ -1,14 +1,9 @@
-﻿extern alias Full;
-
-using System;
-//using System.IO;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
-using Full.Newtonsoft.Json;
-using Full.Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Core.JsonToSimpl
 {
@@ -164,7 +159,7 @@ namespace PepperDash.Core.JsonToSimpl
             /// <returns></returns>
 			public static JObject ParseObject(string json)
 			{
-				using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
+				using (var reader = new JsonTextReader(new StringReader(json)))
 				{
 					var startDepth = reader.Depth;
 					var obj = JObject.Load(reader);
@@ -181,7 +176,7 @@ namespace PepperDash.Core.JsonToSimpl
             /// <returns></returns>
 			public static JArray ParseArray(string json)
 			{
-				using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
+				using (var reader = new JsonTextReader(new StringReader(json)))
 				{
 					var startDepth = reader.Depth;
 					var obj = JArray.Load(reader);
