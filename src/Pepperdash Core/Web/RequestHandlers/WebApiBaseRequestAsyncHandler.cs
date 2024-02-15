@@ -157,7 +157,7 @@ namespace PepperDash.Core.Web.RequestHandlers
 
             var handlerTask = handler(context);
 
-            handlerTask.Wait();
+            handlerTask.GetAwaiter().GetResult();
         }
     }
 }
