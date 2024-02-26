@@ -257,6 +257,11 @@ namespace PepperDash.Core
                     {
                         Client.Connect();
                         TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
+                        if (TheStream.DataAvailable)
+                        {
+                            // empty the buffer if there is data
+                            string str = TheStream.Read();
+                        }
                         TheStream.DataReceived += Stream_DataReceived;
                         Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connected");
                         ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
@@ -414,29 +419,33 @@ namespace PepperDash.Core
 		/// </summary>
 		void Stream_DataReceived(object sender, Crestron.SimplSharp.Ssh.Common.ShellDataEventArgs e)
 		{
-			var bytes = e.Data;
-			if (bytes.Length > 0)
+            if (((ShellStream)sender).Length <= 0L)
+            {
+                return;
+            }
+            var response = ((ShellStream)sender).Read(); 
+ 
+			var bytesHandler = BytesReceived;
+            
+		    if (bytesHandler != null)
+		    {
+                var bytes = Encoding.UTF8.GetBytes(response);
+		        if (StreamDebugging.RxStreamDebuggingIsEnabled)
+		        {
+		            Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
+		        }
+                bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
+		    }
+				
+			var textHandler = TextReceived;
+			if (textHandler != null)
 			{
-				var bytesHandler = BytesReceived;
-			    if (bytesHandler != null)
-			    {
-			        if (StreamDebugging.RxStreamDebuggingIsEnabled)
-			        {
-			            Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
-			        }
-                    bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
-			    }
-					
-				var textHandler = TextReceived;
-				if (textHandler != null)
-				{
-					var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
-                    if (StreamDebugging.RxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Received: '{0}'", ComTextHelper.GetDebugText(str));
+                if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                    Debug.Console(0, this, "Received: '{0}'", ComTextHelper.GetDebugText(response));
 
-                    textHandler(this, new GenericCommMethodReceiveTextArgs(str));
-                }
-			}
+                textHandler(this, new GenericCommMethodReceiveTextArgs(response));
+            }
+			
 		}
 
 
