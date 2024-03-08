@@ -24,11 +24,11 @@ namespace PepperDash.Core
         private static Dictionary<uint, LogEventLevel> _logLevels = new Dictionary<uint, LogEventLevel>()
         {
             {0, LogEventLevel.Information },
-            {1, LogEventLevel.Warning },
-            {2, LogEventLevel.Error },
-            {3, LogEventLevel.Fatal },
-            {4, LogEventLevel.Debug },
-            {5, LogEventLevel.Verbose },
+            {3, LogEventLevel.Warning },
+            {4, LogEventLevel.Error },
+            {5, LogEventLevel.Fatal },
+            {1, LogEventLevel.Debug },
+            {2, LogEventLevel.Verbose },
         };
 
         private static Logger _logger;
@@ -104,7 +104,7 @@ namespace PepperDash.Core
             _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
             _consoleLoggingLevelSwitch.MinimumLevelChanged += (sender, args) =>
             {
-                Debug.Console(0, "Console debug level set to {0}", _consoleLoggingLevelSwitch.MinimumLevel);
+                Console(0, "Console debug level set to {0}", _consoleLoggingLevelSwitch.MinimumLevel);
             };
             _websocketLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Verbose);
             _websocketSink = new DebugWebsocketSink(new JsonFormatter(renderMessage: true));
@@ -116,7 +116,7 @@ namespace PepperDash.Core
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
                 .WriteTo.File(@"\user\debug\global-log-{Date}.txt"
                     , rollingInterval: RollingInterval.Day
-                    , restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
+                    , restrictedToMinimumLevel: LogEventLevel.Debug)
                 .CreateLogger();
 
             // Get the assembly version and print it to console and the log
@@ -455,6 +455,7 @@ namespace PepperDash.Core
             if (!_logLevels.ContainsKey(level)) return;
 
             var logLevel = _logLevels[level];
+            
             _logger.Write(logLevel, format, items);
         }
 
@@ -464,8 +465,8 @@ namespace PepperDash.Core
 
             var logLevel = _logLevels[level];
             
-            var log = _logger.ForContext("Key", keyed.Key);
-            log.Write(logLevel, format, items);
+            var logger = _logger.ForContext("Key", keyed.Key);
+            logger.Write(logLevel, format, items);
         }
 
 
