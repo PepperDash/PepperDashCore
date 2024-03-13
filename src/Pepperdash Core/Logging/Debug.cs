@@ -21,6 +21,7 @@ namespace PepperDash.Core
     /// </summary>
     public static class Debug
     {
+        private static string LevelStoreKey = "ConsoleDebugLevel";
         private static Dictionary<uint, LogEventLevel> _logLevels = new Dictionary<uint, LogEventLevel>()
         {
             {0, LogEventLevel.Information },
@@ -101,7 +102,9 @@ namespace PepperDash.Core
 
         static Debug()
         {
-            _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
+            var defaultConsoleLevel = GetStoredLogEventLevel();
+
+            _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: defaultConsoleLevel);
             _consoleLoggingLevelSwitch.MinimumLevelChanged += (sender, args) =>
             {
                 Console(0, "Console debug level set to {0}", _consoleLoggingLevelSwitch.MinimumLevel);
@@ -184,6 +187,24 @@ namespace PepperDash.Core
             {
 
                 CrestronConsole.PrintLine("Initializing of CrestronLogger failed: {0}", e);
+            }
+        }
+
+        private static LogEventLevel GetStoredLogEventLevel()
+        {
+            try
+            {
+                var result = CrestronDataStoreStatic.GetLocalUintValue(LevelStoreKey, out uint logLevel);
+
+                if(result != CrestronDataStore.CDS_ERROR.CDS_SUCCESS || logLevel > 5 || logLevel < 0)
+                {
+                    return LogEventLevel.Information;
+                }
+
+                return _logLevels[logLevel];
+            } catch
+            {
+                return LogEventLevel.Information;
             }
         }
 
