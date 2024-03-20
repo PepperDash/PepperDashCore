@@ -280,11 +280,25 @@ namespace PepperDash.Core
                     return;
                 }
 
-                var level = Convert.ToUInt32(levelString);
+                if(int.TryParse(levelString, out var levelInt))
+                {
+                    if(levelInt < 0 || levelInt > 5)
+                    {
+                        CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level. If using a number, value must be between 0-5");
+                        return;
+                    }
+                    SetDebugLevel((LogEventLevel)levelInt);
+                    return;
+                }
 
-                if (_logLevels.ContainsKey(level))
-                    SetDebugLevel(level);
-            }
+                if(Enum.TryParse<LogEventLevel>(levelString, out var levelEnum))
+                {
+                    SetDebugLevel(levelEnum);
+                    return;
+                }
+
+                CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level");
+            }          
             catch
             {
                 CrestronConsole.ConsoleCommandResponse("Usage: appdebug:P [0-5]");
@@ -297,15 +311,28 @@ namespace PepperDash.Core
         /// <param name="level"> Valid values 0-5</param>
         public static void SetDebugLevel(uint level)
         {
-            if (_logLevels.ContainsKey(level))
-               _consoleLoggingLevelSwitch.MinimumLevel = _logLevels[level];
+            if(!_logLevels.TryGetValue(level, out var logLevel))
+            {
+                logLevel = LogEventLevel.Information;
+
+                CrestronConsole.PrintLine($"{level} not valid. Setting level to {logLevel}");
+
+                SetDebugLevel(logLevel);
+            }
+
+            SetDebugLevel(logLevel);
+        }
+
+        public static void SetDebugLevel(LogEventLevel level)
+        {
+            _consoleLoggingLevelSwitch.MinimumLevel = level;
 
             CrestronConsole.ConsoleCommandResponse("[Application {0}], Debug level set to {1}",
                 InitialParametersClass.ApplicationNumber, _consoleLoggingLevelSwitch.MinimumLevel);
 
-            var err = CrestronDataStoreStatic.SetLocalUintValue("ConsoleDebugLevel", level);
+            var err = CrestronDataStoreStatic.SetLocalUintValue("ConsoleDebugLevel", (uint) level);
             if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
-                CrestronConsole.PrintLine("Error saving console debug level setting: {0}", err);
+                CrestronConsole.PrintLine($"Error saving console debug level setting: {err}");
         }
 
         public static void SetWebSocketMinimumDebugLevel(LogEventLevel level)
@@ -470,6 +497,18 @@ namespace PepperDash.Core
                 CrestronConsole.ConsoleCommandResponse(l + CrestronEnvironment.NewLine);
         }
 
+        public static void LogMessage(LogEventLevel level, string message, params object[] args)
+        {
+            _logger.Write(level, message, args);
+        }
+
+        public static void LogMessage(LogEventLevel level, IKeyed keyed, string message, params object[] args)
+        {
+            var log = _logger.ForContext("Key", keyed.Key);
+
+            log.Write(level, message, args);
+        }
+
 
         private static void LogMessage(uint level, string format, params object[] items)
         {
@@ -477,7 +516,7 @@ namespace PepperDash.Core
 
             var logLevel = _logLevels[level];
             
-            _logger.Write(logLevel, format, items);
+            LogMessage(logLevel, format, items );
         }
 
         private static void LogMessage(uint level, IKeyed keyed, string format, params object[] items)
@@ -485,9 +524,8 @@ namespace PepperDash.Core
             if (!_logLevels.ContainsKey(level)) return;
 
             var logLevel = _logLevels[level];
-            
-            var logger = _logger.ForContext("Key", keyed.Key);
-            logger.Write(logLevel, format, items);
+
+            LogMessage(logLevel, keyed, format, items);
         }
 
 
