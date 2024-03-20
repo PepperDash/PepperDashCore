@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
-using Crestron.SimplSharp.Reflection;
+using System.Reflection;
 using Crestron.SimplSharp.CrestronLogger;
 using Crestron.SimplSharp.CrestronIO;
 using Newtonsoft.Json;
@@ -21,8 +21,9 @@ namespace PepperDash.Core
     /// </summary>
     public static class Debug
     {
-        private static string LevelStoreKey = "ConsoleDebugLevel";
-        private static Dictionary<uint, LogEventLevel> _logLevels = new Dictionary<uint, LogEventLevel>()
+        private static readonly string LevelStoreKey = "ConsoleDebugLevel";
+
+        private static readonly Dictionary<uint, LogEventLevel> _logLevels = new Dictionary<uint, LogEventLevel>()
         {
             {0, LogEventLevel.Information },
             {3, LogEventLevel.Warning },
@@ -32,18 +33,18 @@ namespace PepperDash.Core
             {2, LogEventLevel.Verbose },
         };
 
-        private static Logger _logger;
+        private static readonly Logger _logger;
 
-        private static LoggingLevelSwitch _consoleLoggingLevelSwitch;
+        private static readonly LoggingLevelSwitch _consoleLoggingLevelSwitch;
 
-        private static LoggingLevelSwitch _websocketLoggingLevelSwitch;
+        private static readonly LoggingLevelSwitch _websocketLoggingLevelSwitch;
 
         public static LogEventLevel WebsocketMinimumLogLevel
         {
             get { return _websocketLoggingLevelSwitch.MinimumLevel; }
         }
 
-        private static DebugWebsocketSink _websocketSink;
+        private static readonly DebugWebsocketSink _websocketSink;
 
         public static DebugWebsocketSink WebsocketSink
         {
@@ -102,13 +103,14 @@ namespace PepperDash.Core
 
         static Debug()
         {
+            CrestronDataStoreStatic.InitCrestronDataStore();
+
             var defaultConsoleLevel = GetStoredLogEventLevel();
 
-            _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: defaultConsoleLevel);
-            _consoleLoggingLevelSwitch.MinimumLevelChanged += (sender, args) =>
-            {
-                Console(0, "Console debug level set to {0}", _consoleLoggingLevelSwitch.MinimumLevel);
-            };
+            _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
+
+            _consoleLoggingLevelSwitch.MinimumLevel = defaultConsoleLevel;
+
             _websocketLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Verbose);
             _websocketSink = new DebugWebsocketSink(new JsonFormatter(renderMessage: true));
 
@@ -125,15 +127,11 @@ namespace PepperDash.Core
             // Get the assembly version and print it to console and the log
             GetVersion();
 
-            string msg = "";
+            string msg = $"[App {InitialParametersClass.ApplicationNumber}] Using PepperDash_Core v{PepperDashCoreVersion}";
 
-            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
+            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
             {
-                msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
-            }
-            else if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
-            {
-                msg = string.Format("[Room {0}] Using PepperDash_Core v{1}", InitialParametersClass.RoomId, PepperDashCoreVersion);
+                msg = $"[Room {InitialParametersClass.RoomId}] Using PepperDash_Core v{PepperDashCoreVersion}";
             }
 
             CrestronConsole.PrintLine(msg);
@@ -141,8 +139,7 @@ namespace PepperDash.Core
             LogError(ErrorLogLevel.Notice, msg);
 
 			IncludedExcludedKeys = new Dictionary<string, object>();
-
-            //CrestronDataStoreStatic.InitCrestronDataStore();
+            
             if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
             {
                 // Add command to console
@@ -188,22 +185,35 @@ namespace PepperDash.Core
 
                 CrestronConsole.PrintLine("Initializing of CrestronLogger failed: {0}", e);
             }
+
+            _consoleLoggingLevelSwitch.MinimumLevelChanged += (sender, args) =>
+            {
+                Console(0, "Console debug level set to {0}", _consoleLoggingLevelSwitch.MinimumLevel);
+            };
         }
 
         private static LogEventLevel GetStoredLogEventLevel()
         {
             try
             {
-                var result = CrestronDataStoreStatic.GetLocalUintValue(LevelStoreKey, out uint logLevel);
+                var result = CrestronDataStoreStatic.GetLocalIntValue(LevelStoreKey, out int logLevel);                
 
-                if(result != CrestronDataStore.CDS_ERROR.CDS_SUCCESS || logLevel > 5 || logLevel < 0)
+                if (result != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
                 {
+                    CrestronConsole.Print($"Unable to retrieve stored log level.\r\nError: {result}.\r\nSetting level to {LogEventLevel.Information}\r\n");
                     return LogEventLevel.Information;
                 }
 
-                return _logLevels[logLevel];
-            } catch
+                if(logLevel < 0 || logLevel > 5)
+                {
+                    CrestronConsole.PrintLine($"Stored Log level not valid: {logLevel}. Setting level to {LogEventLevel.Information}");
+                    return LogEventLevel.Information;
+                }
+
+                return (LogEventLevel)logLevel;
+            } catch (Exception ex)
             {
+                CrestronConsole.PrintLine($"Exception retrieving log level: {ex.Message}");
                 return LogEventLevel.Information;
             }
         }
@@ -217,9 +227,7 @@ namespace PepperDash.Core
 
             if (ver != null && ver.Length > 0)
             {
-                var verAttribute = ver[0] as AssemblyInformationalVersionAttribute;
-
-                if (verAttribute != null)
+                if (ver[0] is AssemblyInformationalVersionAttribute verAttribute)
                 {
                     PepperDashCoreVersion = verAttribute.InformationalVersion;
                 }
@@ -227,8 +235,7 @@ namespace PepperDash.Core
             else
             {
                 var version = assembly.GetName().Version;
-                PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build,
-                    version.Revision);
+                PepperDashCoreVersion = version.ToString();
             }
         }
 
@@ -287,7 +294,7 @@ namespace PepperDash.Core
                         CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level. If using a number, value must be between 0-5");
                         return;
                     }
-                    SetDebugLevel((LogEventLevel)levelInt);
+                    SetDebugLevel((uint) levelInt);
                     return;
                 }
 
@@ -315,7 +322,7 @@ namespace PepperDash.Core
             {
                 logLevel = LogEventLevel.Information;
 
-                CrestronConsole.PrintLine($"{level} not valid. Setting level to {logLevel}");
+                CrestronConsole.ConsoleCommandResponse($"{level} not valid. Setting level to {logLevel}");
 
                 SetDebugLevel(logLevel);
             }
@@ -327,10 +334,15 @@ namespace PepperDash.Core
         {
             _consoleLoggingLevelSwitch.MinimumLevel = level;
 
-            CrestronConsole.ConsoleCommandResponse("[Application {0}], Debug level set to {1}",
+            CrestronConsole.ConsoleCommandResponse("[Application {0}], Debug level set to {1}\r\n",
                 InitialParametersClass.ApplicationNumber, _consoleLoggingLevelSwitch.MinimumLevel);
 
-            var err = CrestronDataStoreStatic.SetLocalUintValue("ConsoleDebugLevel", (uint) level);
+            CrestronConsole.ConsoleCommandResponse($"Storing level {level}:{(int) level}");
+
+            var err = CrestronDataStoreStatic.SetLocalIntValue(LevelStoreKey, (int) level);
+
+            CrestronConsole.ConsoleCommandResponse($"Store result: {err}:{(int)level}");
+
             if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
                 CrestronConsole.PrintLine($"Error saving console debug level setting: {err}");
         }
@@ -361,7 +373,7 @@ namespace PepperDash.Core
                     return;
                 }
 
-                SetDoNotLoadConfigOnNextBoot(Boolean.Parse(stateString));
+                SetDoNotLoadConfigOnNextBoot(bool.Parse(stateString));
             }
             catch
             {
@@ -734,7 +746,7 @@ namespace PepperDash.Core
         {
             if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
             {
-                CheckForMigration();
+                // CheckForMigration();
                 return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
             }
 
