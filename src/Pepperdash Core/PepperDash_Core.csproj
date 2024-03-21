@@ -3,7 +3,7 @@
     <RootNamespace>PepperDash.Core</RootNamespace>
     <AssemblyName>PepperDashCore</AssemblyName>
     <TargetFrameworks>net472;net6</TargetFrameworks>
-    <Deterministic>false</Deterministic>
+    <Deterministic>true</Deterministic>
     <NeutralLanguage>en</NeutralLanguage>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <SignAssembly>False</SignAssembly>
@@ -13,9 +13,10 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PepperDash/PepperDashCore</RepositoryUrl>
     <PackageTags>crestron;4series;</PackageTags>
-    <Version>$(Version)</Version>
+    <Version>2.0.0-local</Version>
     <InformationalVersion>$(Version)</InformationalVersion>
     <PackageOutputPath>../../package</PackageOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugType>full</DebugType>

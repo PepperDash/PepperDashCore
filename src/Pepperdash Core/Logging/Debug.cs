@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
-using Crestron.SimplSharp.Reflection;
+using System.Reflection;
 using Crestron.SimplSharp.CrestronLogger;
 using Crestron.SimplSharp.CrestronIO;
 using Newtonsoft.Json;
@@ -12,7 +12,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Json;
 using Crestron.SimplSharp.CrestronDataStore;
-using System.Linq;
+using PepperDash.Core.Logging;
 
 namespace PepperDash.Core
 {
@@ -21,28 +21,31 @@ namespace PepperDash.Core
     /// </summary>
     public static class Debug
     {
-        private static Dictionary<uint, LogEventLevel> _logLevels = new Dictionary<uint, LogEventLevel>()
+        private static readonly string LevelStoreKey = "ConsoleDebugLevel";
+        private static readonly string WebSocketLevelStoreKey = "WebsocketDebugLevel";
+
+        private static readonly Dictionary<uint, LogEventLevel> _logLevels = new Dictionary<uint, LogEventLevel>()
         {
             {0, LogEventLevel.Information },
-            {1, LogEventLevel.Warning },
-            {2, LogEventLevel.Error },
-            {3, LogEventLevel.Fatal },
-            {4, LogEventLevel.Debug },
-            {5, LogEventLevel.Verbose },
+            {3, LogEventLevel.Warning },
+            {4, LogEventLevel.Error },
+            {5, LogEventLevel.Fatal },
+            {1, LogEventLevel.Debug },
+            {2, LogEventLevel.Verbose },
         };
 
         private static Logger _logger;
 
-        private static LoggingLevelSwitch _consoleLoggingLevelSwitch;
+        private static readonly LoggingLevelSwitch _consoleLoggingLevelSwitch;
 
-        private static LoggingLevelSwitch _websocketLoggingLevelSwitch;
+        private static readonly LoggingLevelSwitch _websocketLoggingLevelSwitch;
 
         public static LogEventLevel WebsocketMinimumLogLevel
         {
             get { return _websocketLoggingLevelSwitch.MinimumLevel; }
         }
 
-        private static DebugWebsocketSink _websocketSink;
+        private static readonly DebugWebsocketSink _websocketSink;
 
         public static DebugWebsocketSink WebsocketSink
         {
@@ -99,38 +102,70 @@ namespace PepperDash.Core
 
 		private static readonly Dictionary<string, object> IncludedExcludedKeys;
 
+        private static readonly LoggerConfiguration _defaultLoggerConfiguration;
+
+        private static LoggerConfiguration _loggerConfiguration;
+
+        public static LoggerConfiguration LoggerConfiguration => _loggerConfiguration;
+
         static Debug()
         {
-            _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
-            _consoleLoggingLevelSwitch.MinimumLevelChanged += (sender, args) =>
-            {
-                Debug.Console(0, "Console debug level set to {0}", _consoleLoggingLevelSwitch.MinimumLevel);
-            };
-            _websocketLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Verbose);
+            CrestronDataStoreStatic.InitCrestronDataStore();
+
+            var defaultConsoleLevel = GetStoredLogEventLevel(LevelStoreKey);
+
+            var defaultWebsocketLevel = GetStoredLogEventLevel(WebSocketLevelStoreKey);
+
+            _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: defaultConsoleLevel);            
+
+            _websocketLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: defaultWebsocketLevel);
+
             _websocketSink = new DebugWebsocketSink(new JsonFormatter(renderMessage: true));
 
-            // Instantiate the root logger
-            _logger = new LoggerConfiguration()
+            var logFilePath = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ?
+                $@"{Directory.GetApplicationRootDirectory()}{Path.DirectorySeparatorChar}user{Path.DirectorySeparatorChar}debug{Path.DirectorySeparatorChar}app{InitialParametersClass.ApplicationNumber}{Path.DirectorySeparatorChar}global-log.log" :
+                $@"{Directory.GetApplicationRootDirectory()}{Path.DirectorySeparatorChar}user{Path.DirectorySeparatorChar}debug{Path.DirectorySeparatorChar}room{InitialParametersClass.RoomId}{Path.DirectorySeparatorChar}global-log.log";
+
+            CrestronConsole.PrintLine($"Saving log files to {logFilePath}");
+
+            _defaultLoggerConfiguration = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
                 .WriteTo.Sink(new DebugConsoleSink(new JsonFormatter(renderMessage: true)), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
-                .WriteTo.File(@"\user\debug\global-log-{Date}.txt"
-                    , rollingInterval: RollingInterval.Day
-                    , restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
-                .CreateLogger();
+                .WriteTo.File(logFilePath,
+                    outputTemplate: "[{Timestamp}][{Level}][{Properties.Key}]{Message}{NewLine}",
+                    rollingInterval: RollingInterval.Day,
+                    restrictedToMinimumLevel: LogEventLevel.Debug,
+                    retainedFileCountLimit: CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ? 30 : 60
+                ); ;
 
+            try
+            {
+                if (InitialParametersClass.NumberOfRemovableDrives > 0)
+                {
+                    CrestronConsole.PrintLine("{0} RM Drive(s) Present. Initializing CrestronLogger", InitialParametersClass.NumberOfRemovableDrives);
+                    _defaultLoggerConfiguration.WriteTo.Sink(new DebugCrestronLoggerSink());
+                }
+                else
+                    CrestronConsole.PrintLine("No RM Drive(s) Present. Not using Crestron Logger");
+            }
+            catch (Exception e)
+            {
+                CrestronConsole.PrintLine("Initializing of CrestronLogger failed: {0}", e);
+            }
+
+            // Instantiate the root logger
+            _loggerConfiguration = _defaultLoggerConfiguration;
+
+            _logger = _loggerConfiguration.CreateLogger();
             // Get the assembly version and print it to console and the log
             GetVersion();
 
-            string msg = "";
+            string msg = $"[App {InitialParametersClass.ApplicationNumber}] Using PepperDash_Core v{PepperDashCoreVersion}";
 
-            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
+            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
             {
-                msg = string.Format("[App {0}] Using PepperDash_Core v{1}", InitialParametersClass.ApplicationNumber, PepperDashCoreVersion);
-            }
-            else if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
-            {
-                msg = string.Format("[Room {0}] Using PepperDash_Core v{1}", InitialParametersClass.RoomId, PepperDashCoreVersion);
+                msg = $"[Room {InitialParametersClass.RoomId}] Using PepperDash_Core v{PepperDashCoreVersion}";
             }
 
             CrestronConsole.PrintLine(msg);
@@ -138,8 +173,7 @@ namespace PepperDash.Core
             LogError(ErrorLogLevel.Notice, msg);
 
 			IncludedExcludedKeys = new Dictionary<string, object>();
-
-            //CrestronDataStoreStatic.InitCrestronDataStore();
+            
             if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
             {
                 // Add command to console
@@ -170,20 +204,49 @@ namespace PepperDash.Core
             if(DoNotLoadConfigOnNextBoot)
                 CrestronConsole.PrintLine(string.Format("Program {0} will not load config after next boot.  Use console command go:{0} to load the config manually", InitialParametersClass.ApplicationNumber));
 
+            _consoleLoggingLevelSwitch.MinimumLevelChanged += (sender, args) =>
+            {
+                Console(0, "Console debug level set to {0}", _consoleLoggingLevelSwitch.MinimumLevel);
+            };
+        }
+
+        public static void UpdateLoggerConfiguration(LoggerConfiguration config)
+        {
+            _loggerConfiguration = config;
+
+            _logger = config.CreateLogger();
+        }
+
+        public static void ResetLoggerConfiguration()
+        {
+            _loggerConfiguration = _defaultLoggerConfiguration;
+
+            _logger = _loggerConfiguration.CreateLogger();
+        }
+
+        private static LogEventLevel GetStoredLogEventLevel(string levelStoreKey)
+        {
             try
             {
-                if (InitialParametersClass.NumberOfRemovableDrives > 0)
-                {
-                    CrestronConsole.PrintLine("{0} RM Drive(s) Present.", InitialParametersClass.NumberOfRemovableDrives);
-                    CrestronLogger.Initialize(2, LoggerModeEnum.DEFAULT); // Use RM instead of DEFAULT as not to double-up console messages.
-                }
-                else
-                    CrestronConsole.PrintLine("No RM Drive(s) Present.");
-            }
-            catch (Exception e)
-            {
+                var result = CrestronDataStoreStatic.GetLocalIntValue(levelStoreKey, out int logLevel);                
 
-                CrestronConsole.PrintLine("Initializing of CrestronLogger failed: {0}", e);
+                if (result != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
+                {
+                    CrestronConsole.Print($"Unable to retrieve stored log level for {levelStoreKey}.\r\nError: {result}.\r\nSetting level to {LogEventLevel.Information}\r\n");
+                    return LogEventLevel.Information;
+                }
+
+                if(logLevel < 0 || logLevel > 5)
+                {
+                    CrestronConsole.PrintLine($"Stored Log level not valid for {levelStoreKey}: {logLevel}. Setting level to {LogEventLevel.Information}");
+                    return LogEventLevel.Information;
+                }
+
+                return (LogEventLevel)logLevel;
+            } catch (Exception ex)
+            {
+                CrestronConsole.PrintLine($"Exception retrieving log level for {levelStoreKey}: {ex.Message}");
+                return LogEventLevel.Information;
             }
         }
 
@@ -196,9 +259,7 @@ namespace PepperDash.Core
 
             if (ver != null && ver.Length > 0)
             {
-                var verAttribute = ver[0] as AssemblyInformationalVersionAttribute;
-
-                if (verAttribute != null)
+                if (ver[0] is AssemblyInformationalVersionAttribute verAttribute)
                 {
                     PepperDashCoreVersion = verAttribute.InformationalVersion;
                 }
@@ -206,8 +267,7 @@ namespace PepperDash.Core
             else
             {
                 var version = assembly.GetName().Version;
-                PepperDashCoreVersion = string.Format("{0}.{1}.{2}.{3}", version.Major, version.Minor, version.Build,
-                    version.Revision);
+                PepperDashCoreVersion = version.ToString();
             }
         }
 
@@ -259,11 +319,25 @@ namespace PepperDash.Core
                     return;
                 }
 
-                var level = Convert.ToUInt32(levelString);
+                if(int.TryParse(levelString, out var levelInt))
+                {
+                    if(levelInt < 0 || levelInt > 5)
+                    {
+                        CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level. If using a number, value must be between 0-5");
+                        return;
+                    }
+                    SetDebugLevel((uint) levelInt);
+                    return;
+                }
 
-                if (_logLevels.ContainsKey(level))
-                    SetDebugLevel(level);
-            }
+                if(Enum.TryParse<LogEventLevel>(levelString, out var levelEnum))
+                {
+                    SetDebugLevel(levelEnum);
+                    return;
+                }
+
+                CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level");
+            }          
             catch
             {
                 CrestronConsole.ConsoleCommandResponse("Usage: appdebug:P [0-5]");
@@ -276,23 +350,41 @@ namespace PepperDash.Core
         /// <param name="level"> Valid values 0-5</param>
         public static void SetDebugLevel(uint level)
         {
-            if (_logLevels.ContainsKey(level))
-               _consoleLoggingLevelSwitch.MinimumLevel = _logLevels[level];
+            if(!_logLevels.TryGetValue(level, out var logLevel))
+            {
+                logLevel = LogEventLevel.Information;
 
-            CrestronConsole.ConsoleCommandResponse("[Application {0}], Debug level set to {1}",
+                CrestronConsole.ConsoleCommandResponse($"{level} not valid. Setting level to {logLevel}");
+
+                SetDebugLevel(logLevel);
+            }
+
+            SetDebugLevel(logLevel);
+        }
+
+        public static void SetDebugLevel(LogEventLevel level)
+        {
+            _consoleLoggingLevelSwitch.MinimumLevel = level;
+
+            CrestronConsole.ConsoleCommandResponse("[Application {0}], Debug level set to {1}\r\n",
                 InitialParametersClass.ApplicationNumber, _consoleLoggingLevelSwitch.MinimumLevel);
 
-            var err = CrestronDataStoreStatic.SetLocalUintValue("ConsoleDebugLevel", level);
+            CrestronConsole.ConsoleCommandResponse($"Storing level {level}:{(int) level}");
+
+            var err = CrestronDataStoreStatic.SetLocalIntValue(LevelStoreKey, (int) level);
+
+            CrestronConsole.ConsoleCommandResponse($"Store result: {err}:{(int)level}");
+
             if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
-                CrestronConsole.PrintLine("Error saving console debug level setting: {0}", err);
+                CrestronConsole.PrintLine($"Error saving console debug level setting: {err}");
         }
 
         public static void SetWebSocketMinimumDebugLevel(LogEventLevel level)
         {
-            _websocketLoggingLevelSwitch.MinimumLevel = level;
-            var levelInt = _logLevels.FirstOrDefault((l) => l.Value.Equals(level)).Key;
+            _websocketLoggingLevelSwitch.MinimumLevel = level;            
 
-            var err = CrestronDataStoreStatic.SetLocalUintValue("WebsocketDebugLevel", levelInt);
+            var err = CrestronDataStoreStatic.SetLocalUintValue(WebSocketLevelStoreKey, (uint) level);
+
             if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
                 Console(0, "Error saving websocket debug level setting: {0}", err);
 
@@ -313,7 +405,7 @@ namespace PepperDash.Core
                     return;
                 }
 
-                SetDoNotLoadConfigOnNextBoot(Boolean.Parse(stateString));
+                SetDoNotLoadConfigOnNextBoot(bool.Parse(stateString));
             }
             catch
             {
@@ -449,13 +541,26 @@ namespace PepperDash.Core
                 CrestronConsole.ConsoleCommandResponse(l + CrestronEnvironment.NewLine);
         }
 
+        public static void LogMessage(LogEventLevel level, string message, params object[] args)
+        {
+            _logger.Write(level, message, args);
+        }
+
+        public static void LogMessage(LogEventLevel level, IKeyed keyed, string message, params object[] args)
+        {
+            var log = _logger.ForContext("Key", keyed.Key);
+
+            log.Write(level, message, args);
+        }
+
 
         private static void LogMessage(uint level, string format, params object[] items)
         {
             if (!_logLevels.ContainsKey(level)) return;
 
             var logLevel = _logLevels[level];
-            _logger.Write(logLevel, format, items);
+            
+            LogMessage(logLevel, format, items );
         }
 
         private static void LogMessage(uint level, IKeyed keyed, string format, params object[] items)
@@ -463,9 +568,8 @@ namespace PepperDash.Core
             if (!_logLevels.ContainsKey(level)) return;
 
             var logLevel = _logLevels[level];
-            
-            var log = _logger.ForContext("Key", keyed.Key);
-            log.Write(logLevel, format, items);
+
+            LogMessage(logLevel, keyed, format, items);
         }
 
 
@@ -560,14 +664,15 @@ namespace PepperDash.Core
         /// or above the level provided, then the output will be written to both console and the log. Otherwise
         /// it will only be written to the log.
         /// </summary>
+        [Obsolete("Use LogMessage methods")]
         public static void ConsoleWithLog(uint level, string format, params object[] items)
         {
             LogMessage(level, format, items);
 
-            var str = string.Format(format, items);
+            // var str = string.Format(format, items);
             //if (Level >= level)
             //    CrestronConsole.PrintLine("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
-            CrestronLogger.WriteToLog(str, level);
+            // CrestronLogger.WriteToLog(str, level);
         }
 
         /// <summary>
@@ -575,12 +680,13 @@ namespace PepperDash.Core
         /// or above the level provided, then the output will be written to both console and the log. Otherwise
         /// it will only be written to the log.
         /// </summary>
+        [Obsolete("Use LogMessage methods")]
         public static void ConsoleWithLog(uint level, IKeyed dev, string format, params object[] items)
         {
             LogMessage(level, dev, format, items);
 
-            var str = string.Format(format, items);
-            CrestronLogger.WriteToLog(string.Format("[{0}] {1}", dev.Key, str), level);
+            // var str = string.Format(format, items);
+            // CrestronLogger.WriteToLog(string.Format("[{0}] {1}", dev.Key, str), level);
         }
 
         /// <summary>
@@ -674,7 +780,7 @@ namespace PepperDash.Core
         {
             if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
             {
-                CheckForMigration();
+                // CheckForMigration();
                 return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
             }
 

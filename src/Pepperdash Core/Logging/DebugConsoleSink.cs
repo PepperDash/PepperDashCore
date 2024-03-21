@@ -14,25 +14,27 @@ using System.Threading.Tasks;
 
 namespace PepperDash.Core
 {
-    internal class DebugConsoleSink : ILogEventSink
+    public class DebugConsoleSink : ILogEventSink
     {
         private readonly ITextFormatter _textFormatter;
 
         public void Emit(LogEvent logEvent)
         {
-            if (!Debug.IsRunningOnAppliance) return;
+            if (!Debug.IsRunningOnAppliance) return;            
 
-            CrestronConsole.PrintLine("[{0}][App {1}][Lvl {2}]: {3}", logEvent.Timestamp,
-                InitialParametersClass.ApplicationNumber,
-                logEvent.Level,
-                logEvent.RenderMessage());
+            string message = $"[{logEvent.Timestamp}][{logEvent.Level}][App {InitialParametersClass.ApplicationNumber}]{logEvent.RenderMessage()}";
+
+            if(logEvent.Properties.TryGetValue("Key",out var value) && value is ScalarValue sv && sv.Value is string rawValue)
+            {
+                message = $"[{logEvent.Timestamp}][{logEvent.Level}][App {InitialParametersClass.ApplicationNumber}][{rawValue}]: {logEvent.RenderMessage()}";
+            }
+
+            CrestronConsole.PrintLine(message);
         }
 
-        public DebugConsoleSink(ITextFormatter formatProvider)
+        public DebugConsoleSink(ITextFormatter formatProvider )
         {
-
             _textFormatter = formatProvider ?? new JsonFormatter();
-
         }
 
     }
