@@ -134,7 +134,7 @@ namespace PepperDash.Core
                 .WriteTo.Sink(new DebugConsoleSink(new JsonFormatter(renderMessage: true)), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
                 .WriteTo.Sink(new DebugErrorLogSink(), LogEventLevel.Information)
-                .WriteTo.File(new CompactJsonFormatter(), logFilePath,
+                .WriteTo.File(new RenderedCompactJsonFormatter(), logFilePath,                                    
                     rollingInterval: RollingInterval.Day,
                     restrictedToMinimumLevel: LogEventLevel.Debug,
                     retainedFileCountLimit: CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ? 30 : 60
