@@ -13,6 +13,7 @@ using Serilog.Events;
 using Serilog.Formatting.Json;
 using Crestron.SimplSharp.CrestronDataStore;
 using PepperDash.Core.Logging;
+using Serilog.Formatting.Compact;
 
 namespace PepperDash.Core
 {
@@ -132,12 +133,12 @@ namespace PepperDash.Core
                 .MinimumLevel.Verbose()
                 .WriteTo.Sink(new DebugConsoleSink(new JsonFormatter(renderMessage: true)), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
-                .WriteTo.File(logFilePath,
-                    outputTemplate: "[{Timestamp}][{Level}][{Properties.Key}]{Message}{NewLine}",
+                .WriteTo.Sink(new DebugErrorLogSink(), LogEventLevel.Information)
+                .WriteTo.File(new CompactJsonFormatter(), logFilePath,
                     rollingInterval: RollingInterval.Day,
                     restrictedToMinimumLevel: LogEventLevel.Debug,
                     retainedFileCountLimit: CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ? 30 : 60
-                ); ;
+                );
 
             try
             {
@@ -580,6 +581,7 @@ namespace PepperDash.Core
         /// <param name="level"></param>
         /// <param name="format">Console format string</param>
         /// <param name="items">Object parameters</param>
+        [Obsolete("Use LogMessage methods")]
         public static void Console(uint level, string format, params object[] items)
         {
 
@@ -605,6 +607,7 @@ namespace PepperDash.Core
         /// <summary>
 		/// Logs to Console when at-level, and all messages to error log, including device key			
         /// </summary>
+        [Obsolete("Use LogMessage methods")]
         public static void Console(uint level, IKeyed dev, string format, params object[] items)
         {
             LogMessage(level, dev, format, items);
@@ -617,6 +620,7 @@ namespace PepperDash.Core
         /// Prints message to console if current debug level is equal to or higher than the level of this message. Always sends message to Error Log.
         /// Uses CrestronConsole.PrintLine.
         /// </summary>
+        [Obsolete("Use LogMessage methods")]
         public static void Console(uint level, IKeyed dev, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
@@ -643,6 +647,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Logs to Console when at-level, and all messages to error log
         /// </summary>
+        [Obsolete("Use LogMessage methods")]
         public static void Console(uint level, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
@@ -694,6 +699,7 @@ namespace PepperDash.Core
         /// </summary>
         /// <param name="errorLogLevel"></param>
         /// <param name="str"></param>
+        [Obsolete("Use LogMessage methods")]
         public static void LogError(ErrorLogLevel errorLogLevel, string str)
         {
 
