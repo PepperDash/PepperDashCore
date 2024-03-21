@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace PepperDash.Core
 {
-    internal class DebugConsoleSink : ILogEventSink
+    public class DebugConsoleSink : ILogEventSink
     {
         private readonly ITextFormatter _textFormatter;
 
