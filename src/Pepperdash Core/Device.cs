@@ -50,7 +50,7 @@ namespace PepperDash.Core
 		public Device(string key)
 		{
 			Key = key;
-			if (key.Contains('.')) Debug.LogMessage(LogEventLevel.Information, "WARNING: Device key should not include '.'", this);
+			if (key.Contains(".")) Debug.LogMessage(LogEventLevel.Information, "WARNING: Device key should not include '.'", this);
 			Name = "";
 		}
 
