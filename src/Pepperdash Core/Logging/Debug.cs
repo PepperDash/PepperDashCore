@@ -14,6 +14,9 @@ using Serilog.Formatting.Json;
 using Crestron.SimplSharp.CrestronDataStore;
 using PepperDash.Core.Logging;
 using Serilog.Formatting.Compact;
+using System.Runtime.CompilerServices;
+using System.Diagnostics;
+using Serilog.Context;
 
 namespace PepperDash.Core
 {
@@ -35,7 +38,7 @@ namespace PepperDash.Core
             {2, LogEventLevel.Verbose },
         };
 
-        private static Logger _logger;
+        private static ILogger _logger;
 
         private static readonly LoggingLevelSwitch _consoleLoggingLevelSwitch;
 
@@ -131,6 +134,7 @@ namespace PepperDash.Core
 
             _defaultLoggerConfiguration = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
+                .Enrich.FromLogContext()
                 .WriteTo.Sink(new DebugConsoleSink(new JsonFormatter(renderMessage: true)), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
                 .WriteTo.Sink(new DebugErrorLogSink(), LogEventLevel.Information)
@@ -542,16 +546,46 @@ namespace PepperDash.Core
                 CrestronConsole.ConsoleCommandResponse(l + CrestronEnvironment.NewLine);
         }
 
-        public static void LogMessage(LogEventLevel level, string message, params object[] args)
+        /// <summary>
+        /// Log an Exception using Serilog's default Exception logging mechanism
+        /// </summary>
+        /// <param name="ex">Exception to log</param>
+        /// <param name="message">Message template</param>
+        /// <param name="device">Optional IKeyed device. If provided, the Key of the device will be added to the log message</param>
+        /// <param name="args">Args to put into message template</param>
+        public static void LogMessage(Exception ex, string message, IKeyed device = null, params object[] args)
         {
-            _logger.Write(level, message, args);
+            using (LogContext.PushProperty("Key", device?.Key ?? string.Empty))
+            {
+                _logger.Error(ex, message, args);
+            }
         }
 
+        /// <summary>
+        /// Log a message
+        /// </summary>
+        /// <param name="level">Level to log at</param>
+        /// <param name="message">Message template</param>
+        /// <param name="device">Optional IKeyed device. If provided, the Key of the device will be added to the log message</param>
+        /// <param name="args">Args to put into message template</param>
+        public static void LogMessage(LogEventLevel level, string message, IKeyed device=null, params object[] args)
+        {
+            using (LogContext.PushProperty("Key", device?.Key ?? string.Empty))
+            {
+                _logger.Write(level, message, args);
+            }
+        }
+
+        [Obsolete("Use overload with optional IKeyed parameter")]
+        public static void LogMessage(LogEventLevel level, string message, params object[] args)
+        {
+            LogMessage(level, message, null, args);
+        }
+
+        [Obsolete("Use overload with optional IKeyed parameter")]
         public static void LogMessage(LogEventLevel level, IKeyed keyed, string message, params object[] args)
         {
-            var log = _logger.ForContext("Key", keyed.Key);
-
-            log.Write(level, message, args);
+            LogMessage(level, message, keyed, args);
         }
 
 
@@ -561,7 +595,7 @@ namespace PepperDash.Core
 
             var logLevel = _logLevels[level];
             
-            LogMessage(logLevel, format, items );
+            LogMessage(logLevel, format, items);
         }
 
         private static void LogMessage(uint level, IKeyed keyed, string format, params object[] items)
