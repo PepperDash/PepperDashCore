@@ -1,22 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using Crestron.SimplSharp;
-using System.Reflection;
-using Crestron.SimplSharp.CrestronLogger;
+﻿using Crestron.SimplSharp;
+using Crestron.SimplSharp.CrestronDataStore;
 using Crestron.SimplSharp.CrestronIO;
+using Crestron.SimplSharp.CrestronLogger;
 using Newtonsoft.Json;
-using PepperDash.Core.DebugThings;
+using PepperDash.Core.Logging;
 using Serilog;
+using Serilog.Context;
 using Serilog.Core;
 using Serilog.Events;
-using Serilog.Formatting.Json;
-using Crestron.SimplSharp.CrestronDataStore;
-using PepperDash.Core.Logging;
 using Serilog.Formatting.Compact;
-using System.Runtime.CompilerServices;
-using System.Diagnostics;
-using Serilog.Context;
+using Serilog.Formatting.Json;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace PepperDash.Core
 {
@@ -27,6 +24,8 @@ namespace PepperDash.Core
     {
         private static readonly string LevelStoreKey = "ConsoleDebugLevel";
         private static readonly string WebSocketLevelStoreKey = "WebsocketDebugLevel";
+        private static readonly string ErrorLogLevelStoreKey = "ErrorLogDebugLevel";
+        private static readonly string FileLevelStoreKey = "FileDebugLevel";
 
         private static readonly Dictionary<uint, LogEventLevel> _logLevels = new Dictionary<uint, LogEventLevel>()
         {
@@ -43,6 +42,10 @@ namespace PepperDash.Core
         private static readonly LoggingLevelSwitch _consoleLoggingLevelSwitch;
 
         private static readonly LoggingLevelSwitch _websocketLoggingLevelSwitch;
+
+        private static readonly LoggingLevelSwitch _errorLogLevelSwitch;
+
+        private static readonly LoggingLevelSwitch _fileLevelSwitch;
 
         public static LogEventLevel WebsocketMinimumLogLevel
         {
@@ -120,9 +123,17 @@ namespace PepperDash.Core
 
             var defaultWebsocketLevel = GetStoredLogEventLevel(WebSocketLevelStoreKey);
 
+            var defaultErrorLogLevel = GetStoredLogEventLevel(ErrorLogLevelStoreKey);
+
+            var defaultFileLogLevel = GetStoredLogEventLevel(FileLevelStoreKey);
+
             _consoleLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: defaultConsoleLevel);            
 
             _websocketLoggingLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: defaultWebsocketLevel);
+
+            _errorLogLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: defaultErrorLogLevel);
+
+            _fileLevelSwitch = new LoggingLevelSwitch(initialMinimumLevel: defaultFileLogLevel);
 
             _websocketSink = new DebugWebsocketSink(new JsonFormatter(renderMessage: true));
 
@@ -137,11 +148,12 @@ namespace PepperDash.Core
                 .Enrich.FromLogContext()
                 .WriteTo.Sink(new DebugConsoleSink(new JsonFormatter(renderMessage: true)), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
-                .WriteTo.Sink(new DebugErrorLogSink(), LogEventLevel.Information)
+                .WriteTo.Sink(new DebugErrorLogSink(), levelSwitch: _errorLogLevelSwitch)
                 .WriteTo.File(new RenderedCompactJsonFormatter(), logFilePath,                                    
                     rollingInterval: RollingInterval.Day,
                     restrictedToMinimumLevel: LogEventLevel.Debug,
-                    retainedFileCountLimit: CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ? 30 : 60
+                    retainedFileCountLimit: CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ? 30 : 60,
+                    levelSwitch: _fileLevelSwitch
                 );
 
             try
@@ -391,9 +403,33 @@ namespace PepperDash.Core
             var err = CrestronDataStoreStatic.SetLocalUintValue(WebSocketLevelStoreKey, (uint) level);
 
             if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
-                Console(0, "Error saving websocket debug level setting: {0}", err);
+                LogMessage(LogEventLevel.Information, "Error saving websocket debug level setting: {erro}", err);
 
-            Console(0, "Websocket debug level set to {0}", _websocketLoggingLevelSwitch.MinimumLevel);
+            LogMessage(LogEventLevel.Information, "Websocket debug level set to {0}", _websocketLoggingLevelSwitch.MinimumLevel);
+        }
+
+        public static void SetErrorLogMinimumDebugLevel(LogEventLevel level)
+        {
+            _errorLogLevelSwitch.MinimumLevel = level;
+
+            var err = CrestronDataStoreStatic.SetLocalUintValue(ErrorLogLevelStoreKey, (uint)level);
+
+            if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
+                LogMessage(LogEventLevel.Information, "Error saving Error Log debug level setting: {error}", err);
+
+            LogMessage(LogEventLevel.Information, "Error log debug level set to {0}", _websocketLoggingLevelSwitch.MinimumLevel);
+        }
+
+        public static void SetFileMinimumDebugLevel(LogEventLevel level)
+        {
+            _errorLogLevelSwitch.MinimumLevel = level;
+
+            var err = CrestronDataStoreStatic.SetLocalUintValue(ErrorLogLevelStoreKey, (uint)level);
+
+            if (err != CrestronDataStore.CDS_ERROR.CDS_SUCCESS)
+                LogMessage(LogEventLevel.Information, "Error saving File debug level setting: {error}", err);
+
+            LogMessage(LogEventLevel.Information, "File debug level set to {0}", _websocketLoggingLevelSwitch.MinimumLevel);
         }
 
         /// <summary>
@@ -576,13 +612,11 @@ namespace PepperDash.Core
             }
         }
 
-        [Obsolete("Use overload with optional IKeyed parameter")]
         public static void LogMessage(LogEventLevel level, string message, params object[] args)
         {
             LogMessage(level, message, null, args);
         }
 
-        [Obsolete("Use overload with optional IKeyed parameter")]
         public static void LogMessage(LogEventLevel level, IKeyed keyed, string message, params object[] args)
         {
             LogMessage(level, message, keyed, args);
