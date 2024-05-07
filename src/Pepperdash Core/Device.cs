@@ -99,7 +99,15 @@ namespace PepperDash.Core
         public void PreActivate()
         {
             if (_PreActivationActions != null)
-                _PreActivationActions.ForEach(a => a.Invoke());
+                _PreActivationActions.ForEach(a => {
+					try
+					{
+						a.Invoke();
+					} catch (Exception e)
+					{ 
+						Debug.LogMessage(e, "Error in PreActivationAction: " + e.Message, this);
+					}
+            });
         }
 
 		/// <summary>
@@ -123,7 +131,16 @@ namespace PepperDash.Core
         public void PostActivate()
         {
             if (_PostActivationActions != null)
-                _PostActivationActions.ForEach(a => a.Invoke());
+                _PostActivationActions.ForEach(a => {
+                    try
+                    {
+                        a.Invoke();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogMessage(e, "Error in PostActivationAction: " + e.Message, this);
+                    }
+                });
         }
 
 		/// <summary>
