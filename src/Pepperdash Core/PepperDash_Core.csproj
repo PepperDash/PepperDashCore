@@ -27,6 +27,14 @@
     <DocumentationFile>bin\4Series\$(Configuration)\PepperDashCore.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="lib\**" />
+    <Compile Remove="Properties\**" />
+    <EmbeddedResource Remove="lib\**" />
+    <EmbeddedResource Remove="Properties\**" />
+    <None Remove="lib\**" />
+    <None Remove="Properties\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Net.Http" />
