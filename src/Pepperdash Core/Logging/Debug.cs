@@ -10,6 +10,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
 using Serilog.Formatting.Json;
+using Serilog.Templates;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -146,7 +147,8 @@ namespace PepperDash.Core
             _defaultLoggerConfiguration = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
                 .Enrich.FromLogContext()
-                .WriteTo.Sink(new DebugConsoleSink(new JsonFormatter(renderMessage: true)), levelSwitch: _consoleLoggingLevelSwitch)
+                .Enrich.With(new CrestronEnricher())
+                .WriteTo.Sink(new DebugConsoleSink(new ExpressionTemplate("[{@t][{@l}][{App}][{Key:3}]{@m}\n{@x}")), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
                 .WriteTo.Sink(new DebugErrorLogSink(), levelSwitch: _errorLogLevelSwitch)
                 .WriteTo.File(new RenderedCompactJsonFormatter(), logFilePath,                                    
