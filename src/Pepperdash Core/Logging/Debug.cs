@@ -148,7 +148,7 @@ namespace PepperDash.Core
                 .MinimumLevel.Verbose()
                 .Enrich.FromLogContext()
                 .Enrich.With(new CrestronEnricher())
-                .WriteTo.Sink(new DebugConsoleSink(new ExpressionTemplate("[{@t][{@l}][{App}][{Key:3}]{@m}\n{@x}")), levelSwitch: _consoleLoggingLevelSwitch)
+                .WriteTo.Sink(new DebugConsoleSink(new ExpressionTemplate("[{@t}][{@l}][{App}][{Key:3}]{@m}\n{@x}")), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
                 .WriteTo.Sink(new DebugErrorLogSink(), levelSwitch: _errorLogLevelSwitch)
                 .WriteTo.File(new RenderedCompactJsonFormatter(), logFilePath,                                    
