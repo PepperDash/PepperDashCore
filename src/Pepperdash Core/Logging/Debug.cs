@@ -187,7 +187,7 @@ namespace PepperDash.Core
 
             CrestronConsole.PrintLine(msg);
 
-            LogError(ErrorLogLevel.Notice, msg);
+            LogMessage(LogEventLevel.Information,msg);
 
 			IncludedExcludedKeys = new Dictionary<string, object>();
             
@@ -691,25 +691,8 @@ namespace PepperDash.Core
         [Obsolete("Use LogMessage methods")]
         public static void Console(uint level, IKeyed dev, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
-        {
-
-            var str = string.Format("[{0}] {1}", dev.Key, string.Format(format, items));
-            if (errorLogLevel != ErrorLogLevel.None)
-            {
-                LogError(errorLogLevel, str);
-            }
-
+        {           
             LogMessage(level, dev, format, items);
-
-            //var log = _logger.ForContext("Key", dev.Key);
-            //var message = string.Format(format, items);
-
-            //log.Write((LogEventLevel)level, message);
-
-            //if (Level >= level)
-            //{
-            //    Console(level, str);
-            //}
         }
 
         /// <summary>
@@ -719,17 +702,7 @@ namespace PepperDash.Core
         public static void Console(uint level, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
-            var str = string.Format(format, items);
-            if (errorLogLevel != ErrorLogLevel.None)
-            {
-                LogError(errorLogLevel, str);
-            }
-
             LogMessage(level, format, items);
-			//if (Level >= level)
-			//{
-			//	Console(level, str);
-			//}
         }
 
         /// <summary>
@@ -770,18 +743,16 @@ namespace PepperDash.Core
         [Obsolete("Use LogMessage methods")]
         public static void LogError(ErrorLogLevel errorLogLevel, string str)
         {
-
-            var msg = IsRunningOnAppliance ? string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str) : string.Format("Room {0}:{1}", InitialParametersClass.RoomId, str);
             switch (errorLogLevel)
             {
                 case ErrorLogLevel.Error:
-                    ErrorLog.Error(msg);
+                    LogMessage(LogEventLevel.Error, str);
                     break;
                 case ErrorLogLevel.Warning:
-                    ErrorLog.Warn(msg);
+                    LogMessage(LogEventLevel.Warning, str);
                     break;
                 case ErrorLogLevel.Notice:
-                    ErrorLog.Notice(msg);
+                    LogMessage(LogEventLevel.Information, str);
                     break;
             }
         }
