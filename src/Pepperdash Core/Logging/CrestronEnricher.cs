@@ -15,15 +15,14 @@ namespace PepperDash.Core.Logging
 
         static CrestronEnricher()
         {
-            if(CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
+            switch (CrestronEnvironment.DevicePlatform)
             {
-                _appName = $"App {InitialParametersClass.ApplicationNumber}";
-                return;
-            }
-
-            if(CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
-            {
-                _appName = $"Room {InitialParametersClass.RoomId}";
+                case eDevicePlatform.Appliance:
+                    _appName = $"App {InitialParametersClass.ApplicationNumber}";
+                    break;
+                case eDevicePlatform.Server:
+                    _appName = $"{InitialParametersClass.RoomId}";
+                    break;
             }
         }
             
