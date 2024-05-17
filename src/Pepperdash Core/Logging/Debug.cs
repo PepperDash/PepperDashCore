@@ -661,14 +661,6 @@ namespace PepperDash.Core
 
             LogMessage(level, format, items);
 
-            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
-            {
-                var logString = string.Format("[level {0}] {1}", level, string.Format(format, items));
-
-                LogError(ErrorLogLevel.Notice, logString);
-                return;
-            }
-
             //if (IsRunningOnAppliance)
             //{
             //    CrestronConsole.PrintLine("[{0}]App {1} Lvl {2}:{3}", DateTime.Now.ToString("HH:mm:ss.fff"),
