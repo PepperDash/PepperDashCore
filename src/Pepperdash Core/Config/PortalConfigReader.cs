@@ -98,11 +98,11 @@ namespace PepperDash.Core.Config
 		        merged.Add("destinationLists",
 		            Merge(template["destinationLists"], system["destinationLists"], "destinationLists"));
 
-            if (system["levelControlLists"] == null)
-                merged.Add("levelControlLists", template["levelControlLists"]);
+            if (system["audioControlPointLists"] == null)
+                merged.Add("audioControlPointLists", template["audioControlPointLists"]);
             else
-                merged.Add("levelControlLists",
-                    Merge(template["levelControlLists"], system["levelControlLists"], "levelControlLists"));
+                merged.Add("audioControlPointLists",
+                    Merge(template["audioControlPointLists"], system["audioControlPointLists"], "audioControlPointLists"));
 
             // Template tie lines take precedence.  Config tool doesn't do them at system
             // level anyway...
