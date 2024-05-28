@@ -20,14 +20,14 @@ namespace PepperDash.Core
         /// <summary>
         /// The key of the device that contains the control port
         /// </summary>
-        [JsonProperty("controlPortDevKey")]
+        [JsonProperty("controlPortDevKey", NullValueHandling = NullValueHandling.Ignore)]
         public string ControlPortDevKey { get; set; }
 
         /// <summary>
         /// The number of the control port on the device specified by ControlPortDevKey
         /// </summary>
         [JsonProperty("controlPortNumber", NullValueHandling = NullValueHandling.Ignore)] // In case "null" is present in config on this value
-        public uint ControlPortNumber { get; set; }
+        public uint? ControlPortNumber { get; set; }
 
         /// <summary>
         /// The name of the control port on the device specified by ControlPortDevKey
@@ -38,19 +38,19 @@ namespace PepperDash.Core
         /// <summary>
         /// Properties for ethernet based communications
         /// </summary>
-        [JsonProperty("tcpSshProperties")]
+        [JsonProperty("tcpSshProperties", NullValueHandling = NullValueHandling.Ignore)]
         public TcpSshPropertiesConfig TcpSshProperties { get; set; }
 
         /// <summary>
         /// The filename and path for the IR file
         /// </summary>
-        [JsonProperty("irFile")]
+        [JsonProperty("irFile", NullValueHandling = NullValueHandling.Ignore)]
         public string IrFile { get; set; }
 
         /// <summary>
         /// The IpId of a Crestron device
         /// </summary>
-        [JsonProperty("ipId")]
+        [JsonProperty("ipId", NullValueHandling = NullValueHandling.Ignore)]
         public string IpId { get; set; }
 
         /// <summary>
@@ -62,33 +62,32 @@ namespace PepperDash.Core
         /// <summary>
         /// Char indicating end of line
         /// </summary>
-        [JsonProperty("endOfLineChar")]
+        [JsonProperty("endOfLineChar", NullValueHandling = NullValueHandling.Ignore)]
         public char EndOfLineChar { get; set; }
 
         /// <summary>
         /// Defaults to Environment.NewLine;
         /// </summary>
-        [JsonProperty("endOfLineString")]
+        [JsonProperty("endOfLineString", NullValueHandling = NullValueHandling.Ignore)]
         public string EndOfLineString { get; set; }
 
         /// <summary>
         /// Indicates 
         /// </summary>
-        [JsonProperty("deviceReadyResponsePattern")]
+        [JsonProperty("deviceReadyResponsePattern", NullValueHandling = NullValueHandling.Ignore)]
         public string DeviceReadyResponsePattern { get; set; }
 
         /// <summary>
         /// Used when communcating to programs running in VC-4
         /// </summary>
-        [JsonProperty("roomId")]
+        [JsonProperty("roomId", NullValueHandling = NullValueHandling.Ignore)]
         public string RoomId { get; set; }
 
         /// <summary>
         /// Constructor
         /// </summary>
         public ControlPropertiesConfig()
-        {
-            EndOfLineString = CrestronEnvironment.NewLine;
+        {            
         }
     }
 }
