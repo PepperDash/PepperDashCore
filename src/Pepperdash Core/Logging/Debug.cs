@@ -10,6 +10,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
 using Serilog.Formatting.Json;
+using Serilog.Templates;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -143,12 +144,17 @@ namespace PepperDash.Core
 
             CrestronConsole.PrintLine($"Saving log files to {logFilePath}");
 
+            var errorLogTemplate = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance 
+                ? "{@t:fff}ms [{@l:u4}]{#if Key is not null}[{Key}]{#end} {@m}{#if @x is not null}\r\n{@x}{#end}"
+                : "[{@t:yyyy-MM-dd HH:mm:ss.fff}][{@l:u4}][{App}]{#if Key is not null}[{Key}]{#end} {@m}{#if @x is not null}\r\n{@x}{#end}";
+
             _defaultLoggerConfiguration = new LoggerConfiguration()
                 .MinimumLevel.Verbose()
                 .Enrich.FromLogContext()
-                .WriteTo.Sink(new DebugConsoleSink(new JsonFormatter(renderMessage: true)), levelSwitch: _consoleLoggingLevelSwitch)
+                .Enrich.With(new CrestronEnricher())
+                .WriteTo.Sink(new DebugConsoleSink(new ExpressionTemplate("[{@t:yyyy-MM-dd HH:mm:ss.fff}][{@l:u4}][{App}]{#if Key is not null}[{Key}]{#end} {@m}{#if @x is not null}\r\n{@x}{#end}")), levelSwitch: _consoleLoggingLevelSwitch)
                 .WriteTo.Sink(_websocketSink, levelSwitch: _websocketLoggingLevelSwitch)
-                .WriteTo.Sink(new DebugErrorLogSink(), levelSwitch: _errorLogLevelSwitch)
+                .WriteTo.Sink(new DebugErrorLogSink(new ExpressionTemplate(errorLogTemplate)), levelSwitch: _errorLogLevelSwitch)
                 .WriteTo.File(new RenderedCompactJsonFormatter(), logFilePath,                                    
                     rollingInterval: RollingInterval.Day,
                     restrictedToMinimumLevel: LogEventLevel.Debug,
@@ -187,7 +193,7 @@ namespace PepperDash.Core
 
             CrestronConsole.PrintLine(msg);
 
-            LogError(ErrorLogLevel.Notice, msg);
+            LogMessage(LogEventLevel.Information,msg);
 
 			IncludedExcludedKeys = new Dictionary<string, object>();
             
@@ -591,7 +597,7 @@ namespace PepperDash.Core
         /// <param name="args">Args to put into message template</param>
         public static void LogMessage(Exception ex, string message, IKeyed device = null, params object[] args)
         {
-            using (LogContext.PushProperty("Key", device?.Key ?? string.Empty))
+            using (LogContext.PushProperty("Key", device?.Key))
             {
                 _logger.Error(ex, message, args);
             }
@@ -606,7 +612,7 @@ namespace PepperDash.Core
         /// <param name="args">Args to put into message template</param>
         public static void LogMessage(LogEventLevel level, string message, IKeyed device=null, params object[] args)
         {
-            using (LogContext.PushProperty("Key", device?.Key ?? string.Empty))
+            using (LogContext.PushProperty("Key", device?.Key))
             {
                 _logger.Write(level, message, args);
             }
@@ -655,14 +661,6 @@ namespace PepperDash.Core
 
             LogMessage(level, format, items);
 
-            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
-            {
-                var logString = string.Format("[level {0}] {1}", level, string.Format(format, items));
-
-                LogError(ErrorLogLevel.Notice, logString);
-                return;
-            }
-
             //if (IsRunningOnAppliance)
             //{
             //    CrestronConsole.PrintLine("[{0}]App {1} Lvl {2}:{3}", DateTime.Now.ToString("HH:mm:ss.fff"),
@@ -691,25 +689,8 @@ namespace PepperDash.Core
         [Obsolete("Use LogMessage methods")]
         public static void Console(uint level, IKeyed dev, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
-        {
-
-            var str = string.Format("[{0}] {1}", dev.Key, string.Format(format, items));
-            if (errorLogLevel != ErrorLogLevel.None)
-            {
-                LogError(errorLogLevel, str);
-            }
-
+        {           
             LogMessage(level, dev, format, items);
-
-            //var log = _logger.ForContext("Key", dev.Key);
-            //var message = string.Format(format, items);
-
-            //log.Write((LogEventLevel)level, message);
-
-            //if (Level >= level)
-            //{
-            //    Console(level, str);
-            //}
         }
 
         /// <summary>
@@ -719,17 +700,7 @@ namespace PepperDash.Core
         public static void Console(uint level, ErrorLogLevel errorLogLevel,
             string format, params object[] items)
         {
-            var str = string.Format(format, items);
-            if (errorLogLevel != ErrorLogLevel.None)
-            {
-                LogError(errorLogLevel, str);
-            }
-
             LogMessage(level, format, items);
-			//if (Level >= level)
-			//{
-			//	Console(level, str);
-			//}
         }
 
         /// <summary>
@@ -770,18 +741,16 @@ namespace PepperDash.Core
         [Obsolete("Use LogMessage methods")]
         public static void LogError(ErrorLogLevel errorLogLevel, string str)
         {
-
-            var msg = IsRunningOnAppliance ? string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str) : string.Format("Room {0}:{1}", InitialParametersClass.RoomId, str);
             switch (errorLogLevel)
             {
                 case ErrorLogLevel.Error:
-                    ErrorLog.Error(msg);
+                    LogMessage(LogEventLevel.Error, str);
                     break;
                 case ErrorLogLevel.Warning:
-                    ErrorLog.Warn(msg);
+                    LogMessage(LogEventLevel.Warning, str);
                     break;
                 case ErrorLogLevel.Notice:
-                    ErrorLog.Notice(msg);
+                    LogMessage(LogEventLevel.Information, str);
                     break;
             }
         }

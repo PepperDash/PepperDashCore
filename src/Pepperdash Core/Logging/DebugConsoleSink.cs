@@ -5,6 +5,8 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Formatting.Json;
+using System.IO;
+using System.Text;
 
 
 namespace PepperDash.Core
@@ -17,12 +19,18 @@ namespace PepperDash.Core
         {
             if (!Debug.IsRunningOnAppliance) return;            
 
-            string message = $"[{logEvent.Timestamp}][{logEvent.Level}][App {InitialParametersClass.ApplicationNumber}]{logEvent.RenderMessage()}";
+            /*string message = $"[{logEvent.Timestamp}][{logEvent.Level}][App {InitialParametersClass.ApplicationNumber}]{logEvent.RenderMessage()}";
 
             if(logEvent.Properties.TryGetValue("Key",out var value) && value is ScalarValue sv && sv.Value is string rawValue)
             {
                 message = $"[{logEvent.Timestamp}][{logEvent.Level}][App {InitialParametersClass.ApplicationNumber}][{rawValue,3}]: {logEvent.RenderMessage()}";
-            }
+            }*/
+
+            var buffer = new StringWriter(new StringBuilder(256));
+
+            _textFormatter.Format(logEvent, buffer);
+
+            var message = buffer.ToString();
 
             CrestronConsole.PrintLine(message);
         }
