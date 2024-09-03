@@ -89,7 +89,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Download Build Version Info
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4.1.7
         with:
           name: Version
       - name: Set Version Number
@@ -102,7 +102,7 @@ jobs:
           Remove-Item -Path ./Version/version.txt
           Remove-Item -Path ./Version
       - name: Download Build output
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4.1.7
         with:
           name: Build
           path: ./
