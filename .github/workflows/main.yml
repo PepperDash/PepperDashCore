@@ -10,7 +10,7 @@ env:
   # solution path doesn't need slashes unless there it is multiple folders deep
   # solution name does not include extension. .sln is assumed
   SOLUTION_PATH: .
-  SOLUTION_FILE: Pepperdash Core
+  SOLUTION_FILE: Pepperdash.Core
   # Do not edit this, we're just creating it here
   VERSION: 0.0.0-buildtype-buildnumber
   # Defaults to debug for build type
