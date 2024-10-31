@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.Net.Http;
 using Crestron.SimplSharp.Net.Https;
 
 namespace PepperDash.Core.GenericRESTfulCommunications
 {
-	/// <summary>
-	/// Generic RESTful communication class
-	/// </summary>
-	public class GenericRESTfulClient
+    /// <summary>
+    /// Generic RESTful communication class
+    /// "This class should only be used in the context of simpl+ programs.  In an s# pro program, please use System.Net.Http and refer to the following guidelines:https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/http/httpclient"
+    /// </summary>
+    public class GenericRESTfulClient
 	{
 		/// <summary>
 		/// Boolean event handler
@@ -44,7 +42,7 @@ namespace PepperDash.Core.GenericRESTfulCommunications
 		/// <param name="password"></param>
         /// <param name="contentType"></param>
 		public void SubmitRequest(string url, ushort port, ushort requestType, string contentType, string username, string password)
-		{
+        {
 			if (url.StartsWith("https:", StringComparison.OrdinalIgnoreCase))
 			{
 				SubmitRequestHttps(url, port, requestType, contentType, username, password);
@@ -74,7 +72,6 @@ namespace PepperDash.Core.GenericRESTfulCommunications
 			{
 				HttpClient client = new HttpClient();
 				HttpClientRequest request = new HttpClientRequest();
-				HttpClientResponse response;
 
 				client.KeepAlive = false;
 				
@@ -95,16 +92,17 @@ namespace PepperDash.Core.GenericRESTfulCommunications
 
 				request.Url.Parse(url);
 				request.RequestType = (Crestron.SimplSharp.Net.Http.RequestType)requestType;
-				
-				response = client.Dispatch(request);
 
-				CrestronConsole.PrintLine(string.Format("SubmitRequestHttp Response[{0}]: {1}", response.Code, response.ContentString.ToString()));				
+                using (var response = client.Dispatch(request))
+                {
+                    CrestronConsole.PrintLine(string.Format("SubmitRequestHttp Response[{0}]: {1}", response.Code, response.ContentString.ToString()));
 
-				if (!string.IsNullOrEmpty(response.ContentString.ToString()))
-					OnStringChange(response.ContentString.ToString(), 0, GenericRESTfulConstants.ResponseStringChange);
+                    if (!string.IsNullOrEmpty(response.ContentString.ToString()))
+                        OnStringChange(response.ContentString.ToString(), 0, GenericRESTfulConstants.ResponseStringChange);
 
-				if (response.Code > 0)
-					OnUshrtChange((ushort)response.Code, 0, GenericRESTfulConstants.ResponseCodeChange);
+                    if (response.Code > 0)
+                        OnUshrtChange((ushort)response.Code, 0, GenericRESTfulConstants.ResponseCodeChange);
+                }
 			}
 			catch (Exception e)
 			{
@@ -215,12 +213,12 @@ namespace PepperDash.Core.GenericRESTfulCommunications
 			{
 				var args = new BoolChangeEventArgs(state, type);
 				args.Index = index;
-				BoolChange(this, args);
+                handler(this, args);
 			}
 		}
 
 		/// <summary>
-		/// Protected mehtod to handle ushort change events
+		/// Protected method to handle ushort change events
 		/// </summary>
 		/// <param name="value"></param>
 		/// <param name="index"></param>
@@ -232,7 +230,7 @@ namespace PepperDash.Core.GenericRESTfulCommunications
 			{
 				var args = new UshrtChangeEventArgs(value, type);
 				args.Index = index;
-				UshrtChange(this, args);
+                handler(this, args);
 			}
 		}
 
@@ -249,7 +247,7 @@ namespace PepperDash.Core.GenericRESTfulCommunications
 			{
 				var args = new StringChangeEventArgs(value, type);
 				args.Index = index;
-				StringChange(this, args);
+                handler(this, args);
 			}
 		}
 	}
