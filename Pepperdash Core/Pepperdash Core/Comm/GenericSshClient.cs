@@ -249,8 +249,6 @@ namespace PepperDash.Core
                     Debug.Console(1, this, "Creating new SshClient");
                     ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
                     Client = new SshClient(connectionInfo);
-
-                    Client.ErrorOccurred -= Client_ErrorOccurred;
                     Client.ErrorOccurred += Client_ErrorOccurred;
 
                     //Attempt to connect
@@ -259,6 +257,11 @@ namespace PepperDash.Core
                     {
                         Client.Connect();
                         TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
+                        if (TheStream.DataAvailable)
+                        {
+                            // empty the buffer if there is data
+                            string str = TheStream.Read();
+                        }
                         TheStream.DataReceived += Stream_DataReceived;
                         Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connected");
                         ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
@@ -320,7 +323,7 @@ namespace PepperDash.Core
 			if (ReconnectTimer != null)
 			{
 				ReconnectTimer.Stop();
-				ReconnectTimer = null;
+				// ReconnectTimer = null;
 			}
 
             KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
@@ -333,12 +336,21 @@ namespace PepperDash.Core
         {
             KillStream();
 
-            if (Client != null)
-            {                
-                Client.Disconnect();
-                Client = null;
-                ClientStatus = status;
-                Debug.Console(1, this, "Disconnected");
+            try
+            {
+                if (Client != null)
+                {
+                    Client.ErrorOccurred -= Client_ErrorOccurred;
+                    Client.Disconnect();
+                    Client.Dispose();
+                    Client = null;
+                    ClientStatus = status;
+                    Debug.Console(1, this, "Disconnected");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception in Kill Client:{0}", ex);
             }
         }
 
@@ -375,14 +387,21 @@ namespace PepperDash.Core
         /// </summary>
 		void KillStream()
 		{
-			if (TheStream != null)
-			{
-				TheStream.DataReceived -= Stream_DataReceived;
-				TheStream.Close();
-				TheStream.Dispose();
-				TheStream = null;
-                Debug.Console(1, this, "Disconnected stream");
-			}
+            try
+            {
+                if (TheStream != null)
+                {
+                    TheStream.DataReceived -= Stream_DataReceived;
+                    TheStream.Close();
+                    TheStream.Dispose();
+                    TheStream = null;
+                    Debug.Console(1, this, "Disconnected stream");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception in Kill Stream:{0}", ex);
+            }
 		}
 
 		/// <summary>
@@ -400,29 +419,33 @@ namespace PepperDash.Core
 		/// </summary>
 		void Stream_DataReceived(object sender, Crestron.SimplSharp.Ssh.Common.ShellDataEventArgs e)
 		{
-			var bytes = e.Data;
-			if (bytes.Length > 0)
+            if (((ShellStream)sender).Length <= 0L)
+            {
+                return;
+            }
+            var response = ((ShellStream)sender).Read(); 
+ 
+			var bytesHandler = BytesReceived;
+            
+		    if (bytesHandler != null)
+		    {
+                var bytes = Encoding.UTF8.GetBytes(response);
+		        if (StreamDebugging.RxStreamDebuggingIsEnabled)
+		        {
+		            Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
+		        }
+                bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
+		    }
+				
+			var textHandler = TextReceived;
+			if (textHandler != null)
 			{
-				var bytesHandler = BytesReceived;
-			    if (bytesHandler != null)
-			    {
-			        if (StreamDebugging.RxStreamDebuggingIsEnabled)
-			        {
-			            Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
-			        }
-                    bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
-			    }
-					
-				var textHandler = TextReceived;
-				if (textHandler != null)
-				{
-					var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
-                    if (StreamDebugging.RxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Received: '{0}'", ComTextHelper.GetDebugText(str));
+                if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                    Debug.Console(0, this, "Received: '{0}'", ComTextHelper.GetDebugText(response));
 
-                    textHandler(this, new GenericCommMethodReceiveTextArgs(str));
-                }
-			}
+                textHandler(this, new GenericCommMethodReceiveTextArgs(response));
+            }
+			
 		}
 
 
@@ -473,28 +496,39 @@ namespace PepperDash.Core
 		/// <param name="text"></param>
 		public void SendText(string text)
 		{
-			try
-			{
-                if (Client != null && TheStream != null && IsConnected)
-                {
-                    if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
+		    try
+		    {
+		        if (Client != null && TheStream != null && IsConnected)
+		        {
+		            if (StreamDebugging.TxStreamDebuggingIsEnabled)
+		                Debug.Console(0,
+		                              this,
+		                              "Sending {0} characters of text: '{1}'",
+		                              text.Length,
+		                              ComTextHelper.GetDebugText(text));
 
-                    TheStream.Write(text);
-                    TheStream.Flush();
+		            TheStream.Write(text);
+		            TheStream.Flush();
+		        }
+		        else
+		        {
+		            Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Text");
+		        }
+		    }
+		    catch (ObjectDisposedException ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
 
-                }
-                else
-                {
-                    Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Text");
-                }
-			}
+		        KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+                ReconnectTimer.Reset();
+		    }
 			catch (Exception ex)
 			{
-			    Debug.Console(0, "Exception: {0}", ex.Message);
-			    Debug.Console(0, "Stack Trace: {0}", ex.StackTrace);
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
 
-				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed. Disconnected, closing");
+				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed");
 			}
 		}
 
@@ -518,10 +552,21 @@ namespace PepperDash.Core
                 {
                     Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Bytes");
                 }
-			}
-			catch
-			{
-				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed. Disconnected, closing");
+            }
+            catch (ObjectDisposedException ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
+
+                KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+                ReconnectTimer.Reset();
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
+
+				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed");
 			}
 		}
 
