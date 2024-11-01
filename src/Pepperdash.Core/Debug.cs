@@ -141,7 +141,7 @@ namespace PepperDash.Core
                     "donotloadonnextboot:P [true/false]: Should the application load on next boot", ConsoleAccessLevelEnum.AccessOperator);
 
                 CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
-                    "appdebug:P [0-5] --devices [devices]: Sets the application's console debug message level.  Devices is an array of comma separated device keys for devices you would like to debug.  An empty array will allow all devices",
+                    "appdebug:P [0-5] --devices [devices]: Sets the application's console debug message level.  An empty array of devices will allow all devices",
                     ConsoleAccessLevelEnum.AccessOperator);
 
                 CrestronConsole.AddNewConsoleCommand(ShowDebugLog, "appdebuglog",
