@@ -100,8 +100,6 @@ namespace PepperDash.Core
 
             if ((setting & eStreamDebuggingSetting.Tx) == eStreamDebuggingSetting.Tx)
                 TxStreamDebuggingIsEnabled = true;
-
-            Debug.SetDeviceDebugSettings(ParentDeviceKey, setting);
         
         }
 
@@ -111,8 +109,6 @@ namespace PepperDash.Core
         private void DisableDebugging()
         {
             StopDebugTimer();
-
-            Debug.SetDeviceDebugSettings(ParentDeviceKey, eStreamDebuggingSetting.Off);
         }
 
         private void StopDebugTimer()
