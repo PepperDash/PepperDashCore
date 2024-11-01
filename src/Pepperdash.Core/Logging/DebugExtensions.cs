@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using System;
+using Serilog;
 using Serilog.Events;
 using Log = PepperDash.Core.Debug;
 
@@ -29,11 +30,6 @@ namespace PepperDash.Core.Logging
         public static void LogError(this IKeyed device, string message, params object[] args)
         {
             Log.LogMessage(LogEventLevel.Error, device, message, args);
-        }
-
-        public static void LogFatal(this IKeyed device, string message, params object[] args)
-        {
-            Log.LogMessage(LogEventLevel.Fatal, device, message, args);
         }
     }
 }

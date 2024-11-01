@@ -3,6 +3,7 @@
 		<RootNamespace>PepperDash.Core</RootNamespace>
 		<AssemblyName>PepperDashCore</AssemblyName>
 		<TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+		<LangVersion>latest</LangVersion>
 		<Deterministic>true</Deterministic>
 		<NeutralLanguage>en</NeutralLanguage>
 		<OutputPath>bin\$(Configuration)\</OutputPath>
@@ -40,6 +41,10 @@
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net472'">
 		<PackageReference Include="Microsoft.Net.Http" Version="2.2.29" />
+		<PackageReference Include="PolySharp" Version="1.14.1">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">

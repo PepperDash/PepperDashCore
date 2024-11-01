@@ -1,281 +1,107 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Crestron.SimplSharp;
-using Crestron.SimplSharp.CrestronIO;
 using Newtonsoft.Json;
+using Serilog;
+using Serilog.Events;
+using WebSocketSharp;
 
-
-namespace PepperDash.Core
+namespace PepperDash.Core.Logging
 {
     /// <summary>
     /// Represents a debugging context
     /// </summary>
-    public class DebugContext
+    public static class DebugContext
     {
-        /// <summary>
-        /// Describes the folder location where a given program stores it's debug level memory. By default, the
-        /// file written will be named appNdebug where N is 1-10.
-        /// </summary>
-        public string Key { get; private set; }
+        private static readonly CTimer SaveTimer;
+        private static readonly Dictionary<string, DebugContextData> CurrentData;
 
-        ///// <summary>
-        ///// The name of the file containing the current debug settings.
-        ///// </summary>
-        //string FileName = string.Format(@"\nvram\debug\app{0}Debug.json", InitialParametersClass.ApplicationNumber);
-
-        DebugContextSaveData SaveData;
-
-        int SaveTimeoutMs = 30000;
-
-        CTimer SaveTimer;
-
-
-        static List<DebugContext> Contexts = new List<DebugContext>();
+        public static readonly string ApplianceFilePath = Path.Combine("user", "debug", $"app-{InitialParametersClass.ApplicationNumber}-Debug.json");
+        public static readonly string ServerFilePath = Path.Combine("User", "debug", $"app-{InitialParametersClass.RoomId}-Debug.json");
 
         /// <summary>
-        /// Creates or gets a debug context
+        /// The name of the file containing the current debug settings.
         /// </summary>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public static DebugContext GetDebugContext(string key)
+        public static readonly string FileName = CrestronEnvironment.DevicePlatform switch
         {
-            var context = Contexts.FirstOrDefault(c => c.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
-            if (context == null)
-            {
-                context = new DebugContext(key);
-                Contexts.Add(context);
-            }
-            return context;
-        }
+            eDevicePlatform.Appliance => ApplianceFilePath,
+            eDevicePlatform.Server => ServerFilePath,
+            _ => string.Empty
+        };
 
-        /// <summary>
-        /// Do not use.  For S+ access.
-        /// </summary>
-        public DebugContext() { }
-
-        DebugContext(string key)
+        static DebugContext()
         {
-            Key = key;
-            if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
+            CurrentData = LoadData();
+            SaveTimer = new CTimer(_ => SaveData(), Timeout.Infinite);
+
+            CrestronEnvironment.ProgramStatusEventHandler += args =>
             {
-                // Add command to console
-                CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
-                    "appdebug:P [0-2]: Sets the application's console debug message level",
-                    ConsoleAccessLevelEnum.AccessOperator);
-            }
-
-            CrestronEnvironment.ProgramStatusEventHandler += CrestronEnvironment_ProgramStatusEventHandler;
-
-            LoadMemory();
-        }
-
-        /// <summary>
-        /// Used to save memory when shutting down
-        /// </summary>
-        /// <param name="programEventType"></param>
-        void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
-        {
-            if (programEventType == eProgramStatusEventType.Stopping)
-            {
-                if (SaveTimer != null)
+                if (args == eProgramStatusEventType.Stopping)
                 {
-                    SaveTimer.Stop();
-                    SaveTimer = null;
+                    using (SaveTimer)
+                    {
+                        SaveData();
+                        SaveTimer.Stop();
+                    }
                 }
-                Console(0, "Saving debug settings");
-                SaveMemory();
-            }
+            };
         }
 
-        /// <summary>
-        /// Callback for console command
-        /// </summary>
-        /// <param name="levelString"></param>
-        public void SetDebugFromConsole(string levelString)
+        public static DebugContextData GetDataForKey(string key, LogEventLevel defaultLevel) =>
+            CurrentData.TryGetValue(key, out var data) ? data : new DebugContextData(defaultLevel);
+
+        public static bool DeviceExistsInContext(string contextKey, string deviceKey) =>
+            CurrentData.TryGetValue(contextKey, out var data) switch
+            {
+                true when data.Devices != null => data.Devices.Any(key => string.Equals(key, deviceKey, StringComparison.OrdinalIgnoreCase)),
+                _ => false
+            };
+
+        public static void SetDataForKey(string key, LogEventLevel defaultLevel, string[] devices = null)
         {
+            if (CurrentData.ContainsKey(key))
+            {
+                CurrentData[key] = new DebugContextData(defaultLevel, devices);
+            }
+            else
+            {
+                CurrentData.Add(key, new DebugContextData(defaultLevel, devices));
+            }
+
+            SaveTimer.Reset(5000);
+        }
+
+        private static void SaveData()
+        {
+            Log.Information("Saving debug data to file:{File}", FileName);
+
             try
             {
-                if (string.IsNullOrEmpty(levelString.Trim()))
-                {
-                    CrestronConsole.ConsoleCommandResponse("AppDebug level = {0}", SaveData.Level);
-                    return;
-                }
-
-                SetDebugLevel(Convert.ToInt32(levelString));
+                var json = JsonConvert.SerializeObject(CurrentData);
+                File.WriteAllText(FileName, json);
             }
-            catch
+            catch (Exception e)
             {
-                CrestronConsole.PrintLine("Usage: appdebug:P [0-2]");
+                Log.Error(e, "Failed to save debug data");
             }
         }
 
-        /// <summary>
-        /// Sets the debug level
-        /// </summary>
-        /// <param name="level"> Valid values 0 (no debug), 1 (critical), 2 (all messages)</param>
-        public void SetDebugLevel(int level)
+        private static Dictionary<string, DebugContextData> LoadData()
         {
-            if (level <= 2)
+            if (!File.Exists(FileName))
             {
-                SaveData.Level = level;
-                SaveMemoryOnTimeout();
-
-                CrestronConsole.PrintLine("[Application {0}], Debug level set to {1}",
-                    InitialParametersClass.ApplicationNumber, SaveData.Level);
+                return new Dictionary<string, DebugContextData>();
             }
-        }
 
-        /// <summary>
-        /// Prints message to console if current debug level is equal to or higher than the level of this message.
-        /// Uses CrestronConsole.PrintLine.
-        /// </summary>
-        /// <param name="level"></param>
-        /// <param name="format">Console format string</param>
-        /// <param name="items">Object parameters</param>
-        public void Console(uint level, string format, params object[] items)
-        {
-            if (SaveData.Level >= level)
-                CrestronConsole.PrintLine("App {0}:{1}", InitialParametersClass.ApplicationNumber,
-                    string.Format(format, items));
-        }
-
-        /// <summary>
-        /// Appends a device Key to the beginning of a message
-        /// </summary>
-        public void Console(uint level, IKeyed dev, string format, params object[] items)
-        {
-            if (SaveData.Level >= level)
-                Console(level, "[{0}] {1}", dev.Key, string.Format(format, items));
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="level"></param>
-        /// <param name="dev"></param>
-        /// <param name="errorLogLevel"></param>
-        /// <param name="format"></param>
-        /// <param name="items"></param>
-        public void Console(uint level, IKeyed dev, Debug.ErrorLogLevel errorLogLevel,
-            string format, params object[] items)
-        {
-            if (SaveData.Level >= level)
-            {
-                var str = string.Format("[{0}] {1}", dev.Key, string.Format(format, items));
-                Console(level, str);
-                LogError(errorLogLevel, str);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="level"></param>
-        /// <param name="errorLogLevel"></param>
-        /// <param name="format"></param>
-        /// <param name="items"></param>
-        public void Console(uint level, Debug.ErrorLogLevel errorLogLevel,
-            string format, params object[] items)
-        {
-            if (SaveData.Level >= level)
-            {
-                var str = string.Format(format, items);
-                Console(level, str);
-                LogError(errorLogLevel, str);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="errorLogLevel"></param>
-        /// <param name="str"></param>
-        public void LogError(Debug.ErrorLogLevel errorLogLevel, string str)
-        {
-            string msg = string.Format("App {0}:{1}", InitialParametersClass.ApplicationNumber, str);
-            switch (errorLogLevel)
-            {
-                case Debug.ErrorLogLevel.Error:
-                    ErrorLog.Error(msg);
-                    break;
-                case Debug.ErrorLogLevel.Warning:
-                    ErrorLog.Warn(msg);
-                    break;
-                case Debug.ErrorLogLevel.Notice:
-                    ErrorLog.Notice(msg);
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// Writes the memory object after timeout
-        /// </summary>
-        void SaveMemoryOnTimeout()
-        {
-            if (SaveTimer == null)
-                SaveTimer = new CTimer(o =>
-                {
-                    SaveTimer = null;
-                    SaveMemory();
-                }, SaveTimeoutMs);
-            else
-                SaveTimer.Reset(SaveTimeoutMs);
-        }
-
-        /// <summary>
-        /// Writes the memory - use SaveMemoryOnTimeout
-        /// </summary>
-        void SaveMemory()
-        {
-            using (StreamWriter sw = new StreamWriter(GetMemoryFileName()))
-            {
-                var json = JsonConvert.SerializeObject(SaveData);
-                sw.Write(json);
-                sw.Flush();
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        void LoadMemory()
-        {
-            var file = GetMemoryFileName();
-            if (File.Exists(file))
-            {
-                using (StreamReader sr = new StreamReader(file))
-                {
-                    var data = JsonConvert.DeserializeObject<DebugContextSaveData>(sr.ReadToEnd());
-                    if (data != null)
-                    {
-                        SaveData = data;
-                        Debug.Console(1, "Debug memory restored from file");
-                        return;
-                    }
-                    else
-                        SaveData = new DebugContextSaveData();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Helper to get the file path for this app's debug memory
-        /// </summary>
-        string GetMemoryFileName()
-        {
-            return string.Format(@"\NVRAM\debugSettings\program{0}-{1}", InitialParametersClass.ApplicationNumber, Key);
+            var json = File.ReadAllText(FileName);
+            return JsonConvert.DeserializeObject<Dictionary<string, DebugContextData>>(json);
         }
     }
 
     /// <summary>
     /// 
     /// </summary>
-    public class DebugContextSaveData
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        public int Level { get; set; }
-    }
+    public record DebugContextData(LogEventLevel Level, string[] Devices = null);
 }

@@ -1,23 +1,21 @@
-﻿using Crestron.SimplSharp;
-using Serilog.Configuration;
+﻿using System.IO;
+using System.Text;
+using Crestron.SimplSharp;
 using Serilog;
+using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Formatting.Json;
-using System.IO;
-using System.Text;
 
-
-namespace PepperDash.Core
+namespace PepperDash.Core.Logging
 {
     public class DebugConsoleSink : ILogEventSink
     {
-        private readonly ITextFormatter _textFormatter;
+        private readonly ITextFormatter textFormatter;
 
         public void Emit(LogEvent logEvent)
         {
-            if (!Debug.IsRunningOnAppliance) return;            
 
             /*string message = $"[{logEvent.Timestamp}][{logEvent.Level}][App {InitialParametersClass.ApplicationNumber}]{logEvent.RenderMessage()}";
 
@@ -28,28 +26,44 @@ namespace PepperDash.Core
 
             var buffer = new StringWriter(new StringBuilder(256));
 
-            _textFormatter.Format(logEvent, buffer);
+            textFormatter.Format(logEvent, buffer);
 
             var message = buffer.ToString();
 
             CrestronConsole.PrintLine(message);
         }
 
-        public DebugConsoleSink(ITextFormatter formatProvider )
+        public DebugConsoleSink(ITextFormatter formatProvider)
         {
-            _textFormatter = formatProvider ?? new JsonFormatter();
+            textFormatter = formatProvider ?? new JsonFormatter();
         }
-
     }
 
     public static class DebugConsoleSinkExtensions
     {
         public static LoggerConfiguration DebugConsoleSink(
-                             this LoggerSinkConfiguration loggerConfiguration,
-                                              ITextFormatter formatProvider = null)
+            this LoggerSinkConfiguration loggerConfiguration,
+            ITextFormatter formatProvider = null,
+            LoggingLevelSwitch levelSwitch = null)
         {
-            return loggerConfiguration.Sink(new DebugConsoleSink(formatProvider));
+            var sink = new DebugConsoleSink(formatProvider);
+            return loggerConfiguration.Conditional(Predicate, c => c.Sink(sink, levelSwitch: levelSwitch));
+
+            static bool Predicate(LogEvent @event)
+            {
+                if (!Debug.IsRunningOnAppliance)
+                {
+                    return false;
+                }
+
+                if (@event.Properties.TryGetValue("Key", out var value) &&
+                    value is ScalarValue { Value: string rawValue })
+                {
+                    return DebugContext.DeviceExistsInContext(Debug.ConsoleLevelStoreKey, rawValue);
+                }
+
+                return true;
+            }
         }
     }
-
 }

@@ -5,9 +5,7 @@ using Serilog.Formatting;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace PepperDash.Core.Logging
 {
@@ -24,6 +22,7 @@ namespace PepperDash.Core.Logging
             {LogEventLevel.Error, (msg) => ErrorLog.Error(msg) },
             {LogEventLevel.Fatal, (msg) => ErrorLog.Error(msg) }
         };
+
         public void Emit(LogEvent logEvent)
         {
             string message;
