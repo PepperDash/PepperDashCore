@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronDataStore;
-using Crestron.SimplSharp.CrestronIO;
 using Crestron.SimplSharp.CrestronLogger;
 using PepperDash.Core.Logging;
 using Serilog;
@@ -71,8 +71,8 @@ namespace PepperDash.Core
             CrestronDataStoreStatic.InitCrestronDataStore();
 
             var logFilePath = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ?
-                $@"{Directory.GetApplicationRootDirectory()}{Path.DirectorySeparatorChar}user{Path.DirectorySeparatorChar}debug{Path.DirectorySeparatorChar}app{InitialParametersClass.ApplicationNumber}{Path.DirectorySeparatorChar}global-log.log" :
-                $@"{Directory.GetApplicationRootDirectory()}{Path.DirectorySeparatorChar}user{Path.DirectorySeparatorChar}debug{Path.DirectorySeparatorChar}room{InitialParametersClass.RoomId}{Path.DirectorySeparatorChar}global-log.log";
+                $@"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}user{Path.DirectorySeparatorChar}debug{Path.DirectorySeparatorChar}app{InitialParametersClass.ApplicationNumber}{Path.DirectorySeparatorChar}global-log.log" :
+                $@"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}user{Path.DirectorySeparatorChar}debug{Path.DirectorySeparatorChar}room{InitialParametersClass.RoomId}{Path.DirectorySeparatorChar}global-log.log";
 
             CrestronConsole.PrintLine($"Saving log files to {logFilePath}");
 
@@ -99,7 +99,7 @@ namespace PepperDash.Core
 #if NET472
 
             const string certFilename = "cert.pfx";
-            var certPath = IsRunningOnAppliance ? Path.Combine("user", certFilename) : Path.Combine("User", certFilename);
+            var certPath = IsRunningOnAppliance ? Path.Combine(Path.DirectorySeparatorChar.ToString(), "user", certFilename) : Path.Combine("User", certFilename);
             var websocket = new DebugNet472WebSocket(certPath);
             WebsocketPort = websocket.Port;
             DefaultLoggerConfiguration.WriteTo.Sink(new DebugWebsocketSink(websocket, new JsonFormatter(renderMessage: true)), levelSwitch: WebsocketLoggingLevelSwitch);
@@ -141,7 +141,7 @@ namespace PepperDash.Core
                     "donotloadonnextboot:P [true/false]: Should the application load on next boot", ConsoleAccessLevelEnum.AccessOperator);
 
                 CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
-                    "appdebug:P [0-5] --devices [devices]: Sets the application's console debug message level.  An empty array of devices will allow all devices",
+                    "appdebug:P [0-5] --devices [devices]: Sets the application's console debug message level.",
                     ConsoleAccessLevelEnum.AccessOperator);
 
                 CrestronConsole.AddNewConsoleCommand(ShowDebugLog, "appdebuglog",
