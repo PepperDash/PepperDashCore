@@ -6,7 +6,6 @@ using Crestron.SimplSharp;
 using Newtonsoft.Json;
 using Serilog;
 using Serilog.Events;
-using WebSocketSharp;
 
 namespace PepperDash.Core.Logging
 {
@@ -18,8 +17,8 @@ namespace PepperDash.Core.Logging
         private static readonly CTimer SaveTimer;
         private static readonly Dictionary<string, DebugContextData> CurrentData;
 
-        public static readonly string ApplianceFilePath = Path.Combine("user", "debug", $"app-{InitialParametersClass.ApplicationNumber}-Debug.json");
-        public static readonly string ServerFilePath = Path.Combine("User", "debug", $"app-{InitialParametersClass.RoomId}-Debug.json");
+        public static readonly string ApplianceFilePath = Path.Combine("/", "user", "debug", $"app{InitialParametersClass.ApplicationNumber.ToString().PadLeft(2, '0')}-debug.json");
+        public static readonly string ServerFilePath = Path.Combine("/", "User", "debug", $"{InitialParametersClass.RoomId}-debug.json");
 
         /// <summary>
         /// The name of the file containing the current debug settings.
@@ -79,6 +78,10 @@ namespace PepperDash.Core.Logging
 
             try
             {
+                var debugDirectory = Path.GetDirectoryName(FileName) ??
+                                     throw new Exception("File directory is root");
+
+                Directory.CreateDirectory(debugDirectory);
                 var json = JsonConvert.SerializeObject(CurrentData);
                 File.WriteAllText(FileName, json);
             }

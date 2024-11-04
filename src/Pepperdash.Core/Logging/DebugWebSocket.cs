@@ -1,7 +1,10 @@
 ﻿using System;
 using System.IO;
 using Crestron.SimplSharp;
+
+#if NET472
 using Org.BouncyCastle.Asn1.X509;
+#endif
 
 namespace PepperDash.Core.Logging
 {
@@ -29,6 +32,7 @@ namespace PepperDash.Core.Logging
 
         private static void CreateCert(string filePath)
         {
+#if NET472
             try
             {
                 var utility     = new BouncyCertificate();
@@ -44,6 +48,7 @@ namespace PepperDash.Core.Logging
             {
                 Debug.LogError(ex, "WSS failed to create cert");
             }
+#endif
         }
 
         public abstract bool IsListening { get; }

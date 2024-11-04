@@ -1,6 +1,4 @@
 ﻿using System.IO;
-using Serilog;
-using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
@@ -27,14 +25,6 @@ namespace PepperDash.Core.Logging
             using var sw = new StringWriter();
             textFormatter.Format(logEvent, sw);
             webSocket.Broadcast(sw.ToString());
-        }
-    }
-
-    public class NoopSink : ILogEventSink
-    {
-        public static readonly NoopSink Instance = new NoopSink();
-        public void Emit(LogEvent logEvent)
-        {
         }
     }
 }

@@ -24,39 +24,35 @@ namespace PepperDash.Core.Logging
 
         public DebugClient()
         {
-            Debug.Console(0, "DebugClient Created");
+            Debug.LogInformation<DebugClient>("DebugClient Created");
         }
 
         protected override void OnOpen()
         {
             base.OnOpen();
-
             var url = Context.WebSocket.Url;
-            Debug.Console(0, Debug.ErrorLogLevel.Notice, "New WebSocket Connection from: {0}", url);
-
+            Debug.LogInformation<DebugClient>("New WebSocket Connection from: {Url}", url);
             connectionTime = DateTime.Now;
         }
 
         protected override void OnMessage(MessageEventArgs e)
         {
             base.OnMessage(e);
-
-            Debug.Console(0, "WebSocket UiClient Message: {0}", e.Data);
+            Debug.LogVerbose<DebugClient>("WebSocket UiClient Message: {Data}", e.Data);
         }
 
         protected override void OnClose(CloseEventArgs e)
         {
             base.OnClose(e);
-
-            Debug.Console(0, Debug.ErrorLogLevel.Notice, "WebSocket UiClient Closing: {0} reason: {1}", e.Code, e.Reason);
+            Debug.LogInformation<DebugClient>("WebSocket UiClient Closing: {Code} Reason: {Reason} Total Time: {Time}", e.Code, e.Reason, ConnectedDuration);
         }
 
-        protected override void OnError(WebSocketSharp.ErrorEventArgs e)
+        protected override void OnError(ErrorEventArgs e)
         {
             base.OnError(e);
-
-            Debug.Console(2, Debug.ErrorLogLevel.Notice, "WebSocket UiClient Error: {0} message: {1}", e.Exception, e.Message);
+            Debug.LogError<DebugClient>(e.Exception, "WebSocket UiClient Error");
         }
     }
 }
+
 #endif

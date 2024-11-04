@@ -1,7 +1,9 @@
-﻿#if NET472
-
+﻿using System;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using Crestron.SimplSharp;
+
+#if NET472
 using WebSocketSharp.Net;
 using WebSocketSharp.Server;
 
@@ -10,6 +12,9 @@ namespace PepperDash.Core.Logging
     internal class DebugNet472WebSocket : DebugWebSocket
     {
         private const string Path = "/debug/join/";
+
+        public string Url => 
+            $"wss://{CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0)}:{server.Port}{server.WebSocketServices[Path].Path}";
 
         private readonly WebSocketServer server;
 
@@ -41,14 +46,8 @@ namespace PepperDash.Core.Logging
 
         public override void Broadcast(string message) => server.WebSocketServices.Broadcast(message);
     }
-}
-#else
 
-using System;
-using System.Net;
-
-namespace PepperDash.Core.Logging
-{
+    //TODO: NETCORE version
     internal class DebugNetWebSocket : DebugWebSocket
     {
         private const string Path = "/debug/join/";
@@ -57,7 +56,6 @@ namespace PepperDash.Core.Logging
 
         public DebugNetWebSocket(int port, string certPath = "") : base(certPath)
         {
-            server.AuthenticationSchemeSelectorDelegate = (request) => AuthenticationSchemes.Anonymous;
             server.Prefixes.Add("wss://*:" + port + Path);
         }
 
@@ -66,7 +64,4 @@ namespace PepperDash.Core.Logging
         public override void Broadcast(string message) => throw new NotImplementedException();
     }
 }
-
 #endif
-
-

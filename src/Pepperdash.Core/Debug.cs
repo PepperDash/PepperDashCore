@@ -60,7 +60,12 @@ namespace PepperDash.Core
         /// </summary>
         public static string PepperDashCoreVersion { get; }
 
-        public static int WebsocketPort { get; }
+        public static string WebsocketUrl { get; } = "";
+
+        public static LogEventLevel WebsocketMinimumLevel => WebsocketLoggingLevelSwitch.MinimumLevel;
+        public static LogEventLevel ConsoleMinimumLevel => ConsoleLoggingLevelSwitch.MinimumLevel;
+        public static LogEventLevel ErrorLogMinimumLevel => ErrorLogLevelSwitch.MinimumLevel;
+        public static LogEventLevel FileLogMinimumLevel => FileLevelSwitch.MinimumLevel;
 
         public static readonly LoggerConfiguration DefaultLoggerConfiguration;
 
@@ -69,10 +74,11 @@ namespace PepperDash.Core
         static Debug()
         {
             CrestronDataStoreStatic.InitCrestronDataStore();
+            var directorySeparator = Path.DirectorySeparatorChar.ToString();
 
-            var logFilePath = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance ?
-                $@"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}user{Path.DirectorySeparatorChar}debug{Path.DirectorySeparatorChar}app{InitialParametersClass.ApplicationNumber}{Path.DirectorySeparatorChar}global-log.log" :
-                $@"{Directory.GetCurrentDirectory()}{Path.DirectorySeparatorChar}user{Path.DirectorySeparatorChar}debug{Path.DirectorySeparatorChar}room{InitialParametersClass.RoomId}{Path.DirectorySeparatorChar}global-log.log";
+            var logFilePath = CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance 
+                ? Path.Combine(directorySeparator, "user", "program" + InitialParametersClass.ApplicationNumber, "logs", "global-log.log")
+                : Path.Combine(directorySeparator, "User", "logs", "global-log.log");
 
             CrestronConsole.PrintLine($"Saving log files to {logFilePath}");
 
@@ -97,51 +103,41 @@ namespace PepperDash.Core
                 );
 
 #if NET472
-
-            const string certFilename = "cert.pfx";
-            var certPath = IsRunningOnAppliance ? Path.Combine(Path.DirectorySeparatorChar.ToString(), "user", certFilename) : Path.Combine("User", certFilename);
+            var certPath = IsRunningOnAppliance ? Path.Combine("/", "user") : Path.Combine("/", "User");
             var websocket = new DebugNet472WebSocket(certPath);
-            WebsocketPort = websocket.Port;
+            WebsocketUrl = websocket.Url;
             DefaultLoggerConfiguration.WriteTo.Sink(new DebugWebsocketSink(websocket, new JsonFormatter(renderMessage: true)), levelSwitch: WebsocketLoggingLevelSwitch);
 #endif
 
+            var supportsRemovableDrive = false;
             try
             {
-                if (InitialParametersClass.NumberOfRemovableDrives > 0)
-                {
-                    CrestronConsole.PrintLine("{0} RM Drive(s) Present. Initializing Crestron Logger", InitialParametersClass.NumberOfRemovableDrives);
-                    DefaultLoggerConfiguration.WriteTo.Sink(new DebugCrestronLoggerSink());
-                }
-                else
-                    CrestronConsole.PrintLine("No RM Drive(s) Present. Not using Crestron Logger");
+                CrestronLogger.Initialize(1, LoggerModeEnum.RM);
+                supportsRemovableDrive = true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                CrestronConsole.PrintLine("Initializing of CrestronLogger failed: {0}", e);
+                CrestronConsole.PrintLine("No RM Drive(s) Present. Not using Crestron Logger");
             }
+
+            if (supportsRemovableDrive)
+                DefaultLoggerConfiguration.WriteTo.Sink(new DebugCrestronLoggerSink());
 
             var storedConsoleLevel = DebugContext.GetDataForKey(ConsoleLevelStoreKey, LogEventLevel.Information);
             ConsoleLoggingLevelSwitch.MinimumLevel = storedConsoleLevel.Level;
+            CrestronConsole.PrintLine("Beginning console logging with level:{0}", storedConsoleLevel.Level);
 
             Log.Logger = DefaultLoggerConfiguration.CreateLogger();
             PepperDashCoreVersion = GetVersion();
+            LogMessage(LogEventLevel.Information, "Using PepperDash_Core v{PepperDashCoreVersion}", PepperDashCoreVersion);
 
-            var msg = $"[App {InitialParametersClass.ApplicationNumber}] Using PepperDash_Core v{PepperDashCoreVersion}";
-
-            if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Server)
-            {
-                msg = $"[Room {InitialParametersClass.RoomId}] Using PepperDash_Core v{PepperDashCoreVersion}";
-            }
-
-            LogMessage(LogEventLevel.Information,msg);
-            
             if (CrestronEnvironment.RuntimeEnvironment == eRuntimeEnvironment.SimplSharpPro)
             {
                 CrestronConsole.AddNewConsoleCommand(SetDoNotLoadOnNextBootFromConsole, "donotloadonnextboot", 
                     "donotloadonnextboot:P [true/false]: Should the application load on next boot", ConsoleAccessLevelEnum.AccessOperator);
 
                 CrestronConsole.AddNewConsoleCommand(SetDebugFromConsole, "appdebug",
-                    "appdebug:P [0-5] --devices [devices]: Sets the application's console debug message level.",
+                    "appdebug:[p] [0-5] --devices [devices]: Sets console debug message level",
                     ConsoleAccessLevelEnum.AccessOperator);
 
                 CrestronConsole.AddNewConsoleCommand(ShowDebugLog, "appdebuglog",
@@ -213,8 +209,10 @@ namespace PepperDash.Core
                         CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level");
                     }
                 }
-
-                CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level");
+                else
+                {
+                    CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level");
+                }
             }          
             catch
             {
