@@ -103,7 +103,7 @@ namespace PepperDash.Core
                 );
 
 #if NET472
-            var certPath = IsRunningOnAppliance ? Path.Combine("/", "user", "cert.pfx") : Path.Combine("/", "User", "cert.pfx");
+            var certPath = IsRunningOnAppliance ? Path.Combine("/", "user", "selfCres.pfx") : Path.Combine("/", "User", "selfCres.pfx");
             var websocket = new DebugNet472WebSocket(certPath);
             WebsocketUrl = websocket.Url;
             DefaultLoggerConfiguration.WriteTo.Sink(new DebugWebsocketSink(websocket, new JsonFormatter(renderMessage: true)), levelSwitch: WebsocketLoggingLevelSwitch);
