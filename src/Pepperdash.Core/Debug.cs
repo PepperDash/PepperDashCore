@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Crestron.SimplSharp;
@@ -103,7 +104,7 @@ namespace PepperDash.Core
                 );
 
 #if NET472
-            var certPath = IsRunningOnAppliance ? Path.Combine("/", "user", "selfCres.pfx") : Path.Combine("/", "User", "selfCres.pfx");
+            var certPath = IsRunningOnAppliance ? Path.Combine("/", "user") : Path.Combine("/", "User");
             var websocket = new DebugNet472WebSocket(certPath);
             WebsocketUrl = websocket.Url;
             DefaultLoggerConfiguration.WriteTo.Sink(new DebugWebsocketSink(websocket, new JsonFormatter(renderMessage: true)), levelSwitch: WebsocketLoggingLevelSwitch);
@@ -190,15 +191,16 @@ namespace PepperDash.Core
                     return;
                 }
 
-                const string pattern = @"^(\d+)(?:\s+--devices\s+([\w,]+))?$";
-                var match = Regex.Match(levelString, pattern);
+                const string pattern = @"^(\d+)(?:\s+--devices\s+([\w\s,-]+))?$";
+                var          match   = Regex.Match(levelString, pattern);
                 if (match.Success)
                 {
                     var level = int.Parse(match.Groups[1].Value);
                     var devices = match.Groups[2].Success
                         ? match.Groups[2].Value.Split(',')
+                            .Select(device => device.Trim())
+                            .ToArray()
                         : [];
-
 
                     if (LogLevels.TryGetValue(level, out var logEventLevel))
                     {
@@ -211,7 +213,7 @@ namespace PepperDash.Core
                 }
                 else
                 {
-                    CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level");
+                    CrestronConsole.ConsoleCommandResponse($"Error: Unable to parse {levelString} to valid log level:does not match the pattern");
                 }
             }          
             catch

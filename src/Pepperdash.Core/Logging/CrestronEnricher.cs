@@ -12,7 +12,7 @@ namespace PepperDash.Core.Logging
         {
             AppName = CrestronEnvironment.DevicePlatform switch
             {
-                eDevicePlatform.Appliance => $"App {InitialParametersClass.ApplicationNumber}",
+                eDevicePlatform.Appliance => $"APP{InitialParametersClass.ApplicationNumber.ToString().PadLeft(2, '0')}",
                 eDevicePlatform.Server => $"{InitialParametersClass.RoomId}",
                 _ => string.Empty
             };
@@ -22,7 +22,6 @@ namespace PepperDash.Core.Logging
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
         {
             var property = propertyFactory.CreateProperty("App", AppName);
-
             logEvent.AddOrUpdateProperty(property);
         }
     }

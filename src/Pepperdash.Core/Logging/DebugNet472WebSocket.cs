@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using Crestron.SimplSharp;
 
 #if NET472
+using System.IO;
 using WebSocketSharp.Net;
 using WebSocketSharp.Server;
 
@@ -11,10 +12,10 @@ namespace PepperDash.Core.Logging
 {
     internal class DebugNet472WebSocket : DebugWebSocket
     {
-        private const string Path = "/debug/join/";
+        private const string WebsocketPath = "/debug/join/";
 
         public string Url => 
-            $"wss://{CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0)}:{server.Port}{server.WebSocketServices[Path].Path}";
+            $"wss://{CrestronEthernetHelper.GetEthernetParameter(CrestronEthernetHelper.ETHERNET_PARAMETER_TO_GET.GET_CURRENT_IP_ADDRESS, 0)}:{server.Port}{server.WebSocketServices[WebsocketPath].Path}";
 
         private readonly WebSocketServer server;
 
@@ -24,7 +25,8 @@ namespace PepperDash.Core.Logging
 
             if (IsSecure)
             {
-                server.SslConfiguration = new ServerSslConfiguration(new X509Certificate2(certPath, CertificatePassword))
+                var filename = Path.Combine(certPath, CertificateName + ".pfx");
+                server.SslConfiguration = new ServerSslConfiguration(new X509Certificate2(filename, CertificatePassword))
                 {
                     ClientCertificateRequired  = false,
                     CheckCertificateRevocation = false,
@@ -38,7 +40,7 @@ namespace PepperDash.Core.Logging
                 };
             }
 
-            server.AddWebSocketService<DebugClient>(Path);
+            server.AddWebSocketService<DebugClient>(WebsocketPath);
             server.Start();
         }
 
