@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
 using Serilog;
@@ -56,10 +57,21 @@ namespace PepperDash.Core.Logging
                     return false;
                 }
 
-                if (@event.Properties.TryGetValue("Key", out var value) &&
-                    value is ScalarValue { Value: string rawValue })
+                if (@event.Properties.TryGetValue("Key", out var value) && value is ScalarValue { Value: string rawValue }
+                    && DebugContext.TryGetDataForKey(Debug.ConsoleLevelStoreKey, out var data)
+                    && data.Devices != null)
                 {
-                    return DebugContext.DeviceExistsInContext(Debug.ConsoleLevelStoreKey, rawValue);
+                    if (data.Devices.Length == 0)
+                    {
+                        return true;
+                    }
+
+                    if (data.Devices.Any(d => d == rawValue))
+                    {
+                        return true;
+                    }
+
+                    return false;
                 }
 
                 return true;

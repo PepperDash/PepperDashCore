@@ -48,15 +48,12 @@ namespace PepperDash.Core.Logging
             };
         }
 
-        public static DebugContextData GetDataForKey(string key, LogEventLevel defaultLevel) =>
+        public static bool TryGetDataForKey(string key, out DebugContextData data) =>
+            CurrentData.TryGetValue(key, out var data);
+
+        public static DebugContextData GetOrCreateDataForKey(string key, LogEventLevel defaultLevel) =>
             CurrentData.TryGetValue(key, out var data) ? data : new DebugContextData(defaultLevel);
 
-        public static bool DeviceExistsInContext(string contextKey, string deviceKey) =>
-            CurrentData.TryGetValue(contextKey, out var data) switch
-            {
-                true when data.Devices != null => data.Devices.Any(key => string.Equals(key, deviceKey, StringComparison.OrdinalIgnoreCase)),
-                _ => false
-            };
 
         public static void SetDataForKey(string key, LogEventLevel defaultLevel, string[] devices = null)
         {
