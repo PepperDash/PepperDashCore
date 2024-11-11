@@ -124,7 +124,7 @@ namespace PepperDash.Core
             if (supportsRemovableDrive)
                 DefaultLoggerConfiguration.WriteTo.Sink(new DebugCrestronLoggerSink());
 
-            var storedConsoleLevel = DebugContext.GetDataForKey(ConsoleLevelStoreKey, LogEventLevel.Information);
+            var storedConsoleLevel = DebugContext.GetOrCreateDataForKey(ConsoleLevelStoreKey, LogEventLevel.Information);
             ConsoleLoggingLevelSwitch.MinimumLevel = storedConsoleLevel.Level;
             CrestronConsole.PrintLine("Beginning console logging with level:{0}", storedConsoleLevel.Level);
 
@@ -202,9 +202,17 @@ namespace PepperDash.Core
                             .ToArray()
                         : [];
 
+
                     if (LogLevels.TryGetValue(level, out var logEventLevel))
                     {
-                        SetConsoleDebugLevel(logEventLevel, devices);
+                        if (devices.Length == 1 && devices[0].ToLower() == "all")
+                        {
+                            SetConsoleDebugLevel(logEventLevel, true, []);
+                        }
+                        else
+                        {
+                            SetConsoleDebugLevel(logEventLevel, false, devices);
+                        }
                     }
                     else
                     {
@@ -222,10 +230,10 @@ namespace PepperDash.Core
             }
         }
 
-        public static void SetConsoleDebugLevel(LogEventLevel level, string[] includedDevices = null)
+        public static void SetConsoleDebugLevel(LogEventLevel level, bool logAllDevices = false, string[] includedDevices = null)
         {
             ConsoleLoggingLevelSwitch.MinimumLevel = level;
-            DebugContext.SetDataForKey(ConsoleLevelStoreKey, level, includedDevices);
+            DebugContext.SetDataForKey(ConsoleLevelStoreKey, level, logAllDevices, includedDevices);
 
             var includedDevicesMessage = includedDevices == null || includedDevices.Length == 0 ? "all" : string.Join(",", includedDevices);
             CrestronConsole.ConsoleCommandResponse($"Success: set console debug level to {level} with devices:{includedDevicesMessage}");

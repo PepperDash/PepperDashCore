@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Crestron.SimplSharp;
@@ -57,21 +58,21 @@ namespace PepperDash.Core.Logging
                     return false;
                 }
 
-                if (@event.Properties.TryGetValue("Key", out var value) && value is ScalarValue { Value: string rawValue }
-                    && DebugContext.TryGetDataForKey(Debug.ConsoleLevelStoreKey, out var data)
-                    && data.Devices != null)
+                if (@event.Level >= LogEventLevel.Error)
                 {
-                    if (data.Devices.Length == 0)
+                    return true;
+                }
+
+                if (@event.Properties.TryGetValue("Key", out var value) && value is ScalarValue { Value: string rawValue }
+                    && DebugContext.TryGetDataForKey(Debug.ConsoleLevelStoreKey, out var ctx))
+                {
+                    if (ctx.LogAllDevices)
                     {
                         return true;
                     }
 
-                    if (data.Devices.Any(d => d == rawValue))
-                    {
-                        return true;
-                    }
-
-                    return false;
+                    return ctx.Devices is not null 
+                           && ctx.Devices.Any(deviceKey => string.Equals(deviceKey, rawValue, StringComparison.OrdinalIgnoreCase));
                 }
 
                 return true;
