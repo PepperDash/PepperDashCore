@@ -496,40 +496,49 @@ namespace PepperDash.Core
 		/// <param name="text"></param>
 		public void SendText(string text)
 		{
-		    try
-		    {
-		        if (Client != null && TheStream != null && IsConnected)
-		        {
-		            if (StreamDebugging.TxStreamDebuggingIsEnabled)
-		                Debug.Console(0,
-		                              this,
-		                              "Sending {0} characters of text: '{1}'",
-		                              text.Length,
-		                              ComTextHelper.GetDebugText(text));
+            try
+            {
+                if (Client != null && TheStream != null && IsConnected)
+                {
+                    if (StreamDebugging.TxStreamDebuggingIsEnabled)
+                        Debug.Console(0,
+                                      this,
+                                      "Sending {0} characters of text: '{1}'",
+                                      text.Length,
+                                      ComTextHelper.GetDebugText(text));
 
-		            TheStream.Write(text);
-		            TheStream.Flush();
-		        }
-		        else
-		        {
-		            Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Text");
-		        }
-		    }
-		    catch (ObjectDisposedException ex)
+                    TheStream.Write(text);
+                    TheStream.Flush();
+                }
+                else
+                {
+                    Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Text");
+                }
+            }
+            catch (ObjectDisposedException ex)
             {
                 Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
                 Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
 
-		        KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+                KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
                 ReconnectTimer.Reset();
-		    }
-			catch (Exception ex)
-			{
-                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
-                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
+            }
+            catch (Crestron.SimplSharp.CrestronIO.IOException ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Crestron.SimplSharp.CrestronIO.IOException: {0} -\n{1}\n", ex.Message, ex);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Crestron.SimplSharp.CrestronIO.IOException Stack Trace: {0}", ex.StackTrace);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Crestron.SimplSharp.CrestronIO.IOException Stream write failed");
+                KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+                ReconnectTimer.Reset();
 
-				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed");
-			}
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Exception: {0} -\n{1}\n", ex.Message, ex);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stack Trace: {0}", ex.StackTrace);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed");
+
+            }
 		}
 
         /// <summary>
