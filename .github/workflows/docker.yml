@@ -70,13 +70,13 @@ jobs:
         run: Write-Output "$($Env:VERSION)" | Out-File -FilePath "$($Env:GITHUB_HOME)\output\version.txt"
       # Upload the build output as an artifact
       - name: Upload Build Output
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: Build
           path: ./${{ env.SOLUTION_FILE}}-${{ env.VERSION}}.zip
       # Upload the Version file as an artifact
       - name: Upload version.txt
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: Version
           path: ${{env.GITHUB_HOME}}\output\version.txt
@@ -114,7 +114,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Download Build Version Info
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: Version
       - name: Set Version Number
@@ -127,7 +127,7 @@ jobs:
           Remove-Item -Path ./Version/version.txt
           Remove-Item -Path ./Version
       - name: Download Build output
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: Build
           path: ./
