@@ -120,6 +120,7 @@ jobs:
       - name: Set Version Number
         shell: powershell
         run: |
+          Get-ChildItem "."
           Get-ChildItem "./Version"
           $version = Get-Content -Path ./Version/version.txt
           Write-Host "Version: $version"
