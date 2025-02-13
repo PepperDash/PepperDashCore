@@ -250,6 +250,7 @@ namespace PepperDash.Core
                     ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
                     Client = new SshClient(connectionInfo);
                     Client.ErrorOccurred += Client_ErrorOccurred;
+                    Client.KeepAliveInterval = TimeSpan.FromMilliseconds(30000);
 
                     //Attempt to connect
                     ClientStatus = SocketStatus.SOCKET_STATUS_WAITING;
