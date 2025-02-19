@@ -269,17 +269,34 @@ namespace PepperDash.Core
                         var errorLogLevel = DisconnectLogged == true ? Debug.ErrorLogLevel.None : Debug.ErrorLogLevel.Error;
 
                         if (ie is SocketException)
-                            this.LogException(ie, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.Message);
-                        else if (ie is System.Net.Sockets.SocketException)
+                        {
+                            this.LogException(ie, "CONNECTION failure: Cannot reach host, ({1})", Key, ie.Message);                            
+                        }
+
+                        if (ie is System.Net.Sockets.SocketException socketException)
+                        {
                             this.LogException(ie, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
                                 Key, Hostname, Port, ie.GetType());
-                        else if (ie is SshAuthenticationException)
+                        }
+                        if (ie is SshAuthenticationException)
                         {
-                            this.LogException(ie, "Authentication failure for username '{0}', ({1})",this,
+                            this.LogException(ie, "Authentication failure for username '{0}', ({1})", this,
                                 Username, ie.Message);
                         }
                         else
                             this.LogException(ie, "Error on connect");
+
+                        DisconnectLogged = true;
+                        KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+                        if (AutoReconnect)
+                        {
+                            this.LogDebug("Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+                            ReconnectTimer.Reset(AutoReconnectIntervalMs);
+                        }
+                    }
+                    catch(SshOperationTimeoutException ex)
+                    {
+                        this.LogWarning("Connection attempt timed out: {message}", ex.Message);
 
                         DisconnectLogged = true;
                         KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
