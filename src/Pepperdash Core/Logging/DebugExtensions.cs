@@ -1,11 +1,16 @@
 ﻿using Serilog;
 using Serilog.Events;
+using System;
 using Log = PepperDash.Core.Debug;
 
 namespace PepperDash.Core.Logging
 {
     public static class DebugExtensions
     {
+        public static void LogException(this IKeyed device, Exception ex, string message, params object[] args)
+        {
+            Log.LogMessage(ex, message, device, args);
+        }
         public static void LogVerbose(this IKeyed device, string message, params object[] args)
         {
             Log.LogMessage(LogEventLevel.Verbose, device, message, args);

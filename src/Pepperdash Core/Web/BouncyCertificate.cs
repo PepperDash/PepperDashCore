@@ -9,7 +9,6 @@ using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Prng;
-using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
@@ -17,10 +16,7 @@ using Org.BouncyCastle.X509;
 using X509Certificate2 = System.Security.Cryptography.X509Certificates.X509Certificate2;
 using X509KeyStorageFlags = System.Security.Cryptography.X509Certificates.X509KeyStorageFlags;
 using X509ContentType = System.Security.Cryptography.X509Certificates.X509ContentType;
-using System.Text;
 using Org.BouncyCastle.Crypto.Operators;
-using System.Numerics;
-using System.Security.Cryptography.X509Certificates;
 using BigInteger = Org.BouncyCastle.Math.BigInteger;
 using X509Certificate = Org.BouncyCastle.X509.X509Certificate;
 
@@ -284,7 +280,7 @@ namespace PepperDash.Core
             // Now to convert the Bouncy Castle certificate to a .NET certificate.
             // See http://web.archive.org/web/20100504192226/http://www.fkollmann.de/v2/post/Creating-certificates-using-BouncyCastle.aspx
             // ...but, basically, we create a PKCS12 store (a .PFX file) in memory, and add the public and private key to that.
-            var store = new Pkcs12Store();
+            var store = new Pkcs12StoreBuilder().Build();
 
             // What Bouncy Castle calls "alias" is the same as what Windows terms the "friendly name".
             string friendlyName = certificate.SubjectDN.ToString();
