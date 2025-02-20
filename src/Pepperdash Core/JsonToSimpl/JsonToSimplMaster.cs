@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronIO;
 using Newtonsoft.Json;
@@ -159,7 +160,11 @@ namespace PepperDash.Core.JsonToSimpl
             /// <returns></returns>
 			public static JObject ParseObject(string json)
 			{
-				using (var reader = new JsonTextReader(new StringReader(json)))
+				#if NET6_0
+                using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
+#else
+                using (var reader = new JsonTextReader(new Crestron.SimplSharp.CrestronIO.StringReader(json)))
+#endif
 				{
 					var startDepth = reader.Depth;
 					var obj = JObject.Load(reader);
@@ -176,7 +181,11 @@ namespace PepperDash.Core.JsonToSimpl
             /// <returns></returns>
 			public static JArray ParseArray(string json)
 			{
-				using (var reader = new JsonTextReader(new StringReader(json)))
+				#if NET6_0
+                using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
+#else
+                using (var reader = new JsonTextReader(new Crestron.SimplSharp.CrestronIO.StringReader(json)))
+#endif
 				{
 					var startDepth = reader.Depth;
 					var obj = JArray.Load(reader);
