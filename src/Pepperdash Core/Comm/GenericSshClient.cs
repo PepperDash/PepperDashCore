@@ -1,16 +1,17 @@
 ﻿using System;
-using System.Linq;
 using System.Text;
+using System.Threading;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
-using Crestron.SimplSharp.Ssh;
-using Crestron.SimplSharp.Ssh.Common;
+using PepperDash.Core.Logging;
+using Renci.SshNet;
+using Renci.SshNet.Common;
 
 namespace PepperDash.Core
 {
-	/// <summary>
-	/// 
-	/// </summary>
+    /// <summary>
+    /// 
+    /// </summary>
     public class GenericSshClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
 	{
 	    private const string SPlusKey = "Uninitialized SshClient";
@@ -133,7 +134,8 @@ namespace PepperDash.Core
 		CTimer ReconnectTimer;
 
         //Lock object to prevent simulatneous connect/disconnect operations
-        private CCriticalSection connectLock = new CCriticalSection();
+        //private CCriticalSection connectLock = new CCriticalSection();
+        private SemaphoreSlim connectLock = new SemaphoreSlim(1);
 
         private bool DisconnectLogged = false;
 
@@ -158,7 +160,7 @@ namespace PepperDash.Core
                     {
                         Connect();
                     }
-	            }, Timeout.Infinite);
+	            }, System.Threading.Timeout.Infinite);
 		}
 
 		/// <summary>
@@ -176,7 +178,7 @@ namespace PepperDash.Core
                 {
                     Connect();
                 }
-            }, Timeout.Infinite);
+            }, System.Threading.Timeout.Infinite);
 		}
 
 		/// <summary>
@@ -196,7 +198,7 @@ namespace PepperDash.Core
 			{
 				if (Client != null)
 				{
-					Debug.Console(1, this, "Program stopping. Closing connection");
+					this.LogDebug("Program stopping. Closing connection");
                     Disconnect();
 				}
 			}
@@ -211,7 +213,7 @@ namespace PepperDash.Core
             if (string.IsNullOrEmpty(Hostname) || Port < 1 || Port > 65535
                 || Username == null || Password == null)
             {
-                Debug.Console(0, this, Debug.ErrorLogLevel.Error, "Connect failed.  Check hostname, port, username and password are set or not null");
+                this.LogError("Connect failed.  Check hostname, port, username and password are set or not null");
                 return;
             }
 
@@ -219,14 +221,14 @@ namespace PepperDash.Core
 
             try
             {
-                connectLock.Enter();
+                connectLock.Wait();
                 if (IsConnected)
                 {
-                    Debug.Console(1, this, "Connection already connected.  Exiting Connect()");
+                    this.LogDebug("Connection already connected.  Exiting Connect");
                 }
                 else
                 {
-                    Debug.Console(1, this, "Attempting connect");
+                    this.LogDebug("Attempting connect");
 
                     // Cancel reconnect if running.
                     ReconnectTimer.Stop();
@@ -234,7 +236,7 @@ namespace PepperDash.Core
                     // Cleanup the old client if it already exists
                     if (Client != null)
                     {
-                        Debug.Console(1, this, "Cleaning up disconnected client");
+                        this.LogDebug("Cleaning up disconnected client");
                         KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
                     }
 
@@ -243,7 +245,7 @@ namespace PepperDash.Core
                     kauth.AuthenticationPrompt += new EventHandler<AuthenticationPromptEventArgs>(kauth_AuthenticationPrompt);
                     PasswordAuthenticationMethod pauth = new PasswordAuthenticationMethod(Username, Password);
 
-                    Debug.Console(1, this, "Creating new SshClient");
+                    this.LogDebug("Creating new SshClient");
                     ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
                     Client = new SshClient(connectionInfo);
 
@@ -257,7 +259,7 @@ namespace PepperDash.Core
                         Client.Connect();
                         TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
                         TheStream.DataReceived += Stream_DataReceived;
-                        Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Connected");
+                        this.LogInformation("Connected");
                         ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
                         DisconnectLogged = false;
                     }
@@ -267,35 +269,52 @@ namespace PepperDash.Core
                         var errorLogLevel = DisconnectLogged == true ? Debug.ErrorLogLevel.None : Debug.ErrorLogLevel.Error;
 
                         if (ie is SocketException)
-                            Debug.Console(1, this, errorLogLevel, "'{0}' CONNECTION failure: Cannot reach host, ({1})", Key, ie.Message);
-                        else if (ie is System.Net.Sockets.SocketException)
-                            Debug.Console(1, this, errorLogLevel, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
-                                Key, Hostname, Port, ie.GetType());
-                        else if (ie is SshAuthenticationException)
                         {
-                            Debug.Console(1, this, errorLogLevel, "Authentication failure for username '{0}', ({1})",
+                            this.LogException(ie, "CONNECTION failure: Cannot reach host, ({1})", Key, ie.Message);                            
+                        }
+
+                        if (ie is System.Net.Sockets.SocketException socketException)
+                        {
+                            this.LogException(ie, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
+                                Key, Hostname, Port, ie.GetType());
+                        }
+                        if (ie is SshAuthenticationException)
+                        {
+                            this.LogException(ie, "Authentication failure for username '{0}', ({1})", this,
                                 Username, ie.Message);
                         }
                         else
-                            Debug.Console(1, this, errorLogLevel, "Error on connect:\r({0})", ie.Message);
+                            this.LogException(ie, "Error on connect");
 
                         DisconnectLogged = true;
                         KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
                         if (AutoReconnect)
                         {
-                            Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+                            this.LogDebug("Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+                            ReconnectTimer.Reset(AutoReconnectIntervalMs);
+                        }
+                    }
+                    catch(SshOperationTimeoutException ex)
+                    {
+                        this.LogWarning("Connection attempt timed out: {message}", ex.Message);
+
+                        DisconnectLogged = true;
+                        KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+                        if (AutoReconnect)
+                        {
+                            this.LogDebug("Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
                             ReconnectTimer.Reset(AutoReconnectIntervalMs);
                         }
                     }
                     catch (Exception e)
                     {
                         var errorLogLevel = DisconnectLogged == true ? Debug.ErrorLogLevel.None : Debug.ErrorLogLevel.Error;
-                        Debug.Console(1, this, errorLogLevel, "Unhandled exception on connect:\r({0})", e.Message);
+                        this.LogException(e, "Unhandled exception on connect");
                         DisconnectLogged = true;
                         KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
                         if (AutoReconnect)
                         {
-                            Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+                            this.LogDebug("Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
                             ReconnectTimer.Reset(AutoReconnectIntervalMs);
                         }
                     }
@@ -303,7 +322,7 @@ namespace PepperDash.Core
             }
             finally
             {
-                connectLock.Leave();
+                connectLock.Release();
             }
         }
 
@@ -335,37 +354,9 @@ namespace PepperDash.Core
                 Client.Disconnect();
                 Client = null;
                 ClientStatus = status;
-                Debug.Console(1, this, "Disconnected");
+                this.LogDebug("Disconnected");
             }
-        }
-
-		/// <summary>
-		/// Anything to do with reestablishing connection on failures
-		/// </summary>
-		void HandleConnectionFailure()
-		{
-            KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
-
-            Debug.Console(1, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
-		    if (AutoReconnect && ConnectEnabled)
-		    {
-		        Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
-		        if (ReconnectTimer == null)
-		        {
-		            ReconnectTimer = new CTimer(o =>
-		            {
-		                Connect();
-		            }, AutoReconnectIntervalMs);
-		            Debug.Console(1, this, "Attempting connection in {0} seconds",
-		                (float) (AutoReconnectIntervalMs/1000));
-		        }
-		        else
-		        {
-		            Debug.Console(1, this, "{0} second reconnect cycle running",
-		                (float) (AutoReconnectIntervalMs/1000));
-		        }
-		    }
-		}
+        }		
 
         /// <summary>
         /// Kills the stream
@@ -378,7 +369,7 @@ namespace PepperDash.Core
 				TheStream.Close();
 				TheStream.Dispose();
 				TheStream = null;
-                Debug.Console(1, this, "Disconnected stream");
+                this.LogDebug("Disconnected stream");
 			}
 		}
 
@@ -395,7 +386,7 @@ namespace PepperDash.Core
 		/// <summary>
 		/// Handler for data receive on ShellStream.  Passes data across to queue for line parsing.
 		/// </summary>
-		void Stream_DataReceived(object sender, Crestron.SimplSharp.Ssh.Common.ShellDataEventArgs e)
+		void Stream_DataReceived(object sender, ShellDataEventArgs e)
 		{
 			var bytes = e.Data;
 			if (bytes.Length > 0)
@@ -405,7 +396,7 @@ namespace PepperDash.Core
 			    {
 			        if (StreamDebugging.RxStreamDebuggingIsEnabled)
 			        {
-			            Debug.Console(0, this, "Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
+			            this.LogInformation("Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
 			        }
                     bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
 			    }
@@ -415,7 +406,7 @@ namespace PepperDash.Core
 				{
 					var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
                     if (StreamDebugging.RxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Received: '{0}'", ComTextHelper.GetDebugText(str));
+                        this.LogInformation("Received: '{0}'", ComTextHelper.GetDebugText(str));
 
                     textHandler(this, new GenericCommMethodReceiveTextArgs(str));
                 }
@@ -427,27 +418,26 @@ namespace PepperDash.Core
 		/// Error event handler for client events - disconnect, etc.  Will forward those events via ConnectionChange
 		/// event
 		/// </summary>
-		void Client_ErrorOccurred(object sender, Crestron.SimplSharp.Ssh.Common.ExceptionEventArgs e)
+		void Client_ErrorOccurred(object sender, ExceptionEventArgs e)
 		{
             CrestronInvoke.BeginInvoke(o =>
             {
                 if (e.Exception is SshConnectionException || e.Exception is System.Net.Sockets.SocketException)
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Disconnected by remote");
+                    this.LogError("Disconnected by remote");
                 else
-                    Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Unhandled SSH client error: {0}", e.Exception);
-
+                    this.LogException(e.Exception, "Unhandled SSH client error");
                 try
                 {
-                    connectLock.Enter();
+                    connectLock.Wait();
                     KillClient(SocketStatus.SOCKET_STATUS_BROKEN_REMOTELY);
                 }
                 finally
                 {
-                    connectLock.Leave();
+                    connectLock.Release();
                 }
                 if (AutoReconnect && ConnectEnabled)
                 {
-                    Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+                    this.LogDebug("Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
                     ReconnectTimer.Reset(AutoReconnectIntervalMs);
                 }
             });
@@ -475,7 +465,7 @@ namespace PepperDash.Core
                 if (Client != null && TheStream != null && IsConnected)
                 {
                     if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
+                        this.LogInformation("Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
 
                     TheStream.Write(text);
                     TheStream.Flush();
@@ -483,15 +473,12 @@ namespace PepperDash.Core
                 }
                 else
                 {
-                    Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Text");
+                    this.LogDebug("Client is null or disconnected.  Cannot Send Text");
                 }
 			}
 			catch (Exception ex)
 			{
-			    Debug.Console(0, "Exception: {0}", ex.Message);
-			    Debug.Console(0, "Stack Trace: {0}", ex.StackTrace);
-
-				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed. Disconnected, closing");
+                this.LogException(ex, "Exception sending text: {message}", text);
 			}
 		}
 
@@ -506,20 +493,20 @@ namespace PepperDash.Core
                 if (Client != null && TheStream != null && IsConnected)
                 {
                     if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                        Debug.Console(0, this, "Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
+                        this.LogInformation("Sending {0} bytes: '{1}'", bytes.Length, ComTextHelper.GetEscapedText(bytes));
 
                     TheStream.Write(bytes, 0, bytes.Length);
                     TheStream.Flush();
                 }
                 else
                 {
-                    Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Bytes");
+                    this.LogDebug("Client is null or disconnected.  Cannot Send Bytes");
                 }
-			}
-			catch
+            }
+            catch (Exception ex)
 			{
-				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed. Disconnected, closing");
-			}
+                this.LogException(ex, "Exception sending bytes: {message}", ComTextHelper.GetEscapedText(bytes));
+            }
 		}
 
 		#endregion
