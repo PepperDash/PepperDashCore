@@ -163,7 +163,7 @@ namespace PepperDash.Core.JsonToSimpl
 				#if NET6_0
                 using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
 #else
-                using (var reader = new JsonTextReader(new Crestron.SimplSharp.CrestronIO.StringReader(json)))
+                using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
 #endif
 				{
 					var startDepth = reader.Depth;
@@ -184,7 +184,7 @@ namespace PepperDash.Core.JsonToSimpl
 				#if NET6_0
                 using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
 #else
-                using (var reader = new JsonTextReader(new Crestron.SimplSharp.CrestronIO.StringReader(json)))
+                using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
 #endif
 				{
 					var startDepth = reader.Depth;
