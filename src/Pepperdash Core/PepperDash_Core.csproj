@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RootNamespace>PepperDash.Core</RootNamespace>
     <AssemblyName>PepperDashCore</AssemblyName>
-    <TargetFrameworks>net8</TargetFrameworks>
+    <TargetFrameworks>net6;net8</TargetFrameworks>
     <Deterministic>true</Deterministic>
     <NeutralLanguage>en</NeutralLanguage>
     <OutputPath>bin\$(Configuration)\</OutputPath>

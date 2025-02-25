@@ -823,11 +823,15 @@ namespace PepperDash.Core
         {
             if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
             {
-                // CheckForMigration();
-                return string.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+                // Use fully qualified name for System.IO.Path
+                string baseDir = Directory.GetApplicationRootDirectory();
+                string userDir = System.IO.Path.Combine(baseDir, "user");
+                string debugSettingsDir = System.IO.Path.Combine(userDir, "debugSettings");
+                return System.IO.Path.Combine(debugSettingsDir, $"program{InitialParametersClass.ApplicationNumber}");
             }
 
-            return string.Format("{0}{1}user{1}debugSettings{1}{2}.json",Directory.GetApplicationRootDirectory(), Path.DirectorySeparatorChar, InitialParametersClass.RoomId);
+            return string.Format("{0}{1}user{1}debugSettings{1}{2}.json",
+                Directory.GetApplicationRootDirectory(), Path.DirectorySeparatorChar, InitialParametersClass.RoomId);
         }
 
         private static void CheckForMigration()
