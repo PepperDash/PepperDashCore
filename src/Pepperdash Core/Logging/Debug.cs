@@ -64,13 +64,13 @@ namespace PepperDash.Core
         /// Describes the folder location where a given program stores it's debug level memory. By default, the
         /// file written will be named appNdebug where N is 1-10.
         /// </summary>
-        public static string OldFilePathPrefix = @"\nvram\debug\";
+        public static string OldFilePathPrefix = "/nvram/debug/";
 
         /// <summary>
         /// Describes the new folder location where a given program stores it's debug level memory. By default, the
         /// file written will be named appNdebug where N is 1-10.
         /// </summary>
-        public static string NewFilePathPrefix = @"\user\debug\";
+        public static string NewFilePathPrefix = "/user/debug/";
 
         /// <summary>
         /// The name of the file containing the current debug settings.
@@ -823,9 +823,8 @@ namespace PepperDash.Core
         {
             if (CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
             {
-                // Make sure the path starts with a slash to make it absolute
-                return String.Format("/user/debugSettings/program{0}", InitialParametersClass.ApplicationNumber);
-            }
+                return "/user/debugSettings/program" + InitialParametersClass.ApplicationNumber;
+            }       
 
             return string.Format("{0}{1}user{1}debugSettings{1}{2}.json",
                 Directory.GetApplicationRootDirectory(), Path.DirectorySeparatorChar, InitialParametersClass.RoomId);
@@ -833,41 +832,42 @@ namespace PepperDash.Core
 
         private static void CheckForMigration()
         {
-            var oldFilePath = String.Format(@"\nvram\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
-            var newFilePath = String.Format(@"\user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber);
+            var oldFilePath = String.Format("/nvram/debugSettings/program{0}", InitialParametersClass.ApplicationNumber);
+            var newFilePath = String.Format("/user/debugSettings/program{0}", InitialParametersClass.ApplicationNumber);
 
             //check for file at old path
             if (!File.Exists(oldFilePath))
             {
                 Console(0, ErrorLogLevel.Notice,
                     String.Format(
-                        @"Debug settings file migration not necessary. Using file at \user\debugSettings\program{0}",
+                        "Debug settings file migration not necessary. Using file at /user/debugSettings/program{0}",
                         InitialParametersClass.ApplicationNumber));
 
                 return;
             }
 
             //create the new directory if it doesn't already exist
-            if (!Directory.Exists(@"\user\debugSettings"))
+            if (!Directory.Exists("/user/debugSettings"))
             {
-                Directory.CreateDirectory(@"\user\debugSettings");
+                Directory.CreateDirectory("/user/debugSettings");
             }
 
             Console(0, ErrorLogLevel.Notice,
                 String.Format(
-                    @"File found at \nvram\debugSettings\program{0}. Migrating to \user\debugSettings\program{0}", InitialParametersClass.ApplicationNumber));
+                    "File found at /nvram/debugSettings/program{0}. Migrating to /user/debugSettings/program{0}", 
+                    InitialParametersClass.ApplicationNumber));
 
             //Copy file from old path to new path, then delete it. This will overwrite the existing file
             File.Copy(oldFilePath, newFilePath, true);
             File.Delete(oldFilePath);
 
             //Check if the old directory is empty, then delete it if it is
-            if (Directory.GetFiles(@"\nvram\debugSettings").Length > 0)
+            if (Directory.GetFiles("/nvram/debugSettings").Length > 0)
             {
                 return;
             }
 
-            Directory.Delete(@"\nvram\debugSettings");
+            Directory.Delete("/nvram/debugSettings");
         }
 
         /// <summary>

@@ -2,6 +2,7 @@
 using Crestron.SimplSharp.CrestronLogger;
 using Serilog.Core;
 using Serilog.Events;
+using System; // Add this for Exception class
 
 namespace PepperDash.Core.Logging
 {
@@ -23,7 +24,22 @@ namespace PepperDash.Core.Logging
 
         public DebugCrestronLoggerSink()
         {
-            CrestronLogger.Initialize(1, LoggerModeEnum.RM);
+            try
+            {
+                // The Crestron SDK appears to be using Windows-style paths internally
+                // We'll wrap this in a try/catch to handle path errors
+                
+                CrestronLogger.Initialize(1, LoggerModeEnum.DEFAULT);
+            }
+            catch (Crestron.SimplSharp.CrestronIO.InvalidDirectoryLocationException ex)
+            {
+                // Log the error but allow the application to continue without the RM logger
+                CrestronConsole.PrintLine("Error initializing CrestronLogger in RM mode: {0}", ex.Message);
+                
+                // Just report the error and continue - don't try to use other logger modes
+                // since LoggerModeEnum doesn't have a Default value
+                CrestronConsole.PrintLine("CrestronLogger will not be available");
+            }
         }
     }
 }
