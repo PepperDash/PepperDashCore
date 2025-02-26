@@ -160,11 +160,7 @@ namespace PepperDash.Core.JsonToSimpl
             /// <returns></returns>
 			public static JObject ParseObject(string json)
 			{
-				#if NET6_0
                 using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
-#else
-                using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
-#endif
 				{
 					var startDepth = reader.Depth;
 					var obj = JObject.Load(reader);
@@ -181,11 +177,7 @@ namespace PepperDash.Core.JsonToSimpl
             /// <returns></returns>
 			public static JArray ParseArray(string json)
 			{
-				#if NET6_0
                 using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
-#else
-                using (var reader = new JsonTextReader(new System.IO.StringReader(json)))
-#endif
 				{
 					var startDepth = reader.Depth;
 					var obj = JArray.Load(reader);
