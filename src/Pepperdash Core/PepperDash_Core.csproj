@@ -41,7 +41,8 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="SSH.NET" Version="2024.2.0" />
-    <PackageReference Include="WebSocketSharp" Version="1.0.3-rc11" />
+    <!-- WebSocketSharp reference removed -->
+    <!-- System.Net.WebSockets is part of .NET Core -->
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Comm\._GenericSshClient.cs" />
