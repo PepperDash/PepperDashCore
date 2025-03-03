@@ -231,7 +231,10 @@ namespace PepperDash.Core
                     this.LogDebug("Attempting connect");
 
                     // Cancel reconnect if running.
-                    ReconnectTimer.Stop();
+					if (ReconnectTimer != null)
+					{
+						ReconnectTimer.Stop();
+					}
 
                     // Cleanup the old client if it already exists
                     if (Client != null)
@@ -248,8 +251,6 @@ namespace PepperDash.Core
                     this.LogDebug("Creating new SshClient");
                     ConnectionInfo connectionInfo = new ConnectionInfo(Hostname, Port, Username, pauth, kauth);
                     Client = new SshClient(connectionInfo);
-
-                    Client.ErrorOccurred -= Client_ErrorOccurred;
                     Client.ErrorOccurred += Client_ErrorOccurred;
 
                     //Attempt to connect
@@ -258,6 +259,11 @@ namespace PepperDash.Core
                     {
                         Client.Connect();
                         TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
+                        if (TheStream.DataAvailable)
+                        {
+                            // empty the buffer if there is data
+                            string str = TheStream.Read();
+                        }
                         TheStream.DataReceived += Stream_DataReceived;
                         this.LogInformation("Connected");
                         ClientStatus = SocketStatus.SOCKET_STATUS_CONNECTED;
@@ -336,7 +342,7 @@ namespace PepperDash.Core
 			if (ReconnectTimer != null)
 			{
 				ReconnectTimer.Stop();
-				ReconnectTimer = null;
+				// ReconnectTimer = null;
 			}
 
             KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
@@ -349,28 +355,72 @@ namespace PepperDash.Core
         {
             KillStream();
 
-            if (Client != null)
-            {                
-                Client.Disconnect();
-                Client = null;
-                ClientStatus = status;
-                this.LogDebug("Disconnected");
+            try
+            {
+                if (Client != null)
+                {
+                    Client.ErrorOccurred -= Client_ErrorOccurred;
+                    Client.Disconnect();
+                    Client.Dispose();
+                    Client = null;
+                    ClientStatus = status;
+                    Debug.Console(1, this, "Disconnected");
+                }
             }
-        }		
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception in Kill Client:{0}", ex);
+            }
+        }
+
+		/// <summary>
+		/// Anything to do with reestablishing connection on failures
+		/// </summary>
+		void HandleConnectionFailure()
+		{
+            KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+
+            Debug.Console(1, this, "Client nulled due to connection failure. AutoReconnect: {0}, ConnectEnabled: {1}", AutoReconnect, ConnectEnabled);
+		    if (AutoReconnect && ConnectEnabled)
+		    {
+		        Debug.Console(1, this, "Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+		        if (ReconnectTimer == null)
+		        {
+		            ReconnectTimer = new CTimer(o =>
+		            {
+		                Connect();
+		            }, AutoReconnectIntervalMs);
+		            Debug.Console(1, this, "Attempting connection in {0} seconds",
+		                (float) (AutoReconnectIntervalMs/1000));
+		        }
+		        else
+		        {
+		            Debug.Console(1, this, "{0} second reconnect cycle running",
+		                (float) (AutoReconnectIntervalMs/1000));
+		        }
+		    }
+		}
 
         /// <summary>
         /// Kills the stream
         /// </summary>
 		void KillStream()
 		{
-			if (TheStream != null)
-			{
-				TheStream.DataReceived -= Stream_DataReceived;
-				TheStream.Close();
-				TheStream.Dispose();
-				TheStream = null;
-                this.LogDebug("Disconnected stream");
-			}
+            try
+            {
+                if (TheStream != null)
+                {
+                    TheStream.DataReceived -= Stream_DataReceived;
+                    TheStream.Close();
+                    TheStream.Dispose();
+                    TheStream = null;
+                    this.LogDebug("Disconnected stream");
+                }
+            }
+            catch (Exception ex)
+            {
+                this.LogException(ex, "Exception in Kill Stream:{0}");
+            }
 		}
 
 		/// <summary>
@@ -388,29 +438,33 @@ namespace PepperDash.Core
 		/// </summary>
 		void Stream_DataReceived(object sender, ShellDataEventArgs e)
 		{
-			var bytes = e.Data;
-			if (bytes.Length > 0)
+            if (((ShellStream)sender).Length <= 0L)
+            {
+                return;
+            }
+            var response = ((ShellStream)sender).Read(); 
+ 
+			var bytesHandler = BytesReceived;
+            
+		    if (bytesHandler != null)
+		    {
+                var bytes = Encoding.UTF8.GetBytes(response);
+		        if (StreamDebugging.RxStreamDebuggingIsEnabled)
+		        {
+		            this.LogInformation("Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
+		        }
+                bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
+		    }
+				
+			var textHandler = TextReceived;
+			if (textHandler != null)
 			{
-				var bytesHandler = BytesReceived;
-			    if (bytesHandler != null)
-			    {
-			        if (StreamDebugging.RxStreamDebuggingIsEnabled)
-			        {
-			            this.LogInformation("Received {1} bytes: '{0}'", ComTextHelper.GetEscapedText(bytes), bytes.Length);
-			        }
-                    bytesHandler(this, new GenericCommMethodReceiveBytesArgs(bytes));
-			    }
-					
-				var textHandler = TextReceived;
-				if (textHandler != null)
-				{
-					var str = Encoding.GetEncoding(28591).GetString(bytes, 0, bytes.Length);
-                    if (StreamDebugging.RxStreamDebuggingIsEnabled)
-                        this.LogInformation("Received: '{0}'", ComTextHelper.GetDebugText(str));
+                if (StreamDebugging.RxStreamDebuggingIsEnabled)
+                    this.LogInformation("Received: '{0}'", ComTextHelper.GetDebugText(response));
 
-                    textHandler(this, new GenericCommMethodReceiveTextArgs(str));
-                }
-			}
+                textHandler(this, new GenericCommMethodReceiveTextArgs(response));
+            }
+			
 		}
 
 
@@ -460,22 +514,33 @@ namespace PepperDash.Core
 		/// <param name="text"></param>
 		public void SendText(string text)
 		{
-			try
-			{
-                if (Client != null && TheStream != null && IsConnected)
-                {
-                    if (StreamDebugging.TxStreamDebuggingIsEnabled)
-                        this.LogInformation("Sending {0} characters of text: '{1}'", text.Length, ComTextHelper.GetDebugText(text));
+		    try
+		    {
+		        if (Client != null && TheStream != null && IsConnected)
+		        {
+		            if (StreamDebugging.TxStreamDebuggingIsEnabled)
+		                Debug.Console(0,
+		                              this,
+		                              "Sending {0} characters of text: '{1}'",
+		                              text.Length,
+		                              ComTextHelper.GetDebugText(text));
 
-                    TheStream.Write(text);
-                    TheStream.Flush();
+		            TheStream.Write(text);
+		            TheStream.Flush();
+		        }
+		        else
+		        {
+		            Debug.Console(1, this, "Client is null or disconnected.  Cannot Send Text");
+		        }
+		    }
+		    catch (ObjectDisposedException ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
 
-                }
-                else
-                {
-                    this.LogDebug("Client is null or disconnected.  Cannot Send Text");
-                }
-			}
+		        KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+                ReconnectTimer.Reset();
+		    }
 			catch (Exception ex)
 			{
                 this.LogException(ex, "Exception sending text: {message}", text);
@@ -503,10 +568,28 @@ namespace PepperDash.Core
                     this.LogDebug("Client is null or disconnected.  Cannot Send Bytes");
                 }
             }
-            catch (Exception ex)
-			{
-                this.LogException(ex, "Exception sending bytes: {message}", ComTextHelper.GetEscapedText(bytes));
+            catch (ObjectDisposedException ex)
+            {
+                this.LogException(ex, "ObjectDisposedException sending {message}", ComTextHelper.GetEscapedText(bytes));
+
+                KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+                ReconnectTimer.Reset();
             }
+            catch (Exception ex)
+            {
+                this.LogException(ex, "Exception sending {message}", ComTextHelper.GetEscapedText(bytes));
+            }
+
+                KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
+                ReconnectTimer.Reset();
+            }
+            catch (Exception ex)
+            {
+                Debug.Console(0, this, Debug.ErrorLogLevel.Notice, "Exception: {0}", ex.Message);
+                Debug.Console(1, this, Debug.ErrorLogLevel.Notice, "Stack Trace: {0}", ex.StackTrace);
+
+				Debug.Console(1, this, Debug.ErrorLogLevel.Error, "Stream write failed");
+			}
 		}
 
 		#endregion

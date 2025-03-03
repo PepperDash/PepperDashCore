@@ -219,7 +219,8 @@ namespace PepperDash.Core
         /// </summary>
         public GenericTcpIpClient()
 			: base(SplusKey)
-		{
+        {
+            StreamDebugging = new CommunicationStreamDebugging(SplusKey);
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
