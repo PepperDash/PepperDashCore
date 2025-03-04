@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RootNamespace>PepperDash.Core</RootNamespace>
     <AssemblyName>PepperDashCore</AssemblyName>
-    <TargetFrameworks>net472;net6</TargetFrameworks>
+    <TargetFramework>net472</TargetFramework>
     <Deterministic>true</Deterministic>
     <NeutralLanguage>en</NeutralLanguage>
     <OutputPath>bin\$(Configuration)\</OutputPath>
@@ -15,7 +15,7 @@
     <PackageTags>crestron;4series;</PackageTags>
     <Version>2.0.0-local</Version>
     <InformationalVersion>$(Version)</InformationalVersion>
-    <PackageOutputPath>../../package</PackageOutputPath>
+    <PackageOutputPath>../output</PackageOutputPath>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
