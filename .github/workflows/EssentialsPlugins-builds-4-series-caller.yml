@@ -1,4 +1,4 @@
-name: Build Essentials Plugin
+name: Build PepperDash Core
 
 on:
   push:
