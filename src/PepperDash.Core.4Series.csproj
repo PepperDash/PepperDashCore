@@ -12,10 +12,8 @@
     <Company>PepperDash Technologies</Company>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PepperDash/PepperDashCore</RepositoryUrl>
-    <PackageTags>crestron;4series;</PackageTags>
-    <Version>2.0.0-local</Version>
-    <InformationalVersion>$(Version)</InformationalVersion>
-    <PackageOutputPath>../output</PackageOutputPath>
+    <PackageTags>crestron;4series;</PackageTags>    
+    <InformationalVersion>$(Version)</InformationalVersion>    
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
