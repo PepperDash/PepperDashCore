@@ -5,6 +5,7 @@ using System.Text;
 using Crestron.SimplSharp;
 using Crestron.SimplSharp.CrestronSockets;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace PepperDash.Core
 {
@@ -25,6 +26,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Indicates connection status
         /// </summary>
+        [JsonProperty("isConnected")]
         bool IsConnected { get; }
         /// <summary>
         /// Connect to the device
@@ -70,6 +72,7 @@ namespace PepperDash.Core
         /// <summary>
         /// Object to enable stream debugging
         /// </summary>
+        [JsonProperty("streamDebugging")]
         CommunicationStreamDebugging StreamDebugging { get; }
     }
 
@@ -87,7 +90,9 @@ namespace PepperDash.Core
         /// <summary>
         /// The current socket status of the client
         /// </summary>
-		SocketStatus ClientStatus { get; }
+        [JsonProperty("clinetStatus")]
+        [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        SocketStatus ClientStatus { get; }
 	}
 
     /// <summary>
@@ -106,10 +111,12 @@ namespace PepperDash.Core
         /// <summary>
         /// Enable automatic recconnect
         /// </summary>
+        [JsonProperty("autoReconnect")]
 		bool AutoReconnect { get; set; }
         /// <summary>
         /// Interval in ms to attempt automatic recconnections
         /// </summary>
+        [JsonProperty("autoReconnectIntervalMs")]
 		int AutoReconnectIntervalMs { get; set; }
 	}
 
