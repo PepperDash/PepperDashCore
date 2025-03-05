@@ -14,125 +14,125 @@ namespace PepperDash.Core
     /// 
     /// </summary>
     public class GenericSshClient : Device, ISocketStatusWithStreamDebugging, IAutoReconnect
-	{
-	    private const string SPlusKey = "Uninitialized SshClient";
+    {
+        private const string SPlusKey = "Uninitialized SshClient";
         /// <summary>
         /// Object to enable stream debugging
         /// </summary>
         public CommunicationStreamDebugging StreamDebugging { get; private set; }
 
-		/// <summary>
-		/// Event that fires when data is received.  Delivers args with byte array
-		/// </summary>
-		public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
+        /// <summary>
+        /// Event that fires when data is received.  Delivers args with byte array
+        /// </summary>
+        public event EventHandler<GenericCommMethodReceiveBytesArgs> BytesReceived;
 
-		/// <summary>
-		/// Event that fires when data is received.  Delivered as text.
-		/// </summary>
-		public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
+        /// <summary>
+        /// Event that fires when data is received.  Delivered as text.
+        /// </summary>
+        public event EventHandler<GenericCommMethodReceiveTextArgs> TextReceived;
 
-		/// <summary>
-		/// Event when the connection status changes.
-		/// </summary>
-		public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
+        /// <summary>
+        /// Event when the connection status changes.
+        /// </summary>
+        public event EventHandler<GenericSocketStatusChageEventArgs> ConnectionChange;
 
         ///// <summary>
         ///// 
         ///// </summary>
         //public event GenericSocketStatusChangeEventDelegate SocketStatusChange;
 
-		/// <summary>
-		/// Address of server
-		/// </summary>
-		public string Hostname { get; set; }
+        /// <summary>
+        /// Address of server
+        /// </summary>
+        public string Hostname { get; set; }
 
-		/// <summary>
-		/// Port on server
-		/// </summary>
-		public int Port { get; set; }
+        /// <summary>
+        /// Port on server
+        /// </summary>
+        public int Port { get; set; }
 
-		/// <summary>
-		/// Username for server
-		/// </summary>
-		public string Username { get; set; }
+        /// <summary>
+        /// Username for server
+        /// </summary>
+        public string Username { get; set; }
 
-		/// <summary>
-		/// And... Password for server.  That was worth documenting!
-		/// </summary>
-		public string Password { get; set; }
+        /// <summary>
+        /// And... Password for server.  That was worth documenting!
+        /// </summary>
+        public string Password { get; set; }
 
-		/// <summary>
-		/// True when the server is connected - when status == 2.
-		/// </summary>
-		public bool IsConnected 
-		{ 
-			// returns false if no client or not connected
+        /// <summary>
+        /// True when the server is connected - when status == 2.
+        /// </summary>
+        public bool IsConnected
+        {
+            // returns false if no client or not connected
             get { return Client != null && ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
-		}        
+        }
 
-		/// <summary>
-		/// S+ helper for IsConnected
-		/// </summary>
-		public ushort UIsConnected
-		{
-			get { return (ushort)(IsConnected ? 1 : 0); }
-		}
+        /// <summary>
+        /// S+ helper for IsConnected
+        /// </summary>
+        public ushort UIsConnected
+        {
+            get { return (ushort)(IsConnected ? 1 : 0); }
+        }
 
-		/// <summary>
-		/// 
-		/// </summary>
-		public SocketStatus ClientStatus
-		{
-			get { return _ClientStatus; }
-			private set
-			{
-				if (_ClientStatus == value)
-					return;
-				_ClientStatus = value;
-				OnConnectionChange();
-			}
-		}
-		SocketStatus _ClientStatus;
+        /// <summary>
+        /// 
+        /// </summary>
+        public SocketStatus ClientStatus
+        {
+            get { return _ClientStatus; }
+            private set
+            {
+                if (_ClientStatus == value)
+                    return;
+                _ClientStatus = value;
+                OnConnectionChange();
+            }
+        }
+        SocketStatus _ClientStatus;
 
-		/// <summary>
-		/// Contains the familiar Simpl analog status values. This drives the ConnectionChange event
-		/// and IsConnected with be true when this == 2.
-		/// </summary>
-		public ushort UStatus 
-		{
-			get { return (ushort)_ClientStatus; }	
-		}
+        /// <summary>
+        /// Contains the familiar Simpl analog status values. This drives the ConnectionChange event
+        /// and IsConnected with be true when this == 2.
+        /// </summary>
+        public ushort UStatus
+        {
+            get { return (ushort)_ClientStatus; }
+        }
 
-		/// <summary>
-		/// Determines whether client will attempt reconnection on failure. Default is true
-		/// </summary>
-		public bool AutoReconnect { get; set; }
+        /// <summary>
+        /// Determines whether client will attempt reconnection on failure. Default is true
+        /// </summary>
+        public bool AutoReconnect { get; set; }
 
-		/// <summary>
-		/// Will be set and unset by connect and disconnect only
-		/// </summary>
-		public bool ConnectEnabled { get; private set; }
+        /// <summary>
+        /// Will be set and unset by connect and disconnect only
+        /// </summary>
+        public bool ConnectEnabled { get; private set; }
 
-		/// <summary>
-		/// S+ helper for AutoReconnect
-		/// </summary>
-		public ushort UAutoReconnect
-		{
-			get { return (ushort)(AutoReconnect ? 1 : 0); }
-			set { AutoReconnect = value == 1; }
-		}
+        /// <summary>
+        /// S+ helper for AutoReconnect
+        /// </summary>
+        public ushort UAutoReconnect
+        {
+            get { return (ushort)(AutoReconnect ? 1 : 0); }
+            set { AutoReconnect = value == 1; }
+        }
 
-		/// <summary>
-		/// Millisecond value, determines the timeout period in between reconnect attempts.
-		/// Set to 5000 by default
-		/// </summary>
-		public int AutoReconnectIntervalMs { get; set; }
+        /// <summary>
+        /// Millisecond value, determines the timeout period in between reconnect attempts.
+        /// Set to 5000 by default
+        /// </summary>
+        public int AutoReconnectIntervalMs { get; set; }
 
-		SshClient Client;
+        SshClient Client;
 
-		ShellStream TheStream;
+        ShellStream TheStream;
 
-		CTimer ReconnectTimer;
+        CTimer ReconnectTimer;
 
         //Lock object to prevent simulatneous connect/disconnect operations
         //private CCriticalSection connectLock = new CCriticalSection();
@@ -140,12 +140,12 @@ namespace PepperDash.Core
 
         private bool DisconnectLogged = false;
 
-		/// <summary>
-		/// Typical constructor.
-		/// </summary>
-		public GenericSshClient(string key, string hostname, int port, string username, string password) :
-			base(key)
-		{
+        /// <summary>
+        /// Typical constructor.
+        /// </summary>
+        public GenericSshClient(string key, string hostname, int port, string username, string password) :
+            base(key)
+        {
             StreamDebugging = new CommunicationStreamDebugging(key);
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
 			Key = key;
@@ -183,14 +183,6 @@ namespace PepperDash.Core
 		}
 
 		/// <summary>
-		/// Just to help S+ set the key
-		/// </summary>
-		public void Initialize(string key)
-		{
-			Key = key;
-		}
-
-		/// <summary>
 		/// Handles closing this up when the program shuts down
 		/// </summary>
 		void CrestronEnvironment_ProgramStatusEventHandler(eProgramStatusEventType programEventType)
@@ -201,14 +193,14 @@ namespace PepperDash.Core
 				{
 					this.LogDebug("Program stopping. Closing connection");
                     Disconnect();
-				}
-			}
-		}
+                }
+            }
+        }
 
-		/// <summary>
-		/// Connect to the server, using the provided properties.
-		/// </summary>
-		public void Connect()
+        /// <summary>
+        /// Connect to the server, using the provided properties.
+        /// </summary>
+        public void Connect()
         {
             // Don't go unless everything is here
             if (string.IsNullOrEmpty(Hostname) || Port < 1 || Port > 65535
@@ -347,7 +339,7 @@ namespace PepperDash.Core
 			}
 
             KillClient(SocketStatus.SOCKET_STATUS_BROKEN_LOCALLY);
-		}
+        }
 
         /// <summary>
         /// Kills the stream, cleans up the client and sets it to null
@@ -468,18 +460,18 @@ namespace PepperDash.Core
                     ReconnectTimer.Reset(AutoReconnectIntervalMs);
                 }
             });
-		}
+        }
 
-		/// <summary>
-		/// Helper for ConnectionChange event
-		/// </summary>
-		void OnConnectionChange()
-		{
-			if (ConnectionChange != null)
-				ConnectionChange(this, new GenericSocketStatusChageEventArgs(this));
-		}
+        /// <summary>
+        /// Helper for ConnectionChange event
+        /// </summary>
+        void OnConnectionChange()
+        {
+            if (ConnectionChange != null)
+                ConnectionChange(this, new GenericSocketStatusChageEventArgs(this));
+        }
 
-		#region IBasicCommunication Members
+        #region IBasicCommunication Members
 
 		/// <summary>
 		/// Sends text to the server
@@ -582,10 +574,10 @@ public class SshConnectionChangeEventArgs : EventArgs
         /// </summary>
 		public ushort Status { get { return Client.UStatus; } }
 
-		/// <summary>
+        /// <summary>
         ///  S+ Constructor
-		/// </summary>
-		public SshConnectionChangeEventArgs() { }
+        /// </summary>
+        public SshConnectionChangeEventArgs() { }
 
         /// <summary>
         /// EventArgs class
@@ -593,9 +585,9 @@ public class SshConnectionChangeEventArgs : EventArgs
         /// <param name="isConnected">Connection State</param>
         /// <param name="client">The Client</param>
 		public SshConnectionChangeEventArgs(bool isConnected, GenericSshClient client)
-		{
-			IsConnected = isConnected;
-			Client = client;
-		}
-	}
+        {
+            IsConnected = isConnected;
+            Client = client;
+        }
+    }
 }

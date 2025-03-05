@@ -12,7 +12,8 @@
     <Company>PepperDash Technologies</Company>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/PepperDash/PepperDashCore</RepositoryUrl>
-    <PackageTags>crestron;4series;</PackageTags>    
+    <PackageTags>crestron;4series;</PackageTags>   
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>        
     <InformationalVersion>$(Version)</InformationalVersion>    
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
   </PropertyGroup>
