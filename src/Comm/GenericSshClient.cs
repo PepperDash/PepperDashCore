@@ -182,15 +182,6 @@ namespace PepperDash.Core
             }, System.Threading.Timeout.Infinite);
 		}
 
-        /// <summary>
-        /// S+ Constructor - Must set all properties before calling Connect
-        /// </summary>
-        public GenericSshClient()
-            : base(SPlusKey)
-        {
-            CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
-            AutoReconnectIntervalMs = 5000;
-
 		/// <summary>
 		/// Handles closing this up when the program shuts down
 		/// </summary>

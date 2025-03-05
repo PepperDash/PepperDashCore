@@ -90,7 +90,7 @@ namespace PepperDash.Core
         /// <summary>
         /// The current socket status of the client
         /// </summary>
-        [JsonProperty("clinetStatus")]
+        [JsonProperty("clientStatus")]
         [JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
         SocketStatus ClientStatus { get; }
 	}
