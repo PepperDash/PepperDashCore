@@ -251,7 +251,7 @@ namespace PepperDash.Core
                     try
                     {
                         Client.Connect();
-                        TheStream = Client.CreateShellStream("PDTShell", 100, 80, 100, 200, 65534);
+                        TheStream = Client.CreateShellStream("PDTShell", 0, 0, 0, 0, 65534);
                         if (TheStream.DataAvailable)
                         {
                             // empty the buffer if there is data
@@ -269,18 +269,17 @@ namespace PepperDash.Core
 
                         if (ie is SocketException)
                         {
-                            this.LogException(ie, "CONNECTION failure: Cannot reach host, ({1})", Key, ie.Message);                            
+                            this.LogException(ie, "CONNECTION failure: Cannot reach host");                            
                         }
 
                         if (ie is System.Net.Sockets.SocketException socketException)
                         {
-                            this.LogException(ie, "'{0}' Connection failure: Cannot reach host '{1}' on port {2}, ({3})",
-                                Key, Hostname, Port, ie.GetType());
+                            this.LogException(ie, "Connection failure: Cannot reach {host} on {port}",
+                                Hostname, Port);
                         }
                         if (ie is SshAuthenticationException)
                         {
-                            this.LogException(ie, "Authentication failure for username '{0}', ({1})", this,
-                                Username, ie.Message);
+                            this.LogException(ie, "Authentication failure for username {userName}", Username);
                         }
                         else
                             this.LogException(ie, "Error on connect");
@@ -289,7 +288,7 @@ namespace PepperDash.Core
                         KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
                         if (AutoReconnect)
                         {
-                            this.LogDebug("Checking autoreconnect: {0}, {1}ms", AutoReconnect, AutoReconnectIntervalMs);
+                            this.LogDebug("Checking autoreconnect: {autoReconnect}, {autoReconnectInterval}ms", AutoReconnect, AutoReconnectIntervalMs);
                             ReconnectTimer.Reset(AutoReconnectIntervalMs);
                         }
                     }
@@ -499,14 +498,14 @@ namespace PepperDash.Core
 		    }
 		    catch (ObjectDisposedException ex)
             {
-                this.LogException(ex, "ObjectDisposedException sending {message}", text);                
+                this.LogError("ObjectDisposedException sending '{message}'. Restarting connection...", text.Trim());                
 
                 KillClient(SocketStatus.SOCKET_STATUS_CONNECT_FAILED);
                 ReconnectTimer.Reset();
 		    }
 			catch (Exception ex)
 			{
-                this.LogException(ex, "Exception sending text: {message}", text);
+                this.LogException(ex, "Exception sending text: '{message}'", text);
 			}
 		}
 
