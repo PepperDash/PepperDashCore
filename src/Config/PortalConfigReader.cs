@@ -98,9 +98,22 @@ namespace PepperDash.Core.Config
 		        merged.Add("destinationLists",
 		            Merge(template["destinationLists"], system["destinationLists"], "destinationLists"));
 
-			// Template tie lines take precedence.  Config tool doesn't do them at system
-			// level anyway...
-			if (template["tieLines"] != null)
+
+            if (system["cameraLists"] == null)
+                merged.Add("cameraLists", template["cameraLists"]);
+            else
+                merged.Add("cameraLists", Merge(template["cameraLists"], system["cameraLists"], "cameraLists"));
+
+            if (system["audioControlPointLists"] == null)
+                merged.Add("audioControlPointLists", template["audioControlPointLists"]);
+            else
+                merged.Add("audioControlPointLists",
+                    Merge(template["audioControlPointLists"], system["audioControlPointLists"], "audioControlPointLists"));
+
+
+            // Template tie lines take precedence.  Config tool doesn't do them at system
+            // level anyway...
+            if (template["tieLines"] != null)
 				merged.Add("tieLines", template["tieLines"]);
 			else if (system["tieLines"] != null)
 				merged.Add("tieLines", system["tieLines"]);
