@@ -122,6 +122,16 @@ namespace PepperDash.Core.PasswordManagement
 		}
 
 		/// <summary>
+		/// Deletes the last character in the currently entered password field
+		/// </summary>
+		public void DeletePasswordCharacter()
+		{
+			PasswordToValidate = PasswordToValidate.Substring(0, PasswordToValidate.Length - 1);			
+			OnBoolChange(false, (ushort)PasswordToValidate.Length, PasswordManagementConstants.PasswordLedFeedbackChange);
+			// Verify if OnStringChange is needed to update the S+ wrapper with the entered PasswordToValidate
+		}
+
+		/// <summary>
 		/// Protected boolean change event handler
 		/// </summary>
 		/// <param name="state"></param>
