@@ -126,8 +126,9 @@ namespace PepperDash.Core.PasswordManagement
 		/// </summary>
 		public void DeletePasswordCharacter()
 		{
+			ushort PasswordLengthBeforeDelete = (ushort)PasswordToValidate.Length;
 			PasswordToValidate = PasswordToValidate.Substring(0, PasswordToValidate.Length - 1);			
-			OnBoolChange(false, (ushort)PasswordToValidate.Length, PasswordManagementConstants.PasswordLedFeedbackChange);
+			OnBoolChange(false, (ushort)PasswordLengthBeforeDelete, PasswordManagementConstants.PasswordLedFeedbackChange);
 			// Verify if OnStringChange is needed to update the S+ wrapper with the entered PasswordToValidate
 		}
 
