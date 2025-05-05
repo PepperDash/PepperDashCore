@@ -8,10 +8,10 @@ $destination = "$($Env:GITHUB_HOME)\output"
 New-Item -ItemType Directory -Force -Path ($destination)
 Get-ChildItem ($destination)
 $exclusions = @(git submodule foreach --quiet 'echo $name')
-$exclusions += "Newtonsoft.Json.Compact.dll"
+$exclusions += "Newtonsoft.Compact.Json.dll"
 # Trying to get any .json schema files (not currently working)
 # Gets any files with the listed extensions.
-Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz", "*.cplz", "*.json", "*.nuspec" | ForEach-Object {
+Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz", "*.cplz", "*.dll", "*.nuspec" | ForEach-Object {
   $allowed = $true;
   # Exclude any files in submodules
   foreach ($exclude in $exclusions) {
@@ -27,9 +27,10 @@ Get-ChildItem -recurse -Path "$($Env:GITHUB_WORKSPACE)" -include "*.clz", "*.cpz
 } | Copy-Item -Destination ($destination) -Force
 Write-Host "Getting matching files..."
 # Get any files from the output folder that match the following extensions
-Get-ChildItem -Path $destination | Where-Object { (($_.Extension -eq ".clz") -or ($_.Extension -eq ".cpz") -or ($_.Extension -eq ".cplz")) } | ForEach-Object { 
-  # Replace the extensions with dll or xml and create an array 
-  $filenames = @($($_ -replace "cpz|clz|cplz", "dll"), $($_ -replace "cpz|clz|cplz", "xml"))
+Get-ChildItem -Path $destination | Where-Object { ($_.Extension -eq ".clz") -or ($_.Extension -eq ".cpz" -or ($_.Extension -eq ".cplz")) } | ForEach-Object { 
+  # Replace the extensions with dll and xml and create an array 
+  # Removed dll file capture, as previous step should capture all of them. Add if needed-> $($_ -replace "cpz|clz|cplz", "dll"),
+  $filenames = @($($_ -replace "cpz|clz|cplz", "xml"))
   Write-Host "Filenames:"
   Write-Host $filenames
   if ($filenames.length -gt 0) {
@@ -37,6 +38,8 @@ Get-ChildItem -Path $destination | Where-Object { (($_.Extension -eq ".clz") -or
     Get-ChildItem -Recurse -Path "$($Env:GITHUB_WORKSPACE)" -include $filenames | Copy-Item -Destination ($destination) -Force
   }
 }
+
+Get-ChildItem -Path $destination\*.cpz | Rename-Item -NewName { "$($_.BaseName)-$($Env:VERSION)$($_.Extension)" }
 Compress-Archive -Path $destination -DestinationPath "$($Env:GITHUB_WORKSPACE)\$($Env:SOLUTION_FILE)-$($Env:VERSION).zip" -Force
 Write-Host "Output Contents post Zip"
 Get-ChildItem -Path $destination
