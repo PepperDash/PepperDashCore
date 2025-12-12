@@ -186,6 +186,7 @@ namespace PepperDash.Core
 		{
             StreamDebugging = new CommunicationStreamDebugging(key);
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
             AutoReconnectIntervalMs = 5000;
             Hostname = address;
             Port = port;
@@ -206,6 +207,7 @@ namespace PepperDash.Core
         {
             StreamDebugging = new CommunicationStreamDebugging(key);
             CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
             AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
 
@@ -223,6 +225,7 @@ namespace PepperDash.Core
         {
             StreamDebugging = new CommunicationStreamDebugging(SplusKey);
 			CrestronEnvironment.ProgramStatusEventHandler += new ProgramStatusEventHandler(CrestronEnvironment_ProgramStatusEventHandler);
+            CrestronEnvironment.EthernetEventHandler += new EthernetEventHandler(CrestronEnvironment_EthernetEventHandler);
 			AutoReconnectIntervalMs = 5000;
             BufferSize = 2000;
 
@@ -250,6 +253,19 @@ namespace PepperDash.Core
                 Debug.Console(1, this, "Program stopping. Closing connection");
                 Deactivate();
             }
+        }
+
+        /// <summary>
+        /// Handles reconnecting when 
+        /// </summary>
+        void CrestronEnvironment_EthernetEventHandler(EthernetEventArgs ethernetEventArgs)
+        {
+            if (ethernetEventArgs.EthernetEventType == eEthernetEventType.LinkUp)
+            {
+                if(_client != null)
+                    Connect();
+            }
+
         }
 
         /// <summary>
@@ -295,12 +311,14 @@ namespace PepperDash.Core
                 }
                 else
                 {
+                    Debug.Console(1, this, "Creating new TCPClient");
                     //Stop retry timer if running
                     RetryTimer.Stop();
                     _client = new TCPClient(Hostname, Port, BufferSize);
                     _client.SocketStatusChange -= Client_SocketStatusChange;
                     _client.SocketStatusChange += Client_SocketStatusChange;
                     DisconnectCalledByUser = false;
+                    RetryTimer.Reset();
                     _client.ConnectToServerAsync(ConnectToServerCallback);
                 }
             }
@@ -376,6 +394,7 @@ namespace PepperDash.Core
 		{
             if (c.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
             {
+                Debug.LogError(Debug.ErrorLogLevel.Error, string.Format("{0}: Server connection result: {1}", Key, c.ClientStatus));
                 Debug.Console(0, this, "Server connection result: {0}", c.ClientStatus);
                 WaitAndTryReconnect();
             }
@@ -500,6 +519,7 @@ namespace PepperDash.Core
             else
             {
                 Debug.Console(1, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
+                RetryTimer.Stop();
 			    _client.ReceiveDataAsync(Receive);
             }
 
