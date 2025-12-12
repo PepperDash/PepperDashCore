@@ -394,7 +394,6 @@ namespace PepperDash.Core
 		{
             if (c.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED)
             {
-                Debug.LogError(Debug.ErrorLogLevel.Error, string.Format("{0}: Server connection result: {1}", Key, c.ClientStatus));
                 Debug.Console(0, this, "Server connection result: {0}", c.ClientStatus);
                 WaitAndTryReconnect();
             }
