@@ -1,12 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Crestron.SimplSharp;
-using PepperDash.Core.JsonToSimpl;
-using PepperDash.Core.JsonStandardObjects;
 
 namespace PepperDash.Core.PasswordManagement
 {
@@ -18,16 +12,22 @@ namespace PepperDash.Core.PasswordManagement
 		/// <summary>
 		/// Public dictionary of known passwords
 		/// </summary>
-		public static Dictionary<uint, string> Passwords = new Dictionary<uint, string>();
+		public static Dictionary<string, string> Passwords = new Dictionary<string, string>();
+
 		/// <summary>
-		/// Private dictionary, used when passwords are updated
+		/// Indicates whether the manager has been initialized
 		/// </summary>
-		private Dictionary<uint, string> _passwords = new Dictionary<uint, string>();
+		public static bool IsInitialized { get; private set; }
+
+		/// <summary>
+		/// Tracks keys changed during the debounce window for notification
+		/// </summary>
+		private readonly List<string> _pendingChanges = new List<string>();
 
 		/// <summary>
 		/// Timer used to wait until password changes have stopped before updating the dictionary
 		/// </summary>
-		CTimer PasswordTimer;
+		CTimer _passwordTimer;
 		/// <summary>
 		/// Timer length
 		/// </summary>
@@ -51,11 +51,15 @@ namespace PepperDash.Core.PasswordManagement
 		public static event EventHandler<StringChangeEventArgs> PasswordChange;
 
 		/// <summary>
-		/// Constructor
+		/// Event to notify clients when the manager has been initialized
+		/// </summary>
+		public static event EventHandler<BoolChangeEventArgs> Initialized;
+
+		/// <summary>
+		/// Constructor (empty constructor required by S+)
 		/// </summary>
 		public PasswordManager()
 		{
-
 		}
 
 		/// <summary>
@@ -64,12 +68,17 @@ namespace PepperDash.Core.PasswordManagement
 		public void Initialize()
 		{
 			if (Passwords == null)
-				Passwords = new Dictionary<uint, string>();
+			{
+				Passwords = new Dictionary<string, string>();
+			}
 
-			if (_passwords == null)
-				_passwords = new Dictionary<uint, string>();
+			OnBoolChange(true, 0, PasswordConstants.Initialized);
 
-			OnBoolChange(true, 0, PasswordManagementConstants.PasswordInitializedChange);
+			IsInitialized = true;
+
+			var handler = Initialized;
+			if (handler != null)
+				handler(this, new BoolChangeEventArgs(true, PasswordConstants.Initialized));
 		}
 
 		/// <summary>
@@ -77,10 +86,10 @@ namespace PepperDash.Core.PasswordManagement
 		/// </summary>
 		/// <param name="key"></param>
 		/// <param name="password"></param>
-		public void UpdatePassword(ushort key, string password)
+		public void UpdatePassword(string key, string password)
 		{
 			// validate the parameters
-			if (key > 0 && string.IsNullOrEmpty(password))
+			if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(password))
 			{
 				Debug.Console(1, string.Format("PasswordManager.UpdatePassword: key [{0}] or password are not valid", key, password));
 				return;
@@ -88,24 +97,21 @@ namespace PepperDash.Core.PasswordManagement
 
 			try
 			{
-				// if key exists, update the value
-				if(_passwords.ContainsKey(key))
-					_passwords[key] = password;
-				// else add the key & value
-				else
-					_passwords.Add(key, password);
-				
-				Debug.Console(1, string.Format("PasswordManager.UpdatePassword: _password[{0}] = {1}", key, _passwords[key]));
+				Passwords[key] = password;
+				if (!_pendingChanges.Contains(key))
+					_pendingChanges.Add(key);
 
-				if (PasswordTimer == null)
+				Debug.Console(1, string.Format("PasswordManager.UpdatePassword: Passwords[{0}] = {1}", key, Passwords[key]));
+
+				if (_passwordTimer == null)
 				{
-					PasswordTimer = new CTimer((o) => PasswordTimerElapsed(), PasswordTimerElapsedMs);
+					_passwordTimer = new CTimer((o) => PasswordTimerElapsed(), PasswordTimerElapsedMs);
 					Debug.Console(1, string.Format("PasswordManager.UpdatePassword: CTimer Started"));
-					OnBoolChange(true, 0, PasswordManagementConstants.PasswordUpdateBusyChange);
+					OnBoolChange(true, 0, PasswordConstants.UpdateBusy);
 				}
 				else
 				{
-					PasswordTimer.Reset(PasswordTimerElapsedMs);
+					_passwordTimer.Reset(PasswordTimerElapsedMs);
 					Debug.Console(1, string.Format("PasswordManager.UpdatePassword: CTimer Reset"));
 				}
 			}
@@ -117,35 +123,83 @@ namespace PepperDash.Core.PasswordManagement
 		}
 
 		/// <summary>
+		/// Helper method for debugging to see what passwords are in the lists
+		/// </summary>
+		public void ListEntries()
+		{
+			Debug.Console(0, "PasswordManager.ListEntries:\r");
+			foreach (var pw in Passwords)
+			{
+				var maskedValue = string.IsNullOrEmpty(pw.Value) ? string.Empty : new string('*', pw.Value.Length);
+				Debug.Console(0, "Passwords[{0}]: {1}\r", pw.Key, maskedValue);
+			}
+		}
+
+		/// <summary>
+		/// Validates the username against the known entries
+		/// </summary>
+		/// <param name="username"></param>
+		public static PasswordValidationResult ValidateUsername(string username)
+		{
+			if (Passwords == null)
+				return PasswordValidationResult.Failure("No entires defined, verify list is initilaized");
+
+			if (string.IsNullOrEmpty(username))
+				return PasswordValidationResult.Failure("Username or password is empty");
+
+			string storedPassword;
+			return !Passwords.TryGetValue(username, out storedPassword) 
+				? PasswordValidationResult.Failure(string.Format("Username '{0}' not found", username)) 
+				: PasswordValidationResult.Success("Valid username", storedPassword);
+		}
+
+		/// <summary>
+		/// Validates the username password against the known entries
+		/// </summary>
+		/// <param name="username"></param>
+		/// <param name="password"></param>
+		public static PasswordValidationResult ValidateUsernameAndPassword(string username, string password)
+		{
+			if (Passwords == null)
+				return PasswordValidationResult.Failure("No entires defined, verify list is initilaized");
+
+			if (string.IsNullOrEmpty(username))
+				return PasswordValidationResult.Failure("Username is empty or null");
+
+			if(string.IsNullOrEmpty(password))
+				return PasswordValidationResult.Failure("Password is empty or null");				
+
+			string storedPassword;
+			if (!Passwords.TryGetValue(username, out storedPassword))
+				return PasswordValidationResult.Failure(string.Format("Username '{0}' not found", username));
+
+			return !string.Equals(storedPassword, password, StringComparison.Ordinal) 
+				? PasswordValidationResult.Failure("Invalid password, verify password and try again") 
+				: PasswordValidationResult.Success("Valid credentials, login was successfull", storedPassword);
+		}
+
+		/// <summary>
 		/// CTimer callback function
 		/// </summary>
 		private void PasswordTimerElapsed()
 		{
 			try
 			{
-				PasswordTimer.Stop();
+				_passwordTimer.Stop();
 				Debug.Console(1, string.Format("PasswordManager.PasswordTimerElapsed: CTimer Stopped"));
-				OnBoolChange(false, 0, PasswordManagementConstants.PasswordUpdateBusyChange);
-				foreach (var pw in _passwords)
+				OnBoolChange(false, 0, PasswordConstants.UpdateBusy);
+
+				foreach (var key in _pendingChanges)
 				{
-					// if key exists, continue
-					if (Passwords.ContainsKey(pw.Key))
-					{
-						Debug.Console(1, string.Format("PasswordManager.PasswordTimerElapsed: pw.key[{0}] = {1}", pw.Key, pw.Value));
-						if (Passwords[pw.Key] != _passwords[pw.Key])
-						{
-							Passwords[pw.Key] = _passwords[pw.Key];
-							Debug.Console(1, string.Format("PasswordManager.PasswordTimerElapsed: Updated Password[{0} = {1}", pw.Key, Passwords[pw.Key]));
-							OnPasswordChange(Passwords[pw.Key], (ushort)pw.Key, PasswordManagementConstants.StringValueChange);
-						}
-					}
-					// else add the key & value
-					else
-					{
-						Passwords.Add(pw.Key, pw.Value);
-					}
+					string value;
+					if (!Passwords.TryGetValue(key, out value)) continue;
+
+					Debug.Console(1, string.Format("PasswordManager.PasswordTimerElapsed: Notifying change for [{0}]", key));
+					OnPasswordChange(key, 0, PasswordConstants.PasswordUpdated);
 				}
-				OnUshrtChange((ushort)Passwords.Count, 0, PasswordManagementConstants.PasswordManagerCountChange);
+
+				_pendingChanges.Clear();
+				OnUshrtChange((ushort)Passwords.Count, 0, PasswordConstants.Count);
 			}
 			catch (Exception e)
 			{
@@ -163,18 +217,8 @@ namespace PepperDash.Core.PasswordManagement
 			PasswordTimerElapsedMs = Convert.ToInt64(time);
 		}
 
-		/// <summary>
-		/// Helper method for debugging to see what passwords are in the lists
-		/// </summary>
-		public void ListPasswords()
-		{
-			Debug.Console(0, "PasswordManager.ListPasswords:\r");
-			foreach (var pw in Passwords)
-				Debug.Console(0, "Passwords[{0}]: {1}\r", pw.Key, pw.Value);
-			Debug.Console(0, "\n");
-			foreach (var pw in _passwords)
-				Debug.Console(0, "_passwords[{0}]: {1}\r", pw.Key, pw.Value);
-		}
+
+		#region event handlers
 
 		/// <summary>
 		/// Protected boolean change event handler
@@ -185,12 +229,10 @@ namespace PepperDash.Core.PasswordManagement
 		protected void OnBoolChange(bool state, ushort index, ushort type)
 		{
 			var handler = BoolChange;
-			if (handler != null)
-			{
-				var args = new BoolChangeEventArgs(state, type);
-				args.Index = index;
-				BoolChange(this, args);
-			}
+			if (handler == null) return;
+
+			var args = new BoolChangeEventArgs(state, type) {Index = index};
+			BoolChange(this, args);
 		}
 
 		/// <summary>
@@ -202,12 +244,10 @@ namespace PepperDash.Core.PasswordManagement
 		protected void OnUshrtChange(ushort value, ushort index, ushort type)
 		{
 			var handler = UshrtChange;
-			if (handler != null)
-			{
-				var args = new UshrtChangeEventArgs(value, type);
-				args.Index = index;
-				UshrtChange(this, args);
-			}
+			if (handler == null) return;
+
+			var args = new UshrtChangeEventArgs(value, type) {Index = index};
+			UshrtChange(this, args);
 		}
 
 		/// <summary>
@@ -219,12 +259,10 @@ namespace PepperDash.Core.PasswordManagement
 		protected void OnStringChange(string value, ushort index, ushort type)
 		{
 			var handler = StringChange;
-			if (handler != null)
-			{
-				var args = new StringChangeEventArgs(value, type);
-				args.Index = index;
-				StringChange(this, args);
-			}
+			if (handler == null) return;
+
+			var args = new StringChangeEventArgs(value, type) {Index = index};
+			StringChange(this, args);
 		}
 
 		/// <summary>
@@ -236,12 +274,12 @@ namespace PepperDash.Core.PasswordManagement
 		protected void OnPasswordChange(string value, ushort index, ushort type)
 		{
 			var handler = PasswordChange;
-			if (handler != null)
-			{
-				var args = new StringChangeEventArgs(value, type);
-				args.Index = index;
-				PasswordChange(this, args);
-			}
+			if (handler == null) return;
+
+			var args = new StringChangeEventArgs(value, type) {Index = index};
+			PasswordChange(this, args);
 		}
+
+		#endregion
 	}
 }

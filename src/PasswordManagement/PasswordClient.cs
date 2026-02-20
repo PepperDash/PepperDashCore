@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Crestron.SimplSharp;
 
 namespace PepperDash.Core.PasswordManagement
@@ -12,13 +9,15 @@ namespace PepperDash.Core.PasswordManagement
 	public class PasswordClient
 	{
 		/// <summary>
+		/// Password selected key
+		/// </summary>
+		public string Username { get; set; }
+		
+		/// <summary>
 		/// Password selected
 		/// </summary>
 		public string Password { get; set; }
-		/// <summary>
-		/// Password selected key
-		/// </summary>
-		public ushort Key { get; set; }
+		
 		/// <summary>
 		/// Used to build the password entered by the user
 		/// </summary>
@@ -42,7 +41,11 @@ namespace PepperDash.Core.PasswordManagement
 		/// </summary>
 		public PasswordClient()
 		{
-			PasswordManager.PasswordChange += new EventHandler<StringChangeEventArgs>(PasswordManager_PasswordChange);
+			PasswordManager.Initialized += (sender, args) => Initialize();
+			PasswordManager.PasswordChange += PasswordManager_PasswordChange;
+
+			if (PasswordManager.IsInitialized)
+				Initialize();
 		}		
 
 		/// <summary>
@@ -50,52 +53,108 @@ namespace PepperDash.Core.PasswordManagement
 		/// </summary>
 		public void Initialize()
 		{
-			OnBoolChange(false, 0, PasswordManagementConstants.PasswordInitializedChange);
+			OnBoolChange(false, 0, PasswordConstants.Initialized);
 
-			Password = "";
-			PasswordToValidate = "";
+			Username = string.Empty;
+			Password = string.Empty;
+			PasswordToValidate = string.Empty;
 
-			OnUshrtChange((ushort)PasswordManager.Passwords.Count, 0, PasswordManagementConstants.PasswordManagerCountChange);
-			OnBoolChange(true, 0, PasswordManagementConstants.PasswordInitializedChange);
+			OnUshrtChange((ushort)PasswordManager.Passwords.Count, 0, PasswordConstants.Count);
+			OnUshrtChange(0, 0, PasswordConstants.PasswordLength);
+			OnStringChange(string.Empty, 0, PasswordConstants.UsernameValidated);
+			OnStringChange("Password client initilaized", 0, PasswordConstants.Message);
+			OnBoolChange(true, 0, PasswordConstants.Initialized);
 		}
 
 		/// <summary>
-		/// Retrieve password by index
+		/// Sends clear/0 values to S+ wrapper
 		/// </summary>
-		/// <param name="key"></param>
-		public void GetPasswordByIndex(ushort key)
+		public void ClearOutputs()
 		{
-			OnUshrtChange((ushort)PasswordManager.Passwords.Count, 0, PasswordManagementConstants.PasswordManagerCountChange);
+			//OnBoolChange(false, 0, PasswordConstants.UsernameValidated);
+			OnUshrtChange(0, 0, PasswordConstants.PasswordLength);
+			OnStringChange(string.Empty, 0, PasswordConstants.UsernameValidated);
+			OnStringChange(string.Empty, 0, PasswordConstants.Message);
+		}
 
-			Key = key;
+	    /// <summary>
+	    /// Sends clear/0 values to S+ wrapper
+	    /// </summary>
+	    /// <param name="result"></param>
+	    public void UpdateOutputs(PasswordValidationResult result)
+	    {
+			OnBoolChange(result.IsValid, 0, PasswordConstants.UsernameValidated);
+		    OnUshrtChange((ushort)(string.IsNullOrEmpty(result.Password) ? 0 : result.Password.Length), 0, PasswordConstants.PasswordLength);
+			OnStringChange(string.Empty, 0, PasswordConstants.UsernameValidated);
+			OnStringChange(result.Message, 0, PasswordConstants.Message);
+	    }
 
-			var pw = PasswordManager.Passwords[Key];
-			if (pw == null)
+		/// <summary>
+		/// Validate username
+		/// </summary>
+		/// <param name="username"></param>
+	    public void ValidateUsername(string username)
+	    {
+			if (string.IsNullOrEmpty(username))
 			{
-				OnUshrtChange(0, 0, PasswordManagementConstants.PasswordLengthChange);
+				OnStringChange("Username is null or empty", 0, PasswordConstants.Message);
 				return;
 			}
 
-			Password = pw;
-			OnUshrtChange((ushort)Password.Length, 0, PasswordManagementConstants.PasswordLengthChange);
-			OnUshrtChange(key, 0, PasswordManagementConstants.PasswordSelectIndexChange);
-		}
+			var result = PasswordManager.ValidateUsername(username);
+			if (!result.IsValid)
+			{
+				UpdateOutputs(result);
+				return;
+			}
+
+			Username = username;
+			Password = result.Password;
+			PasswordToValidate = string.Empty;
+			
+			OnStringChange(Username, 0, PasswordConstants.UsernameValidated); 
+			OnBoolChange(result.IsValid, 0, PasswordConstants.UsernameValidated);						
+			OnUshrtChange((ushort)result.Password.Length, 0, PasswordConstants.PasswordLength);
+			OnStringChange(result.Message, 0, PasswordConstants.Message);
+	    }
 
 		/// <summary>
-		/// Password validation method
+		/// Validate username and passowrd
 		/// </summary>
+		/// <param name="username"></param>
 		/// <param name="password"></param>
-		public void ValidatePassword(string password)
+		public void ValidateUsernameAndPassword(string username, string password)
 		{
-			if (string.IsNullOrEmpty(password))
+			if (string.IsNullOrEmpty(username))
+			{
+				OnStringChange("Username is null or empty", 0, PasswordConstants.Message);
 				return;
+			}
 
-			if (string.Equals(Password, password))
-				OnBoolChange(true, 0, PasswordManagementConstants.PasswordValidationChange);
-			else
-				OnBoolChange(false, 0, PasswordManagementConstants.PasswordValidationChange);
+			if (string.IsNullOrEmpty(password))
+			{
+				OnStringChange("Password is null or empty", 0, PasswordConstants.Message);
+				return;
+			}
 
-			ClearPassword();
+			var result = PasswordManager.ValidateUsernameAndPassword(username, password);
+			if (!result.IsValid)
+			{
+				UpdateOutputs(result);
+				return;
+			}
+
+			OnBoolChange(result.IsValid, 0, PasswordConstants.PasswordValidated);
+			OnStringChange(result.Message, 0, PasswordConstants.Message);
+
+			// Clear entered password and reset outputs after a delay (make configurable as needed)
+			const long clearDelayMs = 5000;
+
+			new CTimer(_ =>
+			{
+				ClearPassword();
+				ClearOutputs();
+			}, clearDelayMs);
 		}
 
 		/// <summary>
@@ -106,10 +165,22 @@ namespace PepperDash.Core.PasswordManagement
 		public void BuildPassword(string data)
 		{
 			PasswordToValidate = String.Concat(PasswordToValidate, data);
-			OnBoolChange(true, (ushort)PasswordToValidate.Length, PasswordManagementConstants.PasswordLedFeedbackChange);
+			OnBoolChange(true, (ushort)PasswordToValidate.Length, PasswordConstants.LedFeedback);
 
-			if (PasswordToValidate.Length == Password.Length)
-				ValidatePassword(PasswordToValidate);
+			if (string.IsNullOrEmpty(Password))
+			{
+				OnStringChange("Cannot validate password, password is null or empty", 0, PasswordConstants.Message);
+				return;
+			}
+			if (PasswordToValidate.Length != Password.Length) return;
+
+			if (string.IsNullOrEmpty(Username))
+			{
+				OnStringChange("Cannot validate password, username is null or empty", 0, PasswordConstants.Message);
+				return;
+			}
+
+			ValidateUsernameAndPassword(Username, PasswordToValidate);
 		}
 
 		/// <summary>
@@ -117,8 +188,8 @@ namespace PepperDash.Core.PasswordManagement
 		/// </summary>
 		public void ClearPassword()
 		{
-			PasswordToValidate = "";
-			OnBoolChange(false, (ushort)PasswordToValidate.Length, PasswordManagementConstants.PasswordLedFeedbackChange);
+			PasswordToValidate = string.Empty;			
+			OnBoolChange(true, (ushort)PasswordToValidate.Length, PasswordConstants.LedFeedback);
 		}
 
 		/// <summary>
@@ -126,11 +197,22 @@ namespace PepperDash.Core.PasswordManagement
 		/// </summary>
 		public void DeletePasswordCharacter()
 		{
-			ushort PasswordLengthBeforeDelete = (ushort)PasswordToValidate.Length;
-			PasswordToValidate = PasswordToValidate.Substring(0, PasswordToValidate.Length - 1);			
-			OnBoolChange(false, (ushort)PasswordLengthBeforeDelete, PasswordManagementConstants.PasswordLedFeedbackChange);
-			// Verify if OnStringChange is needed to update the S+ wrapper with the entered PasswordToValidate
+			if (string.IsNullOrEmpty(PasswordToValidate))
+				return;
+
+			var previousLength = (ushort)PasswordToValidate.Length;
+
+			// Remove last entered character
+			PasswordToValidate = PasswordToValidate.Substring(0, PasswordToValidate.Length - 1);
+
+			// Turn off the last LED that was on (old length index)
+			OnBoolChange(false, previousLength, PasswordConstants.LedFeedback);
+
+			// Send updated length back to S+
+			OnUshrtChange((ushort)PasswordToValidate.Length, 0, PasswordConstants.PasswordLength);
 		}
+
+		#region event handlers
 
 		/// <summary>
 		/// Protected boolean change event handler
@@ -141,12 +223,10 @@ namespace PepperDash.Core.PasswordManagement
 		protected void OnBoolChange(bool state, ushort index, ushort type)
 		{
 			var handler = BoolChange;
-			if (handler != null)
-			{
-				var args = new BoolChangeEventArgs(state, type);
-				args.Index = index;
-				BoolChange(this, args);
-			}
+			if (handler == null) return;
+
+			var args = new BoolChangeEventArgs(state, type) {Index = index};
+			BoolChange(this, args);
 		}
 
 		/// <summary>
@@ -158,12 +238,10 @@ namespace PepperDash.Core.PasswordManagement
 		protected void OnUshrtChange(ushort value, ushort index, ushort type)
 		{
 			var handler = UshrtChange;
-			if (handler != null)
-			{
-				var args = new UshrtChangeEventArgs(value, type);
-				args.Index = index;
-				UshrtChange(this, args);
-			}
+			if (handler == null) return;
+
+			var args = new UshrtChangeEventArgs(value, type) {Index = index};
+			UshrtChange(this, args);
 		}
 
 		/// <summary>
@@ -175,12 +253,20 @@ namespace PepperDash.Core.PasswordManagement
 		protected void OnStringChange(string value, ushort index, ushort type)
 		{
 			var handler = StringChange;
-			if (handler != null)
-			{
-				var args = new StringChangeEventArgs(value, type);
-				args.Index = index;
-				StringChange(this, args);
-			}
+			if (handler == null) return;
+
+			var args = new StringChangeEventArgs(value, type) { Index = index };
+			StringChange(this, args);
+		}
+		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="args"></param>
+		protected void PasswordManager_Initialized(object sender, BoolChangeEventArgs args)
+		{
+			Initialize();
 		}
 
 		/// <summary>
@@ -190,13 +276,12 @@ namespace PepperDash.Core.PasswordManagement
 		/// <param name="args"></param>
 		protected void PasswordManager_PasswordChange(object sender, StringChangeEventArgs args)
 		{
-			//throw new NotImplementedException();
-			if (Key == args.Index)
-			{
-				//PasswordSelectedKey = args.Index;
-				//PasswordSelected = args.StringValue;
-				GetPasswordByIndex(args.Index);
+			if (Username == args.StringValue && args.Type == PasswordConstants.PasswordUpdated)
+			{				
+				// TODO - If the current username password changes, do something
 			}
 		}
+
+		#endregion
 	}
 }

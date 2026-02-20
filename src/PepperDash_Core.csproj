@@ -93,6 +93,7 @@
     <Compile Include="Comm\TcpServerConfigObject.cs" />
     <Compile Include="Config\PortalConfigReader.cs" />
     <Compile Include="CoreInterfaces.cs" />
+    <Compile Include="PasswordManagement\PasswordValidationResult.cs" />
     <Compile Include="Web\RequestHandlers\DefaultRequestHandler.cs" />
     <Compile Include="Web\RequestHandlers\WebApiBaseRequestHandler.cs" />
     <Compile Include="Web\WebApiServer.cs" />
@@ -120,8 +121,8 @@
     <Compile Include="JsonToSimpl\JsonToSimplGenericMaster.cs" />
     <Compile Include="JsonToSimpl\JsonToSimplMaster.cs" />
     <Compile Include="Network\DiscoveryThings.cs" />
-    <Compile Include="PasswordManagement\Config.cs" />
-    <Compile Include="PasswordManagement\Constants.cs" />
+    <Compile Include="PasswordManagement\PasswordConfig.cs" />
+    <Compile Include="PasswordManagement\PasswordConstants.cs" />
     <Compile Include="PasswordManagement\PasswordClient.cs" />
     <Compile Include="PasswordManagement\PasswordManager.cs" />
     <Compile Include="SystemInfo\EventArgs and Constants.cs" />
