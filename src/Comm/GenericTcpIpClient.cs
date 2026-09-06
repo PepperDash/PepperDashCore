@@ -318,7 +318,15 @@ namespace PepperDash.Core
                     _client.SocketStatusChange -= Client_SocketStatusChange;
                     _client.SocketStatusChange += Client_SocketStatusChange;
                     DisconnectCalledByUser = false;
-                    RetryTimer.Reset();
+                    // NOTE: RetryTimer must NOT be armed here. Doing so schedules Reconnect()
+                    // one AutoReconnectIntervalMs after every deliberate connect, and because
+                    // ConnectToServerAsync is still in flight at that point IsConnected is
+                    // still false, so Reconnect() proceeds and opens a SECOND socket.
+                    // Measured on a bench against three PJLink projectors: 6 sockets per poll
+                    // cycle instead of 3, with 38% of connections opened, never used, and
+                    // force-closed by the projector on its 30s idle timeout.
+                    // The retry timer is armed where it belongs - in the failure paths
+                    // (ConnectToServerCallback / Client_SocketStatusChange -> WaitAndTryReconnect).
                     _client.ConnectToServerAsync(ConnectToServerCallback);
                 }
             }
