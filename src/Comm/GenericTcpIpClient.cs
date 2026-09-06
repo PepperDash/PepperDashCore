@@ -165,7 +165,7 @@ namespace PepperDash.Core
 		/// </summary>
 		public bool Connected
 		{
-			get { return _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
+			get { return _client != null && _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
 		}
 
         //Lock object to prevent simulatneous connect/disconnect operations
@@ -276,11 +276,7 @@ namespace PepperDash.Core
 		{
             RetryTimer.Stop();
             RetryTimer.Dispose();
-            if (_client != null)
-            {
-             _client.SocketStatusChange -= this.Client_SocketStatusChange;
-                DisconnectClient();
-            }
+            DisposeClient();
 			return true;
 		}
 
@@ -314,6 +310,12 @@ namespace PepperDash.Core
                     Debug.Console(1, this, "Creating new TCPClient");
                     //Stop retry timer if running
                     RetryTimer.Stop();
+                    // Release the previous socket before replacing it. TCPClient is
+                    // IDisposable ("free resources and disconnect") and holds unmanaged
+                    // socket resources; without this, every connect orphaned a live
+                    // TCPClient. Because the controller reconnects on every poll cycle,
+                    // that is a per-connection leak rather than a one-off.
+                    DisposeClient();
                     _client = new TCPClient(Hostname, Port, BufferSize);
                     _client.SocketStatusChange -= Client_SocketStatusChange;
                     _client.SocketStatusChange += Client_SocketStatusChange;
@@ -391,6 +393,34 @@ namespace PepperDash.Core
                 Debug.Console(1, this, "Disconnecting client");
                 if (IsConnected)
                     _client.DisconnectFromServer();
+            }
+        }
+
+        /// <summary>
+        /// Unsubscribes from the current socket's events and disposes it.
+        /// Safe to call when no client exists.
+        /// </summary>
+        private void DisposeClient()
+        {
+            if (_client == null)
+                return;
+
+            try
+            {
+                _client.SocketStatusChange -= Client_SocketStatusChange;
+                if (IsConnected)
+                    _client.DisconnectFromServer();
+                _client.Dispose();
+            }
+            catch (Exception ex)
+            {
+                // Disposing a socket that the platform has already torn down can throw.
+                // That must never prevent a reconnect.
+                Debug.Console(1, this, "Exception disposing client: {0}", ex.Message);
+            }
+            finally
+            {
+                _client = null;
             }
         }
 
