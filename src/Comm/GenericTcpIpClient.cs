@@ -274,9 +274,21 @@ namespace PepperDash.Core
         /// <returns></returns>
 		public override bool Deactivate()
 		{
-            RetryTimer.Stop();
-            RetryTimer.Dispose();
-            DisposeClient();
+            // Teardown must hold connectLock like the other lifecycle methods. Without it,
+            // Deactivate can race Connect()/Disconnect()/Reconnect() and WaitAndTryReconnect's
+            // lock-protected RetryTimer.Reset — disposing the timer or nulling _client while
+            // another thread is mid-use.
+            try
+            {
+                connectLock.Enter();
+                RetryTimer.Stop();
+                RetryTimer.Dispose();
+                DisposeClient();
+            }
+            finally
+            {
+                connectLock.Leave();
+            }
 			return true;
 		}
 
@@ -416,7 +428,9 @@ namespace PepperDash.Core
             {
                 // Disposing a socket that the platform has already torn down can throw.
                 // That must never prevent a reconnect.
-                Debug.Console(1, this, "Exception disposing client: {0}", ex.Message);
+                // Log the full exception, not just Message — a disposal race is exactly the case
+                // where the stack trace and any inner exception are what you need.
+                Debug.Console(1, this, "Exception disposing client: {0}", ex);
             }
             finally
             {
@@ -557,7 +571,18 @@ namespace PepperDash.Core
             {
                 Debug.Console(1, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
                 RetryTimer.Stop();
-			    _client.ReceiveDataAsync(Receive);
+                // Use the callback's own client rather than the _client field. A queued status
+                // change can be delivered after DisposeClient() has nulled or replaced _client,
+                // which would throw here. Also ignore events from a socket that has already been
+                // superseded — re-arming receive on a dead socket is pointless.
+                if (client != null && ReferenceEquals(client, _client))
+                {
+                    client.ReceiveDataAsync(Receive);
+                }
+                else
+                {
+                    Debug.Console(1, this, "Status change from a superseded socket; not re-arming receive");
+                }
             }
 
 			var handler = ConnectionChange;
