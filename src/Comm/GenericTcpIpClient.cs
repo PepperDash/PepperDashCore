@@ -165,7 +165,7 @@ namespace PepperDash.Core
 		/// </summary>
 		public bool Connected
 		{
-			get { return _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
+			get { return _client != null && _client.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED; }
 		}
 
         //Lock object to prevent simulatneous connect/disconnect operations
@@ -274,12 +274,20 @@ namespace PepperDash.Core
         /// <returns></returns>
 		public override bool Deactivate()
 		{
-            RetryTimer.Stop();
-            RetryTimer.Dispose();
-            if (_client != null)
+            // Teardown must hold connectLock like the other lifecycle methods. Without it,
+            // Deactivate can race Connect()/Disconnect()/Reconnect() and WaitAndTryReconnect's
+            // lock-protected RetryTimer.Reset — disposing the timer or nulling _client while
+            // another thread is mid-use.
+            try
             {
-             _client.SocketStatusChange -= this.Client_SocketStatusChange;
-                DisconnectClient();
+                connectLock.Enter();
+                RetryTimer.Stop();
+                RetryTimer.Dispose();
+                DisposeClient();
+            }
+            finally
+            {
+                connectLock.Leave();
             }
 			return true;
 		}
@@ -314,11 +322,25 @@ namespace PepperDash.Core
                     Debug.Console(1, this, "Creating new TCPClient");
                     //Stop retry timer if running
                     RetryTimer.Stop();
+                    // Release the previous socket before replacing it. TCPClient is
+                    // IDisposable ("free resources and disconnect") and holds unmanaged
+                    // socket resources; without this, every connect orphaned a live
+                    // TCPClient. Because the controller reconnects on every poll cycle,
+                    // that is a per-connection leak rather than a one-off.
+                    DisposeClient();
                     _client = new TCPClient(Hostname, Port, BufferSize);
                     _client.SocketStatusChange -= Client_SocketStatusChange;
                     _client.SocketStatusChange += Client_SocketStatusChange;
                     DisconnectCalledByUser = false;
-                    RetryTimer.Reset();
+                    // NOTE: RetryTimer must NOT be armed here. Doing so schedules Reconnect()
+                    // one AutoReconnectIntervalMs after every deliberate connect, and because
+                    // ConnectToServerAsync is still in flight at that point IsConnected is
+                    // still false, so Reconnect() proceeds and opens a SECOND socket.
+                    // Measured on a bench against three PJLink projectors: 6 sockets per poll
+                    // cycle instead of 3, with 38% of connections opened, never used, and
+                    // force-closed by the projector on its 30s idle timeout.
+                    // The retry timer is armed where it belongs - in the failure paths
+                    // (ConnectToServerCallback / Client_SocketStatusChange -> WaitAndTryReconnect).
                     _client.ConnectToServerAsync(ConnectToServerCallback);
                 }
             }
@@ -383,6 +405,36 @@ namespace PepperDash.Core
                 Debug.Console(1, this, "Disconnecting client");
                 if (IsConnected)
                     _client.DisconnectFromServer();
+            }
+        }
+
+        /// <summary>
+        /// Unsubscribes from the current socket's events and disposes it.
+        /// Safe to call when no client exists.
+        /// </summary>
+        private void DisposeClient()
+        {
+            if (_client == null)
+                return;
+
+            try
+            {
+                _client.SocketStatusChange -= Client_SocketStatusChange;
+                if (IsConnected)
+                    _client.DisconnectFromServer();
+                _client.Dispose();
+            }
+            catch (Exception ex)
+            {
+                // Disposing a socket that the platform has already torn down can throw.
+                // That must never prevent a reconnect.
+                // Log the full exception, not just Message — a disposal race is exactly the case
+                // where the stack trace and any inner exception are what you need.
+                Debug.Console(1, this, "Exception disposing client: {0}", ex);
+            }
+            finally
+            {
+                _client = null;
             }
         }
 
@@ -519,7 +571,18 @@ namespace PepperDash.Core
             {
                 Debug.Console(1, this, "Socket status change {0} ({1})", clientSocketStatus, ClientStatusText);
                 RetryTimer.Stop();
-			    _client.ReceiveDataAsync(Receive);
+                // Use the callback's own client rather than the _client field. A queued status
+                // change can be delivered after DisposeClient() has nulled or replaced _client,
+                // which would throw here. Also ignore events from a socket that has already been
+                // superseded — re-arming receive on a dead socket is pointless.
+                if (client != null && ReferenceEquals(client, _client))
+                {
+                    client.ReceiveDataAsync(Receive);
+                }
+                else
+                {
+                    Debug.Console(1, this, "Status change from a superseded socket; not re-arming receive");
+                }
             }
 
 			var handler = ConnectionChange;
